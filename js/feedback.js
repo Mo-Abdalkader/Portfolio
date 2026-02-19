@@ -1,7 +1,6 @@
 (function() {
   'use strict';
 
-  // ضع بيانات البوت الخاص بك هنا
   const TELEGRAM_TOKEN = "8205587724:AAFOG2WqeLB6nafaw6t79A7jD-d2z4gMkxE"; 
   const TELEGRAM_CHAT_ID = "1088552029";
 
