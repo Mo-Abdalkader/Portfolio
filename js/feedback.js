@@ -1,8 +1,9 @@
 (function() {
   'use strict';
 
-  const TELEGRAM_TOKEN =                                                                                                                                                                                                                                        "8205587724:AAFOG2WqeLB6nafaw6t79A7jD-d2z4gMkxE"; 
-  const TELEGRAM_CHAT_ID =                                                                                                                                                                                                                                      "1088552029";
+  // ضع بيانات البوت الخاص بك هنا
+  const TELEGRAM_TOKEN = "8205587724:AAFOG2WqeLB6nafaw6t79A7jD-d2z4gMkxE"; 
+  const TELEGRAM_CHAT_ID = "1088552029";
 
   let trigger, overlay, panel, closeBtn, form, submitBtn, statusEl;
   let nameInput, topicSelect, pageInput, messageTextarea, charCount;
@@ -44,7 +45,7 @@
     panel.classList.add('open');
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
-    setTimeout(() => nameInput && nameInput.focus(), 300);
+    setTimeout(() => { if (nameInput) nameInput.focus(); }, 300);
   }
 
   function closePanel() {
@@ -55,14 +56,9 @@
 
   function setPageName() {
     if (!pageInput) return;
-    let title = document.title || '';
-    title = title.replace(/\s*[—–|-]\s*Mohamed Abdalkader.*$/i, '').replace(/\s*\|\s*Mohamed Abdalkader.*$/i, '');
-    if (!title || title.trim() === 'Mohamed Abdalkader') {
-      let path = window.location.pathname;
-      let page = path.split('/').pop().replace('.html', '');
-      title = (!page || page === 'index') ? 'Home' : page.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    }
-    pageInput.value = title.trim() || 'Unknown Page';
+    let title = document.title || 'Home';
+    title = title.replace(/\s*[—–|-]\s*Mohamed Abdalkader.*$/i, '');
+    pageInput.value = title.trim();
   }
 
   function updateCharCount() {
@@ -79,15 +75,13 @@
       message: (messageTextarea?.value || '').trim()
     };
 
-    if (!data.message) {
-      showStatus('error', '⚠ Please write a message.');
-      return;
-    }
+    if (!data.message) return;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending…';
     hideStatus();
 
+    // تجهيز النص بصيغة MarkdownV2
     const escape = (s) => s.replace(/([_*[\]()~`>#+\-=|{}.!])/g, "\\$1");
     const text = [
       `📬 *New Feedback — Portfolio*`,
@@ -112,11 +106,10 @@
       });
 
       if (res.ok) {
-        showStatus('success', '✓ Feedback sent to your Bot!');
+        showStatus('success', '✓ Sent directly to Telegram!');
         form.reset();
-        setPageName();
         updateCharCount();
-        setTimeout(closePanel, 2500);
+        setTimeout(closePanel, 2000);
       } else {
         showStatus('error', '⚠ Telegram API Error.');
       }
@@ -135,9 +128,7 @@
     statusEl.style.display = 'block';
   }
 
-  function hideStatus() {
-    if (statusEl) statusEl.style.display = 'none';
-  }
+  function hideStatus() { if (statusEl) statusEl.style.display = 'none'; }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
