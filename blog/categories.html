@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog Categories | Mohamed Abdalkader</title>
+  <meta name="description" content="Browse all 30 AI blog posts by category — ML Foundations, Models, Computer Vision, NLP, Transformers, Fine-Tuning, RAG, and Production AI." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+  <style>
+    /* ────────────────────────────────────────────────────────────────
+       CATEGORIES PAGE — ENHANCED STYLES
+       Everything scoped so it won't conflict with style.css
+    ──────────────────────────────────────────────────────────────── */
+
+    /* ── Series progress banner ──────────────────────────────────── */
+    .series-progress {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem 1.5rem;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .series-progress-label {
+      font-family: var(--font-mono);
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .series-progress-track {
+      flex: 1;
+      min-width: 100px;
+      height: 5px;
+      background: var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .series-progress-fill {
+      height: 100%;
+      /* UPDATE width = (published ÷ 30) × 100  →  20/30 = 66.67% */
+      width: 66.67%;
+      background: linear-gradient(90deg, var(--accent), #c8a94b);
+      border-radius: 999px;
+    }
+    .series-progress-stat {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .series-progress-stat em {
+      font-style: normal;
+      color: var(--accent);
+    }
+
+    /* ── Filter pill bar ─────────────────────────────────────────── */
+    .cat-filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-bottom: 2.25rem;
+    }
+    .cat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .cat-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .cat-pill.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #05101f;
+      font-weight: 700;
+    }
+    .cat-pill-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0 0.2rem;
+    }
+    .cat-pill.active .cat-pill-count {
+      background: rgba(0,0,0,0.2);
+      color: #05101f;
+    }
+
+    /* ── Category section card ───────────────────────────────────── */
+    .cat-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cat-section:hover {
+      border-color: rgba(56,189,248,0.25);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+    }
+    .cat-section[style*="display:none"] { margin: 0; }
+
+    /* section header — clickable to collapse */
+    .cat-header {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 1.35rem 1.75rem;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+    .cat-section.open .cat-header {
+      border-bottom-color: var(--border);
+    }
+    .cat-icon {
+      font-size: 1.5rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .cat-title {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .cat-desc {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin: 0;
+      margin-top: 0.15rem;
+    }
+    .cat-meta-right {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+    }
+    .cat-count-badge {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.18rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.1);
+      border: 1px solid rgba(56,189,248,0.22);
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .cat-chevron {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      transition: transform 0.22s ease;
+    }
+    .cat-section.open .cat-chevron { transform: rotate(180deg); }
+
+    /* post list body */
+    .cat-body {
+      display: none;
+      padding: 0.5rem 0.75rem 0.75rem;
+    }
+    .cat-section.open .cat-body { display: block; }
+
+    /* individual post row */
+    .cat-row {
+      display: grid;
+      grid-template-columns: 3rem 1fr auto auto;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: var(--radius-md);
+      text-decoration: none;
+      transition: background 0.14s;
+      border: 1px solid transparent;
+    }
+    .cat-row:hover {
+      background: rgba(56,189,248,0.05);
+      border-color: rgba(56,189,248,0.12);
+    }
+    .cat-row.locked {
+      pointer-events: none;
+      opacity: 0.35;
+    }
+
+    .cat-day {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: rgba(56,189,248,0.08);
+      border: 1px solid rgba(56,189,248,0.18);
+      border-radius: 4px;
+      padding: 0.15rem 0.35rem;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .cat-row.locked .cat-day {
+      color: var(--text-muted);
+      background: rgba(136,150,174,0.08);
+      border-color: rgba(136,150,174,0.15);
+    }
+    .cat-row-title {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      font-weight: 500;
+      line-height: 1.35;
+    }
+    .cat-row-meta {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .cat-row-arrow {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      transition: transform 0.14s, color 0.14s;
+    }
+    .cat-row:hover .cat-row-arrow {
+      transform: translateX(3px);
+      color: var(--accent);
+    }
+    .cat-row.locked .cat-row-arrow { display: none; }
+    .cat-row-lock {
+      display: none;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+    .cat-row.locked .cat-row-lock { display: block; }
+
+    .cat-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0.5rem 0.75rem;
+      opacity: 0.45;
+    }
+    .cat-section-empty {
+      padding: 0.75rem 0.75rem 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.775rem;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* ── Light mode ──────────────────────────────────────────────── */
+    [data-theme="light"] .series-progress,
+    [data-theme="light"] .cat-section {
+      background: #fff;
+      border-color: #e2d9cc;
+    }
+    [data-theme="light"] .cat-section:hover { border-color: #9fcccf; box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+    [data-theme="light"] .cat-section.open .cat-header { border-bottom-color: #e2d9cc; }
+    [data-theme="light"] .cat-title { color: #0f0e0c; }
+    [data-theme="light"] .cat-row-title { color: #0f0e0c; }
+    [data-theme="light"] .cat-count-badge { background: rgba(42,107,110,0.08); border-color: rgba(42,107,110,0.2); color: #2a6b6e; }
+    [data-theme="light"] .cat-row:hover { background: rgba(42,107,110,0.04); border-color: rgba(42,107,110,0.15); }
+    [data-theme="light"] .cat-day { background: rgba(42,107,110,0.08); border-color: rgba(42,107,110,0.18); color: #2a6b6e; }
+    [data-theme="light"] .cat-pill:hover { border-color: #2a6b6e; color: #2a6b6e; }
+    [data-theme="light"] .cat-pill.active { background: #2a6b6e; border-color: #2a6b6e; color: #fff; }
+    [data-theme="light"] .cat-pill.active .cat-pill-count { color: #fff; }
+    [data-theme="light"] .series-progress-track { background: #e2d9cc; }
+
+    /* ── Responsive ──────────────────────────────────────────────── */
+    @media (max-width: 580px) {
+      .cat-row { grid-template-columns: 2.6rem 1fr auto; }
+      .cat-row-arrow, .cat-row-lock { display: none !important; }
+      .cat-header { padding: 1.1rem 1.1rem; }
+      .cat-body { padding: 0.35rem 0.35rem 0.6rem; }
+      .cat-desc { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="page-hero-inner" data-animate>
+    <span class="section-label">// browse by topic</span>
+    <h1>All Categories</h1>
+    <p class="page-hero-desc">Every post in the 30-Day AI Ramadan Series, organised by topic.<br>Find the exact concept you're studying — from ML foundations to production LLMs.</p>
+    <div style="margin-top:1.2rem">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0.5rem">
+  <div class="container">
+
+    <!-- SERIES PROGRESS -->
+    <!-- UPDATE: width % and the "X / 30" text when publishing posts -->
+    <div class="series-progress">
+      <span class="series-progress-label">🌙 Series progress</span>
+      <div class="series-progress-track">
+        <div class="series-progress-fill" style="width:3.33%"></div>
+      </div>
+      <span class="series-progress-stat"><em>1</em> / 30 posts published</span>
+    </div>
+
+    <!-- FILTER PILLS -->
+    <div class="cat-filter-bar" role="group" aria-label="Filter by category">
+      <button class="cat-pill active" data-cat="all"            onclick="catFilter(this)">All <span class="cat-pill-count">8</span></button>
+      <button class="cat-pill"        data-cat="foundations"    onclick="catFilter(this)">🧱 Foundations <span class="cat-pill-count">6</span></button>
+      <button class="cat-pill"        data-cat="ml-models"      onclick="catFilter(this)">🤖 ML Models <span class="cat-pill-count">8</span></button>
+      <button class="cat-pill"        data-cat="cv"             onclick="catFilter(this)">👁️ Computer Vision <span class="cat-pill-count">3</span></button>
+      <button class="cat-pill"        data-cat="nlp"            onclick="catFilter(this)">💬 NLP <span class="cat-pill-count">2</span></button>
+      <button class="cat-pill"        data-cat="transformers"   onclick="catFilter(this)">⚡ Transformers &amp; LLMs <span class="cat-pill-count">4</span></button>
+      <button class="cat-pill"        data-cat="fine-tuning"    onclick="catFilter(this)">🔧 Fine-Tuning <span class="cat-pill-count">2</span></button>
+      <button class="cat-pill"        data-cat="rag"            onclick="catFilter(this)">🔍 RAG &amp; Vector Search <span class="cat-pill-count">3</span></button>
+      <button class="cat-pill"        data-cat="production"     onclick="catFilter(this)">🚀 Production AI <span class="cat-pill-count">2</span></button>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         🧱  FOUNDATIONS  (Days 1–3, 9, 10, 14)
+         Publish: remove locked from each row + update count badge
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="foundations" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🧱</div>
+        <div>
+          <h2 class="cat-title">Foundations</h2>
+          <p class="cat-desc">How models learn, bias-variance, regularization, and the ML pipeline from data to deployment.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">6 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <!-- PUBLISHED — remove locked to activate -->
+        <!--
+        <a href="intro-to-ml.html" class="cat-row locked">
+        -->
+        <a href="intro-to-ml.html" class="cat-row">
+          <span class="cat-day">Day 1</span>
+          <span class="cat-row-title">What is Machine Learning?</span>
+          <span class="cat-row-meta">11 min · Feb 19</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="ml-pipeline.html" class="cat-row locked">
+          <span class="cat-day">Day 2</span>
+          <span class="cat-row-title">The ML Pipeline</span>
+          <span class="cat-row-meta">10 min · Feb 20</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="how-models-learn.html" class="cat-row locked">
+          <span class="cat-day">Day 3</span>
+          <span class="cat-row-title">How Models Learn</span>
+          <span class="cat-row-meta">12 min · Feb 21</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="bias-variance.html" class="cat-row locked">
+          <span class="cat-day">Day 9</span>
+          <span class="cat-row-title">Bias, Variance &amp; the Tradeoff</span>
+          <span class="cat-row-meta">11 min · Feb 27</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="regularization.html" class="cat-row locked">
+          <span class="cat-day">Day 10</span>
+          <span class="cat-row-title">Regularization: L1, L2, Elastic Net &amp; Dropout</span>
+          <span class="cat-row-meta">11 min · Feb 28</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="feature-engineering.html" class="cat-row locked">
+          <span class="cat-day">Day 14</span>
+          <span class="cat-row-title">Feature Engineering &amp; Selection</span>
+          <span class="cat-row-meta">14 min · Mar 4</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         🤖  ML MODELS  (Days 4–8, 11–13)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="ml-models" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🤖</div>
+        <div>
+          <h2 class="cat-title">ML Models</h2>
+          <p class="cat-desc">Classical algorithms from first principles — intuition, math, and code for every model.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">8 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+
+
+        <div class="cat-divider"></div>
+
+        <a href="linear-regression.html" class="cat-row locked">
+          <span class="cat-day">Day 4</span>
+          <span class="cat-row-title">Linear Regression</span>
+          <span class="cat-row-meta">10 min · Feb 22</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="logistic-regression.html" class="cat-row locked">
+          <span class="cat-day">Day 5</span>
+          <span class="cat-row-title">Logistic Regression</span>
+          <span class="cat-row-meta">10 min · Feb 23</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="knn.html" class="cat-row locked">
+          <span class="cat-day">Day 6</span>
+          <span class="cat-row-title">K-Nearest Neighbors</span>
+          <span class="cat-row-meta">10 min · Feb 24</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="naive-bayes.html" class="cat-row locked">
+          <span class="cat-day">Day 7</span>
+          <span class="cat-row-title">Naive Bayes</span>
+          <span class="cat-row-meta">10 min · Feb 25</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="decision-tree.html" class="cat-row locked">
+          <span class="cat-day">Day 8</span>
+          <span class="cat-row-title">Decision Trees</span>
+          <span class="cat-row-meta">11 min · Feb 26</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="random-forest.html" class="cat-row locked">
+          <span class="cat-day">Day 11</span>
+          <span class="cat-row-title">Bagging &amp; Random Forests</span>
+          <span class="cat-row-meta">12 min · Mar 1</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="boosting.html" class="cat-row locked">
+          <span class="cat-day">Day 12</span>
+          <span class="cat-row-title">Boosting: AdaBoost &amp; Gradient Boosting</span>
+          <span class="cat-row-meta">13 min · Mar 2</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="xgboost.html" class="cat-row locked">
+          <span class="cat-day">Day 13</span>
+          <span class="cat-row-title">XGBoost &amp; LightGBM</span>
+          <span class="cat-row-meta">13 min · Mar 3</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         👁️  COMPUTER VISION  (Days 15–17)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="cv" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">👁️</div>
+        <div>
+          <h2 class="cat-title">Computer Vision</h2>
+          <p class="cat-desc">How machines see — CNNs, transfer learning for medical imaging, and real-time object detection.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">3 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="cnn.html" class="cat-row locked">
+          <span class="cat-day">Day 15</span>
+          <span class="cat-row-title">CNNs from Scratch</span>
+          <span class="cat-row-meta">15 min · Mar 5</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="transfer-learning.html" class="cat-row locked">
+          <span class="cat-day">Day 16</span>
+          <span class="cat-row-title">Transfer Learning &amp; Fine-Tuning</span>
+          <span class="cat-row-meta">14 min · Mar 6</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="object-detection.html" class="cat-row locked">
+          <span class="cat-day">Day 17</span>
+          <span class="cat-row-title">Object Detection, YOLO &amp; Segmentation</span>
+          <span class="cat-row-meta">13 min · Mar 7</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         💬  NLP  (Days 18–19)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="nlp" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">💬</div>
+        <div>
+          <h2 class="cat-title">NLP</h2>
+          <p class="cat-desc">Teaching machines to read — tokenisation, TF-IDF, and the geometry of word meaning.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">2 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="nlp-fundamentals.html" class="cat-row locked">
+          <span class="cat-day">Day 18</span>
+          <span class="cat-row-title">NLP Fundamentals: Tokenisation, Bag-of-Words &amp; TF-IDF</span>
+          <span class="cat-row-meta">13 min · Mar 8</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="word-embeddings.html" class="cat-row locked">
+          <span class="cat-day">Day 19</span>
+          <span class="cat-row-title">Word Embeddings: Word2Vec, GloVe &amp; Sentence Transformers</span>
+          <span class="cat-row-meta">14 min · Mar 9</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         ⚡  TRANSFORMERS & LLMs  (Days 20–23)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="transformers" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">⚡</div>
+        <div>
+          <h2 class="cat-title">Transformers &amp; LLMs</h2>
+          <p class="cat-desc">Self-attention, positional encodings, BERT vs GPT, and the scaling laws powering modern AI.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">4 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="attention-transformer.html" class="cat-row locked">
+          <span class="cat-day">Day 20</span>
+          <span class="cat-row-title">Attention &amp; the Transformer Architecture</span>
+          <span class="cat-row-meta">16 min · Mar 10</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="positional-encodings.html" class="cat-row locked">
+          <span class="cat-day">Day 21</span>
+          <span class="cat-row-title">Positional Encodings: Sinusoidal, RoPE &amp; ALiBi</span>
+          <span class="cat-row-meta">13 min · Mar 11</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="bert-vs-gpt.html" class="cat-row locked">
+          <span class="cat-day">Day 22</span>
+          <span class="cat-row-title">BERT vs GPT: Encoders, Decoders &amp; What They're For</span>
+          <span class="cat-row-meta">12 min · Mar 12</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="scaling-laws.html" class="cat-row locked">
+          <span class="cat-day">Day 23</span>
+          <span class="cat-row-title">Scaling Laws: How We Know Bigger Models Will Be Smarter</span>
+          <span class="cat-row-meta">11 min · Mar 13</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         🔧  LLM FINE-TUNING  (Days 24–25)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="fine-tuning" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🔧</div>
+        <div>
+          <h2 class="cat-title">LLM Fine-Tuning</h2>
+          <p class="cat-desc">LoRA, QLoRA, instruction tuning, and RLHF — adapting large models without training from scratch.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">2 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="lora-qlora.html" class="cat-row locked">
+          <span class="cat-day">Day 24</span>
+          <span class="cat-row-title">LoRA &amp; QLoRA: Parameter-Efficient Fine-Tuning</span>
+          <span class="cat-row-meta">14 min · Mar 14</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="rlhf.html" class="cat-row locked">
+          <span class="cat-day">Day 25</span>
+          <span class="cat-row-title">RLHF: Teaching Models to Follow Instructions</span>
+          <span class="cat-row-meta">13 min · Mar 15</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         🔍  RAG & VECTOR SEARCH  (Days 26–28)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="rag" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🔍</div>
+        <div>
+          <h2 class="cat-title">RAG &amp; Vector Search</h2>
+          <p class="cat-desc">Retrieval-Augmented Generation — chunking, vector databases, re-ranking, and production pipelines.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">3 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="rag-part1.html" class="cat-row locked">
+          <span class="cat-day">Day 26</span>
+          <span class="cat-row-title">RAG Part 1: Architecture &amp; Chunking Strategies</span>
+          <span class="cat-row-meta">14 min · Mar 16</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="rag-part2.html" class="cat-row locked">
+          <span class="cat-day">Day 27</span>
+          <span class="cat-row-title">RAG Part 2: Vector Databases &amp; Retrieval</span>
+          <span class="cat-row-meta">13 min · Mar 17</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="rag-part3.html" class="cat-row locked">
+          <span class="cat-day">Day 28</span>
+          <span class="cat-row-title">RAG Part 3: Re-Ranking, Evaluation &amp; Production</span>
+          <span class="cat-row-meta">14 min · Mar 18</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+
+    <!-- ══════════════════════════════════════════════════════════════
+         🚀  PRODUCTION AI  (Days 29–30)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="production" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🚀</div>
+        <div>
+          <h2 class="cat-title">Production AI</h2>
+          <p class="cat-desc">Vision-Language Models and MLOps — the stack that takes AI from notebook to the real world.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">2 posts</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="vlms.html" class="cat-row locked">
+          <span class="cat-day">Day 29</span>
+          <span class="cat-row-title">Vision-Language Models: CLIP, LLaVA &amp; GPT-4V</span>
+          <span class="cat-row-meta">14 min · Mar 19</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+        <a href="mlops.html" class="cat-row locked">
+          <span class="cat-day">Day 30</span>
+          <span class="cat-row-title">MLOps: From Notebook to Production</span>
+          <span class="cat-row-meta">13 min · Mar 20</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="../js/main.js"></script>
+
+<script>
+  /* ── Category filter ──────────────────────────────────────────── */
+  function catFilter(btn) {
+    document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const filter = btn.dataset.cat;
+    document.querySelectorAll('.cat-section').forEach(sec => {
+      sec.style.display = (filter === 'all' || sec.dataset.cat === filter) ? '' : 'none';
+    });
+  }
+
+  /* ── Collapse / expand section ────────────────────────────────── */
+  function toggleCat(section) {
+    section.classList.toggle('open');
+  }
+</script>
+
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

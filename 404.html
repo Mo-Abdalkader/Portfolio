@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>404 — Page Not Found | Mohamed Abdalkader</title>
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<nav id="navbar" class="navbar scrolled" role="navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Home">
+      <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html"    class="nav-link">Home</a></li>
+      <li><a href="projects.html" class="nav-link">Projects</a></li>
+      <li><a href="blog.html"     class="nav-link">Blog</a></li>
+      <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<div class="page-404" role="main">
+  <div class="dot-grid" aria-hidden="true" style="position:fixed;inset:0;z-index:0;opacity:0.28;pointer-events:none"></div>
+
+  <div style="position:relative;z-index:1;text-align:center" data-animate>
+    <span class="error-num" aria-hidden="true">404</span>
+    <span class="error-code">// page_not_found</span>
+    <h1 class="error-title">This page doesn't exist</h1>
+    <p class="error-desc" style="max-width:36ch;margin:0 auto 2rem">
+      The model hasn't trained on this URL. Try one of these instead.
+    </p>
+    <div style="display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap">
+      <a href="index.html"    class="btn btn-primary">← Go Home</a>
+      <a href="projects.html" class="btn btn-outline">Projects</a>
+      <a href="blog.html"     class="btn btn-ghost">Blog</a>
+    </div>
+    <p style="margin-top:2.5rem;font-family:var(--font-mono);font-size:0.75rem;color:var(--text-muted)">
+      <span style="color:var(--error)">raise</span> PageNotFoundError(<span style="color:var(--text-secondary)">"Try one of the links above"</span>)
+    </p>
+  </div>
+</div>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<script src="js/main.js"></script>
+
+<!-- ══ GLOBAL FEEDBACK SYSTEM ═════════════════════════════════════ -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="js/feedback.js"></script>
+</body>
+</html>

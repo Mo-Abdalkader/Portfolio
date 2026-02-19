@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects — Mohamed Abdalkader</title>
+  <meta name="description" content="Production-grade ML systems — Medical AI, Computer Vision, and Research projects by Mohamed Abdalkader." />
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-logo" aria-label="Home">
+      <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="index.html"    class="nav-link">Home</a></li>
+      <li><a href="projects.html" class="nav-link">Projects</a></li>
+      <li><a href="blog.html"     class="nav-link">Blog</a></li>
+      <li><a href="index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" id="langEN">EN</button>
+        <button class="lang-btn"        id="langAR">AR</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- ══ PAGE HERO ════════════════════════════════════════════════════ -->
+<section class="page-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="page-hero-inner" data-animate>
+    <span class="section-label" id="t-page-projects-label">// my work</span>
+    <h1 id="t-page-projects-h1">Projects</h1>
+    <p class="page-hero-desc" id="t-page-projects-sub">Production-grade ML systems. Real results.</p>
+  </div>
+</section>
+
+<!-- ══ PROJECTS ═════════════════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+
+    <!-- Filter tabs — update counts when you add projects -->
+    <div class="filter-tabs" data-filter="projects" data-animate>
+      <button class="filter-tab active" data-category="all">All (5)</button>
+      <button class="filter-tab" data-category="Medical AI">Medical AI (2)</button>
+      <button class="filter-tab" data-category="Computer Vision">Computer Vision (2)</button>
+      <button class="filter-tab" data-category="Research">Research (1)</button>
+    </div>
+
+    <div class="grid-auto">
+
+      <!-- ── PROJECT 1 ─────────────────────────────────────────── -->
+      <article class="project-card" data-animate data-delay="1" data-category="Medical AI">
+        <div class="card-top">
+          <span class="status-badge status-private">Private Research</span>
+          <span class="card-category">Medical AI</span>
+        </div>
+        <h3 class="card-title">Medical VLM with Multi-Agent Architecture</h3>
+        <p class="card-desc">Fine-tuned Qwen 2.5 7B VLM with LoRA rank-32 on 35,000 retinal images. Multi-agent pipeline (DenseNet + EfficientNet + RBF-SVM) achieved 240% accuracy boost (20% → 68%). 4-bit QLoRA cut VRAM 17GB → 7GB with no accuracy loss. RAG with FAISS reduced hallucinations 18% → 5%.</p>
+        <div class="tech-stack">
+          <span class="tag">Qwen 2.5 7B</span><span class="tag">PyTorch</span><span class="tag">LoRA/QLoRA</span><span class="tag">FAISS</span><span class="tag">Flask · Docker</span>
+        </div>
+        <div class="card-actions">
+          <span class="btn btn-ghost btn-sm" style="opacity:0.5;cursor:default;">🔒 Private</span>
+        </div>
+      </article>
+
+      <!-- ── PROJECT 2 ─────────────────────────────────────────── -->
+      <article class="project-card" data-animate data-delay="2" data-category="Medical AI">
+        <div class="card-top">
+          <span class="status-badge status-private">Private Research</span>
+          <span class="card-category">Medical AI</span>
+        </div>
+        <h3 class="card-title">Medical Knowledge RAG System</h3>
+        <p class="card-desc">RAG pipeline indexing 20+ medical textbooks (5,000+ pages) with FAISS. 0.3s retrieval latency, 0.89 recall@5. Grounded VLM outputs lifted retinopathy to 68%, edema to 94%. Improved BLEU 0.17 → 0.26, cut hallucination rate 18% → 5%.</p>
+        <div class="tech-stack">
+          <span class="tag">LangChain</span><span class="tag">FAISS</span><span class="tag">Transformers</span><span class="tag">sentence-transformers</span>
+        </div>
+        <div class="card-actions">
+          <span class="btn btn-ghost btn-sm" style="opacity:0.5;cursor:default;">🔒 Private</span>
+        </div>
+      </article>
+
+      <!-- ── PROJECT 3 ─────────────────────────────────────────── -->
+      <article class="project-card" data-animate data-delay="3" data-category="Computer Vision">
+        <div class="card-top">
+          <span class="status-badge status-live">Live</span>
+          <span class="card-category">Computer Vision</span>
+        </div>
+        <h3 class="card-title">Brain Tumor Classification</h3>
+        <p class="card-desc">Custom CNN — 95% accuracy on 3,000 brain MRI scans across 4 tumor types (glioma, meningioma, pituitary, healthy). 400% dataset expansion via augmentation. Dockerized Streamlit app with real-time inference &lt;2s and Class Activation Maps.</p>
+        <div class="tech-stack">
+          <span class="tag">TensorFlow</span><span class="tag">Keras</span><span class="tag">OpenCV</span><span class="tag">Streamlit</span><span class="tag">Docker</span>
+        </div>
+        <div class="card-actions">
+          <a href="https://github.com/Mo-Abdalkader/Brain-Tumor"  class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://brain-tumor-cls.streamlit.app/"         class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+        </div>
+      </article>
+
+      <!-- ── PROJECT 4 ─────────────────────────────────────────── -->
+      <article class="project-card" data-animate data-delay="1" data-category="Computer Vision">
+        <div class="card-top">
+          <span class="status-badge status-live">Live</span>
+          <span class="card-category">Computer Vision</span>
+        </div>
+        <h3 class="card-title">Face Recognition &amp; Similarity System</h3>
+        <p class="card-desc">FaceNet-based recognition with SQLite identity database managing 1,000+ profiles. 0.92 accuracy at 15 FPS on CPU. Desktop Tkinter GUI plus Streamlit web API with cosine similarity matching.</p>
+        <div class="tech-stack">
+          <span class="tag">PyTorch</span><span class="tag">FaceNet</span><span class="tag">Streamlit</span><span class="tag">SQLite</span><span class="tag">OpenCV</span>
+        </div>
+        <div class="card-actions">
+          <a href="https://github.com/Mo-Abdalkader/Face-Recognition"        class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://face-similarity-recognition.streamlit.app/"        class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+        </div>
+      </article>
+
+      <!-- ── PROJECT 5 ─────────────────────────────────────────── -->
+      <article class="project-card" data-animate data-delay="2" data-category="Research">
+        <div class="card-top">
+          <span class="status-badge status-live">Live</span>
+          <span class="card-category">Research</span>
+        </div>
+        <h3 class="card-title">AI-IoT Renewable Energy Prediction</h3>
+        <p class="card-desc">Graduation project benchmarking 21 DL architectures (LSTM, GRU, BiLSTM, CNN-LSTM, Transformer, TFT) for solar and wind forecasting. 98% accuracy, &lt;15% MAPE, 48-hour window. ITAC + ASRT funded. IEEE national recognition award.</p>
+        <div class="tech-stack">
+          <span class="tag">LSTM · GRU</span><span class="tag">Transformers</span><span class="tag">Azure IoT Hub</span><span class="tag">TensorFlow</span>
+        </div>
+        <div class="card-actions">
+          <a href="https://github.com/Mo-Abdalkader/Renewable-Energy-Prediction" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+        </div>
+      </article>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           ADD NEW PROJECT HERE ↓ (copy any article block above)
+           ═══════════════════════════════════════════════════════════ -->
+
+    </div><!-- /grid-auto -->
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="index.html" class="footer-logo" aria-label="Home">
+          <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline" id="t-footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="projects.html">Projects</a>
+        <a href="blog.html">Blog</a>
+        <a href="index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy" id="t-footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<script src="js/main.js"></script>
+
+<!-- ══ GLOBAL FEEDBACK SYSTEM ═════════════════════════════════════ -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="js/feedback.js"></script>
+</body>
+</html>

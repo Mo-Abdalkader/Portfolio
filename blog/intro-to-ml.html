@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 1 — What is Machine Learning? | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="Machine learning explained from zero — what it is, how it differs from normal programming, the four types, and why it now powers everything from your Netflix feed to medical diagnosis." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* Light mode: editorial warm-paper feel integrated with site */
+    [data-theme="light"] .post-hero {
+      background: linear-gradient(180deg, #f0ebe0 0%, #f5f3ed 100%);
+      border-bottom: 1px solid #ddd5c4;
+    }
+    [data-theme="light"] .post-hero h1 { font-family: 'Playfair Display', serif; color: #0f0e0c; }
+    [data-theme="light"] .post-hero-lead { color: #5a5248; }
+    [data-theme="light"] .post-article { background: #f7f3ec; }
+    [data-theme="light"] .prose { color: #2e2b25; }
+    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
+    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .prose strong { color: #0f0e0c; }
+    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
+    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
+    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
+    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
+    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
+    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
+    [data-theme="light"] .prose-step-text { color: #2e2b25; }
+    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
+    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
+    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
+    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
+    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
+    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
+    [data-theme="light"] .reading-progress { background: linear-gradient(90deg, #c8a94b, #2a6b6e); }
+    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .post-nav-label { color:#7a7062; }
+    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
+    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
+    [data-theme="light"] .prose-callout-label { color:#7a7062; }
+    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
+    [data-theme="light"] .footer-nav a, [data-theme="light"] .footer-tagline, [data-theme="light"] .footer-copy, [data-theme="light"] .footer-built { color:#5a5248; }
+    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
+  </style>
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 1 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 19, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">11 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Foundations</span>
+    </div>
+    <h1>What is Machine Learning?<br>And Why Does It Actually Matter?</h1>
+    <p class="post-hero-lead">A complete, honest introduction to ML — what it really is, how it differs from normal programming, the four families of algorithms, and where Deep Learning fits inside all of it.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>In 1956, a group of scientists gathered at Dartmouth College with a bold claim:<br>
+      they would spend the summer teaching a machine to think like a human.<br><br>
+      Seventy years later, a machine looked at a photo of your retina and spotted a tumor<br>
+      a human doctor would have missed for another six months.</p>
+    </blockquote>
+
+    <h2>01 — The Problem With Traditional Programming</h2>
+    <p>Imagine you want to write a program that detects spam emails. In traditional programming, you sit down and write rules: <em>if the email contains "FREE MONEY" → mark as spam. If it contains "claim your prize" → spam. If it comes from a Nigerian prince → definitely spam.</em></p>
+    <p>This works. For a while. Then spammers adapt. They write "FR33 M0N3Y." They use different languages. They disguise the sender. You write more rules. They adapt again. You're in an arms race you can't win — because the world is too complex and too unpredictable to be captured in hand-written rules.</p>
+    <p><strong>Traditional programming</strong> is: <em>Data + Rules → Answers</em>. You write the logic. The computer executes it.</p>
+    <p><strong>Machine learning flips this completely:</strong> <em>Data + Answers → Rules</em>. You show the machine thousands of spam and non-spam emails, tell it which is which, and it <em>figures out the rules itself</em>. Rules you never would have thought to write.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🏫 Analogy</span>
+      <p>Teaching a child the difference between dogs and cats. You don't hand them a rulebook: "four legs, fur, meows = cat." You just show them pictures. Hundreds of them. Dog. Cat. Cat. Dog. Dog. After enough examples, they just <em>know</em>. They've built an internal model from patterns — even if they can't explain the rules they learned.</p>
+      <p style="margin-top:0.75rem">That is exactly what machine learning does. The "child" is the algorithm. The "pictures" are your training data. The "internal model" is the trained ML model.</p>
+    </div>
+
+    <h2>02 — A Precise Definition</h2>
+    <p>The classic definition comes from Arthur Samuel (1959): <em>"Machine learning is the field of study that gives computers the ability to learn without being explicitly programmed."</em></p>
+    <p>Tom Mitchell gave a more precise version (1997): <em>"A computer program is said to learn from experience E with respect to some task T and performance measure P, if its performance at task T, as measured by P, improves with experience E."</em></p>
+    <p>In plain language: an ML model gets <strong>better at a task</strong> the more <strong>data</strong> it sees. That improvement is measurable. That's it.</p>
+
+    <h2>03 — The Four Families of Machine Learning</h2>
+    <p>All of ML breaks into four broad families depending on what kind of data you have and what you're trying to do:</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>Supervised Learning — learning with a teacher.</strong>
+          You have labeled examples: inputs paired with correct answers. Spam/not-spam. Cat/dog. House price given its size and location. The model learns the mapping from input → output.
+          <br><br>
+          <em>Real-world examples:</em> Email spam filters, disease diagnosis from X-rays, house price prediction, credit card fraud detection, voice recognition.
+          <br><br>
+          This is the most common type of ML today and the focus of the first half of this series.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text">
+          <strong>Unsupervised Learning — learning without a teacher.</strong>
+          You have data but no labels. No correct answers. The model has to find structure on its own — grouping similar things together, finding hidden patterns, compressing information.
+          <br><br>
+          <em>Real-world examples:</em> Customer segmentation (grouping shoppers by behavior), anomaly detection (spotting unusual transactions), dimensionality reduction (compressing data while keeping meaning), topic modeling in documents.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text">
+          <strong>Semi-Supervised Learning — learning with a little help.</strong>
+          A practical middle ground. You have a small amount of labeled data and a large amount of unlabeled data. The model uses both. This is extremely common in medicine — getting expert labels is expensive, but getting raw scans is cheap.
+          <br><br>
+          <em>Real-world examples:</em> Medical image analysis (a few hundred labeled scans + thousands of unlabeled ones), web content classification, speech recognition.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Reinforcement Learning — learning from consequences.</strong>
+          There are no labels, no pre-packaged answers. Instead, an <em>agent</em> takes actions inside an environment, receives a reward or penalty based on the outcome, and gradually learns a strategy (called a <em>policy</em>) that maximises cumulative reward. Think of it as training a dog — you don't hand it a rulebook, you reward the good behaviour and let it figure out the rest.
+          <br><br>
+          This family of ML is uniquely suited to sequential decision-making: situations where the right action now depends on what will happen later.
+          <br><br>
+          <em>Real-world examples:</em> AlphaGo and AlphaZero (board games), robotic arm control, autonomous vehicle navigation, real-time bidding in ad systems, training large language models with human feedback (RLHF — the technique behind ChatGPT's conversational quality).
+        </div>
+      </div>
+    </div>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv"><div class="prose-kv-key">Supervised</div><div class="prose-kv-val">Labeled data. Input → Output mapping.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Unsupervised</div><div class="prose-kv-val">No labels. Find hidden structure.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Semi-supervised</div><div class="prose-kv-val">Some labels + lots of unlabeled data.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Reinforcement</div><div class="prose-kv-val">Agent + environment + reward. Learn by doing.</div></div>
+    </div>
+
+    <h2>04 — Where Does Deep Learning Fit?</h2>
+    <p>You've heard "AI," "Machine Learning," and "Deep Learning" used interchangeably. They're not the same thing. Think of them as nested circles:</p>
+    <ul>
+      <li><strong>Artificial Intelligence (AI)</strong> is the broadest idea — any technique that makes machines seem intelligent. Chess engines, expert systems, and calculators are all AI in some sense.</li>
+      <li><strong>Machine Learning</strong> is a <em>subset</em> of AI — specifically, systems that learn from data instead of following hand-coded rules.</li>
+      <li><strong>Deep Learning</strong> is a <em>subset</em> of ML — specifically, ML that uses very large neural networks with many layers. The "deep" refers to the depth (number of layers) in the network.</li>
+    </ul>
+    <p>Deep Learning is what powers GPT-4, image recognition in your phone, AlphaFold's protein predictions, and Mohamed's Qwen 2.5 VLM for retinal analysis. It's incredibly powerful — but it requires far more data and compute than classical ML. For many real-world problems, simpler ML methods (Random Forests, XGBoost) still outperform deep learning.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
+      <p>ChatGPT, Gemini, Claude — these are all examples of supervised + unsupervised learning at a massive scale. They were trained on trillions of words (data) with human feedback (labels). The core idea is exactly what you just learned: show the system enough examples, and it builds an internal model that generalizes. The scale is different. The principle is identical.</p>
+    </div>
+
+    <h2>05 — What ML Cannot Do</h2>
+    <p>Understanding limits is as important as understanding capabilities. ML models:</p>
+    <ul>
+      <li><strong>Don't understand.</strong> They find statistical patterns. A model that classifies lung cancer from X-rays has no concept of lungs, cancer, or health. It recognizes patterns in pixels that correlate with radiologist labels.</li>
+      <li><strong>Don't generalize beyond their training data.</strong> A model trained on data from 2020 may fail on 2024 data if the world changed. This is called <em>distribution shift</em>.</li>
+      <li><strong>Require data.</strong> Lots of it, ideally. A model trained on 50 examples of a rare disease will not be reliable.</li>
+      <li><strong>Are only as good as their labels.</strong> Garbage in, garbage out. Biased labels produce biased models — one of the most serious problems in applied AI.</li>
+    </ul>
+
+    <h2>06 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Traditional programming is transparent — you can read every rule. Machine learning models are often a black box — even their creators can't fully explain why they made a specific prediction.</p>
+      <p style="margin-top:0.75rem"><strong>If a model recommends denying someone a bank loan, and no one can explain why — is that acceptable?</strong> Where does accuracy end and accountability begin?</p>
+    </div>
+
+    <h2>07 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 2: The ML Pipeline.</strong> We walk through the complete journey a real ML project takes: from raw, messy data to a deployed model. Data collection, cleaning, feature engineering, training, evaluation, and deployment. This is the skeleton every ML engineer works inside.</p>
+
+    <h2>08 — Go Deeper</h2>
+    <p style="margin-top:0.75rem">▶ <a href="https://www.youtube.com/watch?v=aircAruvnKk" target="_blank" rel="noopener">Simplilearn: What Is Machine Learning? 2026</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 8 min · A solid visual overview covering the core ideas introduced in this post — good as a companion watch.</em></p>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is the difference between AI, Machine Learning, and Deep Learning?</strong><br>
+        <em>AI is the broadest field — any technique making machines appear intelligent. ML is a subset where machines learn from data rather than explicit rules. Deep Learning is a subset of ML using large multi-layer neural networks.</em></li>
+        <li><strong>What is the difference between supervised and unsupervised learning?</strong><br>
+        <em>Supervised learning uses labeled data (input-output pairs) to learn a mapping function. Unsupervised learning finds hidden patterns or structure in unlabeled data.</em></li>
+        <li><strong>How does machine learning differ from traditional programming?</strong><br>
+        <em>Traditional programming takes data and rules to produce answers. ML takes data and answers to produce rules — the model learns the logic instead of being explicitly programmed with it.</em></li>
+        <li><strong>What is a training set and why do we need one?</strong><br>
+        <em>A training set is the data used to fit the model's parameters. The model learns statistical patterns from it. Without training data, the model has no experience to generalize from.</em></li>
+        <li><strong>Can you name a real-world application of each type of ML?</strong><br>
+        <em>Supervised: email spam detection. Unsupervised: customer segmentation. Semi-supervised: medical image analysis with limited labeled scans. Reinforcement: AlphaGo, robotics control.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>🔗 <a href="https://developers.google.com/machine-learning/intro-to-ml" target="_blank" rel="noopener">Google Developers — Introduction to Machine Learning</a></p>
+    </div>
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#MachineLearning</span><span class="tag">#AI</span><span class="tag">#SupervisedLearning</span><span class="tag">#DeepLearning</span><span class="tag">#Foundations</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span><span class="tag">#DataScience</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="../blog.html" class="post-nav-card">
+    <span class="post-nav-label">← Blog Index</span>
+    <span class="post-nav-title">Blog Index</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with &hearts; HTML &middot; CSS &middot; JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

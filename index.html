@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mohamed Abdalkader — AI Engineer</title>
+  <meta name="description" content="AI Engineer specializing in LLM Fine-tuning, Computer Vision, and Medical AI. 240% accuracy gains. 8+ production ML projects." />
+  <meta property="og:title"       content="Mohamed Abdalkader — AI Engineer" />
+  <meta property="og:description" content="AI Engineer specializing in LLM Fine-tuning, Computer Vision, and Medical AI systems." />
+  <meta property="og:type"        content="website" />
+
+  <!-- Favicon = your logo -->
+  <link rel="icon" type="image/png" href="assets/logo.png" />
+
+  <!-- PREVENT THEME FLASH — must be first script in <head> -->
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- ══ NAVBAR ═══════════════════════════════════════════════════════ -->
+<nav id="navbar" class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+
+    <!-- LOGO — drop logo.png into assets/ folder -->
+    <a href="index.html" class="nav-logo" aria-label="Mohamed Abdalkader — Home">
+      <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+
+    <ul class="nav-links" role="list">
+      <li><a href="index.html"    class="nav-link">Home</a></li>
+      <li><a href="projects.html" class="nav-link">Projects</a></li>
+      <li><a href="blog.html"     class="nav-link">Blog</a></li>
+      <li><a href="#contact"      class="nav-link">Contact</a></li>
+    </ul>
+
+    <div class="nav-right">
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" id="langEN" aria-label="English">EN</button>
+        <button class="lang-btn"        id="langAR" aria-label="العربية">AR</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile slide-down menu -->
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="index.html"    class="nav-link" role="menuitem">Home</a>
+  <a href="projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="blog.html"     class="nav-link" role="menuitem">Blog</a>
+  <a href="#contact"      class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- ══ HERO ═══════════════════════════════════════════════════════ -->
+<section class="hero" aria-label="Introduction">
+  <div class="hero-bg" aria-hidden="true">
+    <div class="dot-grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+  </div>
+
+  <div class="hero-inner">
+    <!-- Left column -->
+    <div data-animate>
+      <span class="section-label" id="t-hero-label">// AI Engineer</span>
+      <h1 class="hero-title gradient-text" id="t-hero-name">Mohamed Abdalkader</h1>
+
+      <div class="hero-role">
+        <span id="t-hero-role-text">&gt; AI Engineer</span>
+        <span class="cursor" aria-hidden="true"></span>
+      </div>
+
+      <p class="hero-subtitle" id="t-hero-subtitle-text">
+        LLM Fine-tuning · Computer Vision · Medical AI · MLOps
+      </p>
+
+      <p class="hero-desc" id="t-hero-desc">
+        AI Engineer with 1+ year building production ML systems for medical imaging and NLP.
+        Delivered 240% accuracy gains via LoRA fine-tuning and multi-agent architectures.
+        Deployed RAG pipelines indexing medical textbooks with sub-second retrieval.
+        Reduced model memory 59% through quantization.
+      </p>
+
+      <div class="hero-ctas">
+        <a href="projects.html" class="btn btn-primary"  id="t-cta-projects">View Projects →</a>
+        <a href="blog.html"     class="btn btn-outline"  id="t-cta-blog">Read Blog</a>
+        <a href="assets/resume.pdf" class="btn btn-ghost" download id="t-cta-cv">↓ Download CV</a>
+      </div>
+
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"             class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader"        class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+        <a href="https://leetcode.com/Mo-Abdalkader/"          class="social-link" target="_blank" rel="noopener">⟨⟩ LeetCode</a>
+      </div>
+    </div>
+
+    <!-- Right column — terminal card -->
+    <div data-animate data-delay="2">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dots" aria-hidden="true">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="terminal-title">Mo-Abdalkader ~ $</span>
+        </div>
+        <div class="terminal-body"><pre><span class="t-class">class</span> <span class="t-key">MohamedAbdalkader</span><span class="t-attr">:</span>
+  <span class="t-attr">role</span>   <span class="t-attr">=</span> <span class="t-str">"AI Engineer"</span>
+  <span class="t-attr">focus</span>  <span class="t-attr">=</span> [
+    <span class="t-str">"LLM Fine-tuning"</span><span class="t-attr">,</span>
+    <span class="t-str">"Computer Vision"</span><span class="t-attr">,</span>
+    <span class="t-str">"Medical AI"</span><span class="t-attr">,</span>
+    <span class="t-str">"RAG Systems"</span><span class="t-attr">,</span>
+  ]
+  <span class="t-attr">results</span> <span class="t-attr">=</span> {
+    <span class="t-str">"accuracy_gain"</span>  <span class="t-attr">:</span> <span class="t-str">"+240%"</span><span class="t-attr">,</span>
+    <span class="t-str">"memory_savings"</span> <span class="t-attr">:</span> <span class="t-str">"-59%"</span><span class="t-attr">,</span>
+    <span class="t-str">"grants"</span>         <span class="t-attr">:</span> <span class="t-str">"$3,450"</span><span class="t-attr">,</span>
+    <span class="t-str">"caption_boost"</span>  <span class="t-attr">:</span> <span class="t-str">"26x"</span><span class="t-attr">,</span>
+  }
+  <span class="t-attr">status</span> <span class="t-attr">=</span> <span class="t-str">"open_to_opportunities"</span></pre></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
+<div class="stats-bar">
+  <div class="stats-grid">
+    <div class="stat-block" data-animate>
+      <span class="stat-icon">📈</span>
+      <span class="stat-value">240%</span>
+      <span class="stat-label" id="t-stat-label-1">Accuracy Gain</span>
+    </div>
+    <div class="stat-block" data-animate data-delay="1">
+      <span class="stat-icon">⚡</span>
+      <span class="stat-value">59%</span>
+      <span class="stat-label" id="t-stat-label-2">Memory Reduction</span>
+    </div>
+    <div class="stat-block" data-animate data-delay="2">
+      <span class="stat-icon">🏆</span>
+      <span class="stat-value">$3.4K</span>
+      <span class="stat-label" id="t-stat-label-3">Research Grants</span>
+    </div>
+    <div class="stat-block" data-animate data-delay="3">
+      <span class="stat-icon">🚀</span>
+      <span class="stat-value">8+</span>
+      <span class="stat-label" id="t-stat-label-4">ML Projects Shipped</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FEATURED PROJECTS ════════════════════════════════════════════ -->
+<section class="section" id="projects">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-label" id="t-section-featured-label">// featured work</span>
+      <h2 id="t-section-featured-h2">Projects</h2>
+      <p id="t-section-featured-sub">Production-grade systems built with purpose.</p>
+    </div>
+
+    <!-- Project Slider: all 5 cards, 3 visible at once, arrows to navigate -->
+    <!--
+      TO ADD A NEW PROJECT: paste a new <article class="project-card"> inside
+      .proj-slider-track. The slider JS auto-detects card count.
+    -->
+    <div class="proj-slider" id="projSlider">
+      <div class="proj-slider-track" id="projSliderTrack">
+
+        <!-- CARD 1 -->
+        <article class="project-card proj-slide" data-category="Medical AI">
+          <div class="card-top">
+            <span class="status-badge status-private">Private Research</span>
+            <span class="card-category">Medical AI</span>
+          </div>
+          <h3 class="card-title">Medical VLM with Multi-Agent Architecture</h3>
+          <p class="card-desc">Fine-tuned Qwen 2.5 7B VLM with LoRA rank-32 on 35,000 retinal images. Multi-agent pipeline (DenseNet + EfficientNet + RBF-SVM) achieved 240% accuracy boost (20% → 68%). 4-bit QLoRA cut VRAM 17GB → 7GB. RAG with FAISS reduced hallucinations 18% → 5%.</p>
+          <div class="tech-stack">
+            <span class="tag">Qwen 2.5 7B</span><span class="tag">PyTorch</span><span class="tag">LoRA/QLoRA</span><span class="tag">FAISS</span><span class="tag">Flask · Docker</span>
+          </div>
+          <div class="card-actions">
+            <span class="btn btn-ghost btn-sm" style="opacity:0.5;cursor:default;">🔒 Private</span>
+          </div>
+        </article>
+
+        <!-- CARD 2 -->
+        <article class="project-card proj-slide" data-category="Medical AI">
+          <div class="card-top">
+            <span class="status-badge status-private">Private Research</span>
+            <span class="card-category">Medical AI</span>
+          </div>
+          <h3 class="card-title">Medical Knowledge RAG System</h3>
+          <p class="card-desc">RAG pipeline indexing 20+ medical textbooks (5,000+ pages) with FAISS. 0.3s retrieval latency, 0.89 recall@5. Grounded VLM outputs lifted retinopathy to 68%, edema to 94%. Improved BLEU 0.17 → 0.26, cut hallucination rate 18% → 5%.</p>
+          <div class="tech-stack">
+            <span class="tag">LangChain</span><span class="tag">FAISS</span><span class="tag">Transformers</span><span class="tag">sentence-transformers</span>
+          </div>
+          <div class="card-actions">
+            <span class="btn btn-ghost btn-sm" style="opacity:0.5;cursor:default;">🔒 Private</span>
+          </div>
+        </article>
+
+        <!-- CARD 3 -->
+        <article class="project-card proj-slide" data-category="Computer Vision">
+          <div class="card-top">
+            <span class="status-badge status-live">Live</span>
+            <span class="card-category">Computer Vision</span>
+          </div>
+          <h3 class="card-title">Brain Tumor Classification</h3>
+          <p class="card-desc">Custom CNN — 95% accuracy on 3,000 brain MRI scans across 4 tumor types (glioma, meningioma, pituitary, healthy). 400% dataset expansion via augmentation. Dockerized Streamlit app with real-time inference &lt;2s and Class Activation Maps.</p>
+          <div class="tech-stack">
+            <span class="tag">TensorFlow</span><span class="tag">Keras</span><span class="tag">OpenCV</span><span class="tag">Streamlit</span><span class="tag">Docker</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://github.com/Mo-Abdalkader/Brain-Tumor" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+            <a href="https://brain-tumor-cls.streamlit.app/"        class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+          </div>
+        </article>
+
+        <!-- CARD 4 -->
+        <article class="project-card proj-slide" data-category="Computer Vision">
+          <div class="card-top">
+            <span class="status-badge status-live">Live</span>
+            <span class="card-category">Computer Vision</span>
+          </div>
+          <h3 class="card-title">Face Recognition &amp; Similarity System</h3>
+          <p class="card-desc">FaceNet-based recognition with SQLite identity database managing 1,000+ profiles. 0.92 accuracy at 15 FPS on CPU. Desktop Tkinter GUI plus Streamlit web API with cosine similarity matching.</p>
+          <div class="tech-stack">
+            <span class="tag">PyTorch</span><span class="tag">FaceNet</span><span class="tag">Streamlit</span><span class="tag">SQLite</span><span class="tag">OpenCV</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://github.com/Mo-Abdalkader/Face-Recognition"       class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+            <a href="https://face-similarity-recognition.streamlit.app/"       class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+          </div>
+        </article>
+
+        <!-- CARD 5 -->
+        <article class="project-card proj-slide" data-category="Research">
+          <div class="card-top">
+            <span class="status-badge status-live">Live</span>
+            <span class="card-category">Research</span>
+          </div>
+          <h3 class="card-title">AI-IoT Renewable Energy Prediction</h3>
+          <p class="card-desc">Graduation project benchmarking 21 DL architectures (LSTM, GRU, BiLSTM, CNN-LSTM, Transformer, TFT) for solar and wind forecasting. 98% accuracy, &lt;15% MAPE, 48-hour window. ITAC + ASRT funded. IEEE national recognition award.</p>
+          <div class="tech-stack">
+            <span class="tag">LSTM · GRU</span><span class="tag">Transformers</span><span class="tag">Azure IoT Hub</span><span class="tag">TensorFlow</span>
+          </div>
+          <div class="card-actions">
+            <a href="https://github.com/Mo-Abdalkader/Renewable-Energy-Prediction" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          </div>
+        </article>
+
+      </div><!-- /proj-slider-track -->
+
+      <!-- Slider controls -->
+      <div class="proj-slider-controls">
+        <button class="proj-arrow" id="projPrev" aria-label="Previous projects">‹</button>
+        <div class="proj-dots" id="projDots" aria-label="Project navigation"></div>
+        <button class="proj-arrow" id="projNext" aria-label="Next projects">›</button>
+      </div>
+    </div>
+
+    <div class="section-cta" data-animate>
+      <a href="projects.html" class="btn btn-outline" id="t-btn-view-all-projects">View All Projects →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ LATEST BLOG POSTS ════════════════════════════════════════════ -->
+<section class="section" style="padding-top:0" id="blog">
+  <div class="container">
+    <div class="section-header" data-animate>
+      <span class="section-label" id="t-section-blog-label">// latest posts</span>
+      <h2 id="t-section-blog-h2">Blog</h2>
+      <p id="t-section-blog-sub">Deep dives, tutorials, and thoughts on AI.</p>
+    </div>
+
+    <!-- Blog Slider: shows latest posts, arrows to navigate -->
+    <div class="blog-slider" id="blogSlider">
+      <div class="blog-slider-track" id="blogSliderTrack">
+
+        <!-- BLOG CARD 1 -->
+        <article class="blog-card blog-slide" data-slug="intro-to-ml.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 1</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 19, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>11 min read</span>
+          </div>
+          <h3 class="post-title">What is Machine Learning?</h3>
+          <p class="post-desc">Machine learning explained from zero — what it is, how it differs from normal programming, the three types, and why it now powers everything.</p>
+          <a href="blog/intro-to-ml.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 2 -->
+        <article class="blog-card blog-slide" data-slug="ml-pipeline.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 2</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 20, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>10 min read</span>
+          </div>
+          <h3 class="post-title">The ML Pipeline</h3>
+          <p class="post-desc">The complete journey from raw data to a deployed model — data collection, cleaning, feature engineering, training, evaluation, and deployment.</p>
+          <a href="blog/ml-pipeline.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 3 -->
+        <article class="blog-card blog-slide" data-slug="how-models-learn.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 3</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 21, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>12 min read</span>
+          </div>
+          <h3 class="post-title">How Models Actually Learn</h3>
+          <p class="post-desc">Loss functions, gradient descent, and learning rate — the universal engine behind every ML model from linear regression to GPT-4.</p>
+          <a href="blog/how-models-learn.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 4 -->
+        <article class="blog-card blog-slide" data-slug="linear-regression.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 4</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 22, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>10 min read</span>
+          </div>
+          <h3 class="post-title">Linear Regression</h3>
+          <p class="post-desc">Linear regression from scratch — the simplest and most foundational ML model. OLS, MSE, R², and why it still powers production systems.</p>
+          <a href="blog/linear-regression.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 5 -->
+        <article class="blog-card blog-slide" data-slug="logistic-regression.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 5</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 23, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>10 min read</span>
+          </div>
+          <h3 class="post-title">Logistic Regression</h3>
+          <p class="post-desc">How a linear model learns to output probabilities using the sigmoid function, log-loss, and what the decision boundary really means.</p>
+          <a href="blog/logistic-regression.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 6 -->
+        <article class="blog-card blog-slide" data-slug="knn.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 6</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 24, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>10 min read</span>
+          </div>
+          <h3 class="post-title">K-Nearest Neighbors</h3>
+          <p class="post-desc">Distance metrics, the curse of dimensionality, choosing K, and its surprising link to vector search in modern LLMs.</p>
+          <a href="blog/knn.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 7 -->
+        <article class="blog-card blog-slide" data-slug="naive-bayes.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 7</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 25, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>10 min read</span>
+          </div>
+          <h3 class="post-title">Naive Bayes</h3>
+          <p class="post-desc">Bayes' theorem from scratch, the independence assumption, why it works despite being wrong, and text classification in production.</p>
+          <a href="blog/naive-bayes.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 8 -->
+        <article class="blog-card blog-slide" data-slug="decision-tree.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 8</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 26, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>11 min read</span>
+          </div>
+          <h3 class="post-title">Decision Trees</h3>
+          <p class="post-desc">Gini impurity vs entropy, overfitting, pruning, feature importance — the foundation of every modern ensemble method.</p>
+          <a href="blog/decision-tree.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 9 -->
+        <article class="blog-card blog-slide" data-slug="bias-variance.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 9</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 27, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>11 min read</span>
+          </div>
+          <h3 class="post-title">Bias, Variance &amp; the Tradeoff</h3>
+          <p class="post-desc">Bias and variance explained through darts, learning curves, and every model unified into one framework.</p>
+          <a href="blog/bias-variance.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 10 -->
+        <article class="blog-card blog-slide" data-slug="regularization.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 10</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Feb 28, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>11 min read</span>
+          </div>
+          <h3 class="post-title">Regularization</h3>
+          <p class="post-desc">L1, L2, Elastic Net, and Dropout — the tools that prevent overfitting in every model with intuition, math, and code.</p>
+          <a href="blog/regularization.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 11 -->
+        <article class="blog-card blog-slide" data-slug="random-forest.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 11</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 1, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>12 min read</span>
+          </div>
+          <h3 class="post-title">Bagging &amp; Random Forests</h3>
+          <p class="post-desc">How asking 500 imperfect models instead of one perfect model produces the most reliable predictions in classical ML.</p>
+          <a href="blog/random-forest.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 12 -->
+        <article class="blog-card blog-slide" data-slug="boosting.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 12</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 2, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">Boosting: AdaBoost &amp; Gradient Boosting</h3>
+          <p class="post-desc">Bagging makes models vote in parallel. Boosting makes them learn in sequence — each new model fixing exactly where the last one failed.</p>
+          <a href="blog/boosting.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 13 -->
+        <article class="blog-card blog-slide" data-slug="xgboost.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 13</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 3, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">XGBoost &amp; LightGBM</h3>
+          <p class="post-desc">The engineering masterpieces that made gradient boosting 10–100× faster — second-order gradients, histogram splits, and early stopping.</p>
+          <a href="blog/xgboost.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 14 -->
+        <article class="blog-card blog-slide" data-slug="feature-engineering.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 14</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 4, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">Feature Engineering &amp; Selection</h3>
+          <p class="post-desc">The craft that separates good ML engineers from great ones — creating, transforming, and selecting features that make every model smarter.</p>
+          <a href="blog/feature-engineering.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 15 -->
+        <article class="blog-card blog-slide" data-slug="cnn.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 15</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 5, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>15 min read</span>
+          </div>
+          <h3 class="post-title">CNNs from Scratch</h3>
+          <p class="post-desc">How machines learned to see — convolutions, filters, pooling, receptive fields, and residual connections explained from first principles.</p>
+          <a href="blog/cnn.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 16 -->
+        <article class="blog-card blog-slide" data-slug="transfer-learning.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 16</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 6, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">Transfer Learning &amp; Fine-Tuning</h3>
+          <p class="post-desc">How a model pre-trained on everyday photos achieved 95% accuracy on brain tumour classification with just hundreds of examples.</p>
+          <a href="blog/transfer-learning.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 17 -->
+        <article class="blog-card blog-slide" data-slug="object-detection.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 17</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 7, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">Object Detection, YOLO &amp; Segmentation</h3>
+          <p class="post-desc">Classification tells you what. Detection tells you where. Segmentation tells you which exact pixels. YOLO, IoU, NMS, and U-Net explained.</p>
+          <a href="blog/object-detection.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 18 -->
+        <article class="blog-card blog-slide" data-slug="nlp-fundamentals.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 18</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 8, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">NLP Fundamentals</h3>
+          <p class="post-desc">Teaching machines to read — tokenisation, bag-of-words, TF-IDF, and the foundational techniques that turn language into computable numbers.</p>
+          <a href="blog/nlp-fundamentals.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 19 -->
+        <article class="blog-card blog-slide" data-slug="word-embeddings.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 19</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 9, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">Word Embeddings</h3>
+          <p class="post-desc">king − man + woman ≈ queen. Word2Vec, GloVe, and sentence transformers — the geometry of meaning that powers semantic search and RAG.</p>
+          <a href="blog/word-embeddings.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 20 -->
+        <article class="blog-card blog-slide" data-slug="attention-transformer.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 20</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 10, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>16 min read</span>
+          </div>
+          <h3 class="post-title">Attention &amp; the Transformer</h3>
+          <p class="post-desc">The architecture that powers GPT-4, Claude, and Gemini — self-attention, Q/K/V, multi-head attention, and the full transformer block from scratch.</p>
+          <a href="blog/attention-transformer.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 21 -->
+        <article class="blog-card blog-slide" data-slug="positional-encodings.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 21</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 11, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">Positional Encodings: Sinusoidal, RoPE &amp; ALiBi</h3>
+          <p class="post-desc">How transformers understand word order without recurrence — sinusoidal encodings, rotary embeddings, and long-context model techniques.</p>
+          <a href="blog/positional-encodings.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 22 -->
+        <article class="blog-card blog-slide" data-slug="bert-vs-gpt.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 22</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 12, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>12 min read</span>
+          </div>
+          <h3 class="post-title">BERT vs GPT: Encoders, Decoders &amp; What They're For</h3>
+          <p class="post-desc">Why BERT reads the whole sentence but GPT only looks left — masked vs causal language modeling and when to use each.</p>
+          <a href="blog/bert-vs-gpt.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 23 -->
+        <article class="blog-card blog-slide" data-slug="scaling-laws.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 23</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 13, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>11 min read</span>
+          </div>
+          <h3 class="post-title">Scaling Laws</h3>
+          <p class="post-desc">The power laws that let researchers predict model performance before training — compute, data, and parameters in one unified framework.</p>
+          <a href="blog/scaling-laws.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 24 -->
+        <article class="blog-card blog-slide" data-slug="lora-qlora.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 24</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 14, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">LoRA &amp; QLoRA: Parameter-Efficient Fine-Tuning</h3>
+          <p class="post-desc">Fine-tuning a 7B model on a single GPU — low-rank decomposition, 4-bit quantization, and the technique behind most open-source LLM fine-tuning.</p>
+          <a href="blog/lora-qlora.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 25 -->
+        <article class="blog-card blog-slide" data-slug="rlhf.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 25</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 15, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">RLHF: Teaching Models to Follow Instructions</h3>
+          <p class="post-desc">How ChatGPT learned to be helpful — reward models, PPO, and the human feedback loop that aligns LLMs with human intent.</p>
+          <a href="blog/rlhf.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 26 -->
+        <article class="blog-card blog-slide" data-slug="rag-part1.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 26</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 16, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">RAG Part 1: Architecture &amp; Chunking</h3>
+          <p class="post-desc">Giving LLMs long-term memory — retrieval-augmented generation from scratch, document chunking strategies, and embedding pipelines.</p>
+          <a href="blog/rag-part1.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 27 -->
+        <article class="blog-card blog-slide" data-slug="rag-part2.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 27</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 17, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">RAG Part 2: Vector Databases &amp; Retrieval</h3>
+          <p class="post-desc">FAISS, Pinecone, Chroma — how vector databases store and retrieve embeddings at scale, with ANN search and similarity metrics.</p>
+          <a href="blog/rag-part2.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 28 -->
+        <article class="blog-card blog-slide" data-slug="rag-part3.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 28</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 18, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">RAG Part 3: Re-Ranking &amp; Production</h3>
+          <p class="post-desc">Taking RAG from prototype to production — cross-encoder re-ranking, RAGAS evaluation, hallucination mitigation, and latency optimization.</p>
+          <a href="blog/rag-part3.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 29 -->
+        <article class="blog-card blog-slide" data-slug="vlms.html" data-category="Deep Dive">
+          <div class="series-badge">
+            <span class="series-day">Day 29</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Deep Dive</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 19, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>14 min read</span>
+          </div>
+          <h3 class="post-title">Vision-Language Models: CLIP, LLaVA &amp; GPT-4V</h3>
+          <p class="post-desc">How AI learned to see and talk at the same time — contrastive learning, vision encoders, and the multimodal architecture powering GPT-4V.</p>
+          <a href="blog/vlms.html" class="read-more">Read more →</a>
+        </article>
+
+        <!-- BLOG CARD 30 -->
+        <article class="blog-card blog-slide" data-slug="mlops.html" data-category="Practical Guide">
+          <div class="series-badge">
+            <span class="series-day">Day 30</span>
+            <span class="series-name">🌙 30-Day AI Ramadan Series</span>
+          </div>
+          <div class="post-meta">
+            <span class="category-pill">Practical Guide</span>
+            <span class="meta-sep">·</span>
+            <span>Mar 20, 2026</span>
+            <span class="meta-sep">·</span>
+            <span>13 min read</span>
+          </div>
+          <h3 class="post-title">MLOps: From Notebook to Production</h3>
+          <p class="post-desc">The full stack that takes a model from Jupyter to the real world — CI/CD for ML, model registries, monitoring, and retraining pipelines.</p>
+          <a href="blog/mlops.html" class="read-more">Read more →</a>
+        </article>
+
+      </div>
+
+      <!-- Slider controls -->
+      <div class="blog-slider-controls">
+        <button class="blog-arrow" id="blogPrev" aria-label="Previous posts">‹</button>
+        <div class="blog-dots" id="blogDots" aria-label="Blog navigation"></div>
+        <button class="blog-arrow" id="blogNext" aria-label="Next posts">›</button>
+      </div>
+    </div>
+
+    <div class="section-cta" data-animate>
+      <a href="blog.html" class="btn btn-outline" id="t-btn-read-all-posts">All Blogs →</a>
+      <a href="blog/categories.html" class="btn btn-ghost">All Categories</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══ CONTACT ══════════════════════════════════════════════════════ -->
+<section class="section" id="contact">
+  <div class="container" style="text-align:center">
+    <div class="section-header" data-animate>
+      <h2 id="t-section-contact-h2">Let's Connect</h2>
+      <p id="t-section-contact-sub" style="max-width:48ch;margin:0.5rem auto 0">
+        Open to collaborations, opportunities, and interesting conversations about AI.
+      </p>
+    </div>
+
+    <div class="contact-grid" data-animate data-delay="1">
+
+      <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="contact-card">
+        <div class="contact-icon">
+          <img src="assets/email.png" alt="Email" onerror="this.style.display='none';this.parentElement.innerHTML='✉'" />
+        </div>
+        <div class="contact-info">
+          <div class="contact-label" id="t-contact-label-email">Email</div>
+          <div class="contact-handle">Mohameed.Abdalkadeergmail.com</div>
+        </div>
+        <span class="contact-arrow">→</span>
+      </a>
+
+      <a href="https://linkedin.com/in/Mo-Abdalkader" class="contact-card" target="_blank" rel="noopener">
+        <div class="contact-icon">
+          <img src="assets/linkedin.png" alt="LinkedIn" onerror="this.style.display='none';this.parentElement.innerHTML='⊕'" />
+        </div>
+        <div class="contact-info">
+          <div class="contact-label" id="t-contact-label-linkedin">LinkedIn</div>
+          <div class="contact-handle">Mo-Abdalkader</div>
+        </div>
+        <span class="contact-arrow">→</span>
+      </a>
+
+      <a href="https://github.com/Mo-Abdalkader" class="contact-card" target="_blank" rel="noopener">
+        <div class="contact-icon">
+          <img src="assets/github.png" alt="GitHub" onerror="this.style.display='none';this.parentElement.innerHTML='⌥'" />
+        </div>
+        <div class="contact-info">
+          <div class="contact-label" id="t-contact-label-github">GitHub</div>
+          <div class="contact-handle">Mo-Abdalkader</div>
+        </div>
+        <span class="contact-arrow">→</span>
+      </a>
+
+      <!-- <a href="https://leetcode.com/Mo-Abdalkader/" class="contact-card" target="_blank" rel="noopener">
+        <div class="contact-icon">
+          <img src="assets/leetcode.png" alt="LeetCode" onerror="this.style.display='none';this.parentElement.innerHTML='⟨⟩'" />
+        </div>
+        <div class="contact-info">
+          <div class="contact-label" id="t-contact-label-leetcode">LeetCode</div>
+          <div class="contact-handle">Mo-Abdalkader</div>
+        </div>
+        <span class="contact-arrow">→</span>
+      </a> -->
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ═══════════════════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+
+      <div>
+        <a href="index.html" class="footer-logo" aria-label="Home">
+          <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline" id="t-footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="projects.html">Projects</a>
+        <a href="blog.html">Blog</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+          <div class="footer-bottom">
+      <p class="footer-copy" id="t-footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Back to top -->
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="js/main.js"></script>
+<script src="js/feedback.js"></script>
+</body>
+</html>
