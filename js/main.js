@@ -63,7 +63,8 @@ var TRANSLATIONS = {
 
   // Footer
   'footer-tagline':         { en: "AI Engineer · Building tomorrow's systems today.", ar: 'مهندس ذكاء اصطناعي · بناء أنظمة المستقبل اليوم.' },
-  'footer-copy':            { en: '© 2025 Mohamed Abdalkader. All rights reserved.', ar: '© 2025 محمد عبدالقادر. جميع الحقوق محفوظة.' },
+  'footer-copy':            { en: '© 2026 Mohamed Abdalkader. All rights reserved.', ar: '© 2026 محمد عبدالقادر. جميع الحقوق محفوظة.' },
+
 
   // Projects page
   'page-projects-label':    { en: '// my work',                       ar: '// أعمالي' },
@@ -742,6 +743,7 @@ function copyPostLink(btn) {
   // Master list of all 30 posts in the series (add slug when publishing each post)
   const PUBLISHED_POSTS = [
     'intro-to-ml.html',            // Day 1  - Feb 19
+    'ml-pipeline.html',            // Day 2  - Feb 20
   ];
 
   const TOTAL_POSTS = 30;
