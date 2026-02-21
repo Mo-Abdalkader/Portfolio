@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 3 — How Models Learn | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="Loss functions, gradient descent, and learning rate explained from zero — the universal engine behind every ML model from linear regression to GPT-4." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    /* Light mode: editorial warm-paper feel integrated with site */
+    [data-theme="light"] .post-hero {
+      background: linear-gradient(180deg, #f0ebe0 0%, #f5f3ed 100%);
+      border-bottom: 1px solid #ddd5c4;
+    }
+    [data-theme="light"] .post-hero h1 { font-family: 'Playfair Display', serif; color: #0f0e0c; }
+    [data-theme="light"] .post-hero-lead { color: #5a5248; }
+    [data-theme="light"] .post-article { background: #f7f3ec; }
+    [data-theme="light"] .prose { color: #2e2b25; }
+    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
+    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .prose strong { color: #0f0e0c; }
+    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
+    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
+    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
+    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
+    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
+    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
+    [data-theme="light"] .prose-step-text { color: #2e2b25; }
+    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
+    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
+    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
+    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
+    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
+    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
+    [data-theme="light"] .reading-progress { background: linear-gradient(90deg, #c8a94b, #2a6b6e); }
+    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .post-nav-label { color:#7a7062; }
+    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
+    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
+    [data-theme="light"] .prose-callout-label { color:#7a7062; }
+    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
+    [data-theme="light"] .footer-nav a, [data-theme="light"] .footer-tagline, [data-theme="light"] .footer-copy, [data-theme="light"] .footer-built { color:#5a5248; }
+    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
+  </style>
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 3 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 21, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">12 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Foundations</span>
+    </div>
+    <h1>How Models Actually Learn:<br>Loss, Gradient Descent & Optimization</h1>
+    <p class="post-hero-lead">Every ML model — from a spam filter to GPT-4 — learns by doing the same thing: measuring how wrong it is, then nudging itself to be less wrong. Here's exactly how that works.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>You're blindfolded on a hilly landscape. Your goal: reach the lowest valley.<br>
+      You can't see anything. But you can feel the ground beneath your feet.<br>
+      You take a small step in the direction that feels most downhill.<br>
+      Then another. Then another.<br><br>
+      Eventually — step by step — you find the bottom.<br>
+      That is gradient descent. That is how every ML model learns.</p>
+    </blockquote>
+
+    <h2>01 — What Does "Learning" Actually Mean?</h2>
+    <p>When we say a model "learns," we mean something very specific: it <strong>adjusts its internal numbers</strong> (called parameters or weights) until its predictions become as accurate as possible on the training data.</p>
+    <p>Before training, these weights are random. The model makes terrible predictions. After training, the weights have been tuned so that predictions are good. The process of tuning them is called <strong>optimization</strong>, and it is driven by a <strong>loss function</strong>.</p>
+
+    <h2>02 — The Loss Function: Measuring How Wrong You Are</h2>
+    <p>A loss function is a mathematical formula that measures the gap between what your model <em>predicted</em> and what the <em>correct answer</em> was. Lower loss = better predictions.</p>
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🏹 Analogy</span>
+      <p>You're learning archery. You shoot at a target. The loss function measures how far from the bullseye your arrow landed. 10cm away → high loss. 1cm away → low loss. Bullseye → zero loss. Your job is to adjust your technique — arm position, grip, release — to minimize that distance. The loss function is the scoreboard.</p>
+    </div>
+    <p>For regression problems (predicting a number), the most common loss is <strong>Mean Squared Error (MSE)</strong>: take each prediction error, square it (to penalize large errors more), average them all.</p>
+    <p>For classification (predicting a category), the most common is <strong>Cross-Entropy Loss</strong> (also called log-loss): it measures how confident and correct the model's probability predictions are. A confident wrong answer is penalized heavily. An uncertain correct answer is penalized lightly.</p>
+
+    <h2>03 — Gradient Descent: The Optimization Engine</h2>
+    <p>Once we have a way to measure error (loss), we need a way to reduce it. That mechanism is <strong>gradient descent</strong>.</p>
+    <p>The <strong>gradient</strong> is the slope of the loss function at the current parameter values. It tells you: <em>"If I increase this weight slightly, does the loss go up or down — and by how much?"</em> The gradient points in the direction of steepest increase. So we go in the <em>opposite</em> direction — downhill — to reduce the loss.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text"><strong>Forward pass.</strong> Feed training data through the model with current weights. Get predictions.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Compute loss.</strong> Compare predictions to true labels using the loss function. Get a single number representing total error.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Compute gradients.</strong> Calculate the gradient of the loss with respect to every weight. This tells us the direction and size of each nudge needed. In neural networks, this is done via <em>backpropagation</em> — applying the chain rule of calculus layer by layer.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text"><strong>Update weights.</strong> Adjust every weight in the opposite direction of its gradient, scaled by the learning rate. <code>weight = weight - learning_rate × gradient</code></div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text"><strong>Repeat.</strong> Do this thousands or millions of times — each pass through the training data is called an <em>epoch</em>. Over time, the loss decreases and predictions improve.</div>
+      </div>
+    </div>
+
+    <h2>04 — The Learning Rate: The Most Important Number You'll Tune</h2>
+    <p>The <strong>learning rate</strong> (often written as α or lr) controls how big each weight update step is. It's the single most impactful hyperparameter in training.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv"><div class="prose-kv-key">Too high (e.g. 1.0)</div><div class="prose-kv-val">Steps are too large — model overshoots the minimum, loss bounces wildly or diverges.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Too low (e.g. 0.000001)</div><div class="prose-kv-val">Steps are tiny — training takes forever, may get stuck in a bad local minimum.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Just right (e.g. 0.001)</div><div class="prose-kv-val">Steady descent toward a good minimum. Fast enough to be practical, careful enough to converge.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Typical range</div><div class="prose-kv-val">1e-4 to 1e-2 for most tasks. LLMs often use 3e-4 (the "Karpathy constant").</div></div>
+    </div>
+
+    <h2>05 — Gradient Descent in Pure NumPy</h2>
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Toy dataset: predict y from x (y = 2x + 1 with noise)</span>
+np.random.seed(<span class="t-num">42</span>)
+X = np.random.randn(<span class="t-num">100</span>)
+y = <span class="t-num">2</span> * X + <span class="t-num">1</span> + np.random.randn(<span class="t-num">100</span>) * <span class="t-num">0.3</span>
+
+<span class="t-cmt"># Initialize weights randomly</span>
+w, b = <span class="t-num">0.0</span>, <span class="t-num">0.0</span>   <span class="t-cmt"># weight and bias</span>
+lr    = <span class="t-num">0.01</span>       <span class="t-cmt"># learning rate</span>
+
+<span class="t-key">for</span> epoch <span class="t-key">in</span> range(<span class="t-num">1000</span>):
+    y_pred = w * X + b                   <span class="t-cmt"># forward pass</span>
+    loss   = np.mean((y_pred - y) ** <span class="t-num">2</span>) <span class="t-cmt"># MSE loss</span>
+
+    <span class="t-cmt"># Gradients (calculus, but readable: dLoss/dw, dLoss/db)</span>
+    dw = np.mean(<span class="t-num">2</span> * (y_pred - y) * X)
+    db = np.mean(<span class="t-num">2</span> * (y_pred - y))
+
+    w -= lr * dw   <span class="t-cmt"># gradient descent step</span>
+    b -= lr * db
+
+<span class="t-key">print</span>(<span class="t-str">f"Learned: w={w:.3f}, b={b:.3f}"</span>)
+<span class="t-cmt"># → Learned: w≈2.000, b≈1.000  ✓  (recovered the true values)</span></code></pre>
+    <p><em>This is the complete training loop — forward pass, loss, gradients, update. Every framework (PyTorch, TensorFlow, sklearn) does exactly this, just faster and with automatic differentiation.</em></p>
+
+    <h2>06 — Variants: SGD, Mini-Batch, and Adam</h2>
+    <p>Pure gradient descent computes the gradient on the <em>entire</em> dataset before each update. With millions of examples, this is too slow. Two practical variants:</p>
+    <ul>
+      <li><strong>Stochastic Gradient Descent (SGD).</strong> Update weights after each single training example. Fast but noisy — the loss bounces up and down before converging.</li>
+      <li><strong>Mini-Batch Gradient Descent.</strong> Update weights after each small batch (32, 64, 128 examples). The standard in deep learning. Balances speed and stability.</li>
+      <li><strong>Adam (Adaptive Moment Estimation).</strong> The most popular optimizer today. Adapts the learning rate for each weight individually based on past gradients. Converges faster and requires less learning rate tuning. Default choice for neural networks.</li>
+    </ul>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
+      <p>GPT-4 was trained with Adam optimizer, mini-batch gradient descent, and a learning rate schedule that starts high and gradually decays. The training loop ran for weeks on thousands of GPUs — but it's the exact same 5-step loop above, just at an almost unimaginable scale. The concepts are identical.</p>
+    </div>
+
+    <h2>07 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Gradient descent finds a local minimum — the lowest nearby point. But the loss landscape of a neural network has millions of dimensions and countless valleys. There's no guarantee it finds the global minimum.</p>
+      <p style="margin-top:0.75rem"><strong>Yet in practice, modern neural networks work brilliantly. Why might finding <em>a</em> good solution be more important than finding <em>the</em> perfect solution?</strong></p>
+    </div>
+
+    <h2>08 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 4: Linear Regression.</strong> The simplest model that uses everything you just learned. One loss function, one gradient descent loop, one straight line — and it teaches more about ML than almost any other algorithm.</p>
+
+    <h2>09 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=IHZwWFHWa-w" target="_blank" rel="noopener">3Blue1Brown: Gradient Descent, How Neural Networks Learn</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 21 min · The definitive visual explanation. Watch this.</em></p>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is a loss function? Give two examples.</strong><br>
+        <em>A loss function quantifies the error between predictions and true labels. MSE (Mean Squared Error) is used for regression; Cross-Entropy loss is used for classification.</em></li>
+        <li><strong>Explain gradient descent in plain language.</strong><br>
+        <em>Gradient descent iteratively adjusts model weights in the direction that reduces the loss function, using the gradient (slope) to determine which direction is "downhill."</em></li>
+        <li><strong>What happens if the learning rate is too high or too low?</strong><br>
+        <em>Too high: the optimizer overshoots minima and the loss may diverge. Too low: training is extremely slow and may get stuck in poor local minima.</em></li>
+        <li><strong>What is the difference between SGD and Adam?</strong><br>
+        <em>SGD applies the same learning rate to all parameters. Adam adapts the learning rate per parameter based on historical gradient magnitudes and directions, making it faster and more robust in practice.</em></li>
+        <li><strong>What is backpropagation?</strong><br>
+        <em>Backpropagation is the algorithm for computing gradients in neural networks. It applies the chain rule of calculus backwards through the network layers, computing each weight's contribution to the total loss.</em></li>
+      </ol>
+    </div>
+
+
+    <!-- ── ATTACHMENTS ──────────────────────────────────────────────────────
+         Uncomment any block below when you have resources to add.
+    ─────────────────────────────────────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+
+    </div>
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#GradientDescent</span><span class="tag">#LossFunction</span><span class="tag">#Optimization</span><span class="tag">#Backpropagation</span><span class="tag">#LearningRate</span><span class="tag">#Foundations</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="ml-pipeline.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 2</span>
+    <span class="post-nav-title">The ML Pipeline</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
