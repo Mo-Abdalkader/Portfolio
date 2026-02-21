@@ -8,208 +8,17 @@
   <link rel="icon" type="image/png" href="../assets/logo.png" />
   <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  
-    <!-- Google Analytics -->
+  <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-6JXJJ6Y1ZC');
-  </script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
-  <style>
-    /* ── Light mode overrides ─────────────────────────────────── */
-    [data-theme="light"] .post-hero { background: linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%); border-bottom:1px solid #ddd5c4; }
-    [data-theme="light"] .post-hero h1 { font-family:'Playfair Display',serif; color:#0f0e0c; }
-    [data-theme="light"] .post-hero-lead { color:#5a5248; }
-    [data-theme="light"] .post-article { background:#f7f3ec; }
-    [data-theme="light"] .prose { color:#2e2b25; }
-    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
-    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
-    [data-theme="light"] .prose strong { color:#0f0e0c; }
-    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
-    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
-    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
-    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
-    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
-    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
-    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
-    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
-    [data-theme="light"] .prose-step-text { color:#2e2b25; }
-    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
-    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
-    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
-    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
-    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
-    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
-    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
-    [data-theme="light"] .reading-progress { background:linear-gradient(90deg,#c8a94b,#2a6b6e); }
-    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
-    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
-    [data-theme="light"] .post-nav-label { color:#7a7062; }
-    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
-    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
-    [data-theme="light"] .prose-callout-label { color:#7a7062; }
-    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
-    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built { color:#5a5248; }
-    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
-
-    /* ── Pipeline diagram ─────────────────────────────────────── */
-    .pipeline-diagram { display:flex; flex-direction:column; gap:0; margin:2rem 0 2.5rem; }
-    .pipeline-row { display:flex; }
-    .pipeline-node {
-      display:flex; align-items:center; gap:1rem;
-      padding:0.9rem 1.25rem; flex:1;
-      background:var(--surface,#181818);
-      border:1px solid var(--border,#2a2a2a);
-      border-radius:0; transition:background 0.18s;
-    }
-    .pipeline-row:first-child .pipeline-node { border-radius:10px 10px 0 0; }
-    .pipeline-row:last-child  .pipeline-node { border-radius:0 0 10px 10px; }
-    .pipeline-node:hover { background:var(--surface-hover,#202020); }
-    .pipeline-node-num {
-      font-family:'JetBrains Mono',monospace; font-size:0.72rem; font-weight:500;
-      color:var(--accent,#c8a94b); background:rgba(200,169,75,0.1);
-      border:1px solid rgba(200,169,75,0.22); border-radius:5px;
-      width:28px; height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
-    }
-    .pipeline-node-label { font-weight:600; font-size:0.9rem; color:var(--text,#e0ddd6); flex:1; }
-    .pipeline-node-analogy { font-size:0.78rem; color:var(--text-muted,#757575); font-style:italic; }
-    .pipeline-connector {
-      width:2px; height:12px; margin:0 auto;
-      background:linear-gradient(180deg,rgba(200,169,75,0.4),rgba(42,107,110,0.4));
-      position:relative;
-    }
-    .pipeline-connector::after {
-      content:''; position:absolute; bottom:-4px; left:50%; transform:translateX(-50%);
-      width:0; height:0;
-      border-left:5px solid transparent; border-right:5px solid transparent;
-      border-top:6px solid rgba(42,107,110,0.5);
-    }
-    [data-theme="light"] .pipeline-node { background:#f0ebe0; border-color:#ddd5c4; }
-    [data-theme="light"] .pipeline-node:hover { background:#ede8dc; }
-    [data-theme="light"] .pipeline-node-label { color:#0f0e0c; }
-    [data-theme="light"] .pipeline-node-analogy { color:#7a7062; }
-    [data-theme="light"] .pipeline-node-num { background:rgba(200,169,75,0.15); }
-
-    /* ── Time badge ───────────────────────────────────────────── */
-    .time-badge {
-      display:inline-flex; align-items:center;
-      font-family:'JetBrains Mono',monospace; font-size:0.68rem;
-      padding:0.18rem 0.5rem;
-      background:rgba(42,107,110,0.1); border:1px solid rgba(42,107,110,0.22);
-      border-radius:4px; color:#3a9d90; margin-left:0.5rem; vertical-align:middle;
-    }
-    [data-theme="light"] .time-badge { color:#1a5c58; }
-
-    /* ── Step pitfall note ────────────────────────────────────── */
-    /* Uses a neutral amber-tinted style instead of red — less alarming, still visible */
-    .step-pitfall {
-      margin-top:0.65rem;
-      padding:0.55rem 0.85rem;
-      background:rgba(200,169,75,0.06);
-      border-left:3px solid rgba(200,169,75,0.4);
-      border-radius:0 6px 6px 0;
-      font-size:0.82rem;
-      color:var(--text-muted,#9a9490);
-      line-height:1.55;
-    }
-    [data-theme="light"] .step-pitfall { background:rgba(200,169,75,0.08); color:#5a5248; border-left-color:#c8a94b; }
-
-    /* ── Metrics table ────────────────────────────────────────── */
-    .metrics-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.875rem; }
-    .metrics-table th {
-      text-align:left; padding:0.5rem 0.85rem;
-      font-family:'JetBrains Mono',monospace; font-size:0.73rem; font-weight:500;
-      color:var(--accent,#c8a94b); background:rgba(200,169,75,0.06);
-      border-bottom:1px solid var(--border,#2a2a2a);
-    }
-    .metrics-table td { padding:0.55rem 0.85rem; border-bottom:1px solid var(--border,#2a2a2a); color:var(--text,#e0ddd6); vertical-align:top; line-height:1.5; }
-    .metrics-table tr:last-child td { border-bottom:none; }
-    .metrics-table td:first-child { font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:#3a9d90; font-weight:500; white-space:nowrap; }
-    [data-theme="light"] .metrics-table th { background:rgba(200,169,75,0.08); border-bottom-color:#ddd5c4; color:#7a5c10; }
-    [data-theme="light"] .metrics-table td { border-bottom-color:#ddd5c4; color:#2e2b25; }
-    [data-theme="light"] .metrics-table td:first-child { color:#1a4547; }
-
-    /* ── Knowledge check / quiz ───────────────────────────────── */
-    .knowledge-check { margin:2.5rem 0; border:1px solid var(--border,#2a2a2a); border-radius:12px; overflow:hidden; }
-    .knowledge-check-header {
-      padding:0.9rem 1.25rem;
-      background:rgba(42,107,110,0.09); border-bottom:1px solid var(--border,#2a2a2a);
-      font-weight:600; font-size:0.92rem; color:var(--text,#e0ddd6);
-    }
-    .knowledge-check-body { padding:1.25rem 1.5rem; display:flex; flex-direction:column; gap:1.5rem; }
-    .quiz-question { font-weight:500; font-size:0.9rem; color:var(--text,#e0ddd6); margin-bottom:0.55rem; line-height:1.5; }
-    .quiz-reveal-btn {
-      background:none; border:1px solid var(--border,#2a2a2a); border-radius:6px;
-      padding:0.38rem 0.9rem; font-size:0.8rem; color:var(--accent,#c8a94b);
-      cursor:pointer; font-family:'Outfit',sans-serif; transition:background 0.15s,border-color 0.15s;
-    }
-    .quiz-reveal-btn:hover { background:rgba(200,169,75,0.07); border-color:rgba(200,169,75,0.4); }
-    .quiz-answer {
-      display:none; margin-top:0.75rem; padding:0.85rem 1rem;
-      background:rgba(42,107,110,0.07); border-left:3px solid rgba(42,107,110,0.5);
-      border-radius:0 8px 8px 0; font-size:0.875rem; color:var(--text,#e0ddd6);
-      line-height:1.6; animation:fadeIn 0.2s ease;
-    }
-    .quiz-answer.visible { display:block; }
-    @keyframes fadeIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
-    [data-theme="light"] .knowledge-check { border-color:#ddd5c4; }
-    [data-theme="light"] .knowledge-check-header { background:rgba(42,107,110,0.06); border-bottom-color:#ddd5c4; color:#0f0e0c; }
-    [data-theme="light"] .quiz-question { color:#2e2b25; }
-    [data-theme="light"] .quiz-reveal-btn { border-color:#ddd5c4; color:#7a5c10; }
-    [data-theme="light"] .quiz-answer { background:rgba(42,107,110,0.06); color:#2e2b25; }
-
-    /* ── Quick recap ──────────────────────────────────────────── */
-    .quick-recap { margin:2.5rem 0; border:1px solid rgba(200,169,75,0.25); border-radius:12px; overflow:hidden; }
-    .quick-recap-header {
-      background:rgba(200,169,75,0.07); border-bottom:1px solid rgba(200,169,75,0.18);
-      padding:0.85rem 1.25rem; font-weight:600; font-size:0.85rem;
-      color:var(--accent,#c8a94b); letter-spacing:0.05em; text-transform:uppercase;
-    }
-    .quick-recap ol { margin:0; padding:1.25rem 1.25rem 1.25rem 2.5rem; display:flex; flex-direction:column; gap:0.55rem; }
-    .quick-recap li { font-size:0.875rem; color:var(--text,#e0ddd6); line-height:1.5; }
-    .quick-recap li strong { color:var(--accent,#c8a94b); }
-    [data-theme="light"] .quick-recap { border-color:rgba(200,169,75,0.3); }
-    [data-theme="light"] .quick-recap-header { color:#7a5c10; }
-    [data-theme="light"] .quick-recap li { color:#2e2b25; }
-    [data-theme="light"] .quick-recap li strong { color:#7a5c10; }
-
-    /* ── New terminology underline ───────────────────────────── */
-    .term {
-      text-decoration: underline;
-      text-decoration-color: rgba(200,169,75,0.35);
-      text-underline-offset: 3px;
-      text-decoration-thickness: 1px;
-      font-style: italic;
-    }
-    [data-theme="light"] .term { text-decoration-color: rgba(150,120,50,0.4); }
-
-    /* ── Code output block ────────────────────────────────────── */
-    .code-output {
-      margin-top:0.5rem; padding:1rem 1.25rem;
-      background:#0d1117; border:1px solid #252525; border-radius:8px;
-      font-family:'JetBrains Mono',monospace; font-size:0.77rem;
-      color:#8bc4a8; white-space:pre; overflow-x:auto; line-height:1.65;
-    }
-    .code-output-label {
-      font-size:0.68rem; color:#555; margin-bottom:0.6rem;
-      letter-spacing:0.08em; text-transform:uppercase;
-    }
-  </style>
 </head>
 <body class="blog-post-page">
 
 <div class="reading-progress" id="readingProgress"></div>
 
-<!-- SEASONAL BANNER ZONE -->
 <div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
   <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
   <div class="ramadan-content">
@@ -226,36 +35,28 @@
   <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
 </div>
 
-
-<!-- NAVBAR (full site) -->
 <nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo" aria-label="Home">
-      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
-    </a>
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
     <ul class="nav-links" role="list">
-      <li><a href="../index.html"         class="nav-link">Home</a></li>
-      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
-      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
       <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
     </ul>
     <div class="nav-right">
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
-      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
-        <span></span><span></span><span></span>
-      </button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu" role="menu">
-  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
-  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
-  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
   <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
 </div>
 
-
-<!-- POST HERO -->
 <header class="post-hero">
   <div class="dot-grid" aria-hidden="true"></div>
   <div class="post-hero-inner">
@@ -290,63 +91,20 @@
       Machine learning has the exact same workflow. It's called the ML pipeline.</p>
     </blockquote>
 
-    <!-- VISUAL PIPELINE DIAGRAM -->
     <div class="pipeline-diagram" role="img" aria-label="ML Pipeline: 7 stages from Problem Definition to Deployment">
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">1</div>
-          <div class="pipeline-node-label">Problem Definition</div>
-          <div class="pipeline-node-analogy">Decide what dish you're making</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">1</div><div class="pipeline-node-label">Problem Definition</div><div class="pipeline-node-analogy">Decide what dish you're making</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">2</div>
-          <div class="pipeline-node-label">Data Collection</div>
-          <div class="pipeline-node-analogy">Source your ingredients</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">2</div><div class="pipeline-node-label">Data Collection</div><div class="pipeline-node-analogy">Source your ingredients</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">3</div>
-          <div class="pipeline-node-label">Data Cleaning &amp; EDA</div>
-          <div class="pipeline-node-analogy">Wash, inspect, understand</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">3</div><div class="pipeline-node-label">Data Cleaning &amp; EDA</div><div class="pipeline-node-analogy">Wash, inspect, understand</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">4</div>
-          <div class="pipeline-node-label">Feature Engineering</div>
-          <div class="pipeline-node-analogy">Prep &amp; transform for cooking</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">4</div><div class="pipeline-node-label">Feature Engineering</div><div class="pipeline-node-analogy">Prep &amp; transform for cooking</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">5</div>
-          <div class="pipeline-node-label">Train / Val / Test Split</div>
-          <div class="pipeline-node-analogy">Practice, tune, then sit the real exam</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">5</div><div class="pipeline-node-label">Train / Val / Test Split</div><div class="pipeline-node-analogy">Practice, tune, then sit the real exam</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">6</div>
-          <div class="pipeline-node-label">Model Training &amp; Evaluation</div>
-          <div class="pipeline-node-analogy">Cook, taste, adjust</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">6</div><div class="pipeline-node-label">Model Training &amp; Evaluation</div><div class="pipeline-node-analogy">Cook, taste, adjust</div></div></div>
       <div class="pipeline-connector"></div>
-      <div class="pipeline-row">
-        <div class="pipeline-node">
-          <div class="pipeline-node-num">7</div>
-          <div class="pipeline-node-label">Deployment &amp; Monitoring</div>
-          <div class="pipeline-node-analogy">Serve — and keep an eye on quality</div>
-        </div>
-      </div>
+      <div class="pipeline-row"><div class="pipeline-node"><div class="pipeline-node-num">7</div><div class="pipeline-node-label">Deployment &amp; Monitoring</div><div class="pipeline-node-analogy">Serve — and keep an eye on quality</div></div></div>
     </div>
 
     <h2>01 — Why the Pipeline Matters More Than the Model</h2>
@@ -477,30 +235,16 @@ val_score = model.score(X_val, y_val)
 <span class="t-cmt"># Stage 6 — Final honest evaluation on the test set (touch only once)</span>
 print(classification_report(y_test, model.predict(X_test)))</code></pre>
 
-    <p><em>Notice: the scaler is <code>fit</code> only on training data, then <code>transform</code>ed onto everything else. Fitting on the full dataset before splitting would leak test statistics into the scaler — a subtle but consequential form of data leakage.</em></p>
+    <p><em>Notice: the scaler is <code>fit</code> only on training data, then <code>transform</code>ed onto everything else. Fitting on the full dataset before splitting would leak test statistics into the scaler — a subtle but important form of data leakage.</em></p>
 
     <div class="prose-callout" style="margin-top:1.5rem">
       <span class="prose-callout-label">📊 Choosing the right metric</span>
       <table class="metrics-table">
-        <thead>
-          <tr><th>Metric</th><th>What it measures</th><th>Best used when…</th></tr>
-        </thead>
+        <thead><tr><th>Metric</th><th>What it measures</th><th>Best used when…</th></tr></thead>
         <tbody>
-          <tr>
-            <td>Accuracy</td>
-            <td>% of all predictions that are correct</td>
-            <td>Classes are roughly balanced in size</td>
-          </tr>
-          <tr>
-            <td>F1 Score</td>
-            <td>Balance between catching true cases (recall) and avoiding false alarms (precision)</td>
-            <td>One class is rare — fraud, disease, spam</td>
-          </tr>
-          <tr>
-            <td>RMSE</td>
-            <td>Typical prediction error in the original units (e.g. ±$4,000 for house prices)</td>
-            <td>Predicting a continuous number, not a category</td>
-          </tr>
+          <tr><td>Accuracy</td><td>% of all predictions that are correct</td><td>Classes are roughly balanced in size</td></tr>
+          <tr><td>F1 Score</td><td>Balance between catching true cases (recall) and avoiding false alarms (precision)</td><td>One class is rare — fraud, disease, spam</td></tr>
+          <tr><td>RMSE</td><td>Typical prediction error in the original units (e.g. ±$4,000 for house prices)</td><td>Predicting a continuous number, not a category</td></tr>
         </tbody>
       </table>
     </div>
@@ -523,7 +267,7 @@ weighted avg       0.97      0.97      0.97       114
     <h2>05 — Why This Matters in Production</h2>
     <p>Three principles that separate engineers who ship reliable ML from those who don't:</p>
     <ul>
-      <li><strong>The pipeline is the product.</strong> In production, you're not shipping a model — you're shipping the entire pipeline: preprocessing, model, post-processing. If any step breaks or drifts, the product breaks. A model is only as reliable as the pipeline it sits inside.</li>
+      <li><strong>The pipeline is the product.</strong> In production, you're not shipping a model — you're shipping the entire pipeline: preprocessing, model, post-processing. If any step breaks or drifts, the product breaks.</li>
       <li><strong>Reproducibility is non-negotiable.</strong> Set random seeds. Version your data. Log your hyperparameters. If you can't reproduce your results, you can't debug them — and you can't trust them.</li>
       <li><strong>The test set is sacred.</strong> Look at it once, at the very end. Every time you peek at it to make a decision, you're leaking information and your final accuracy number becomes a lie.</li>
     </ul>
@@ -549,7 +293,7 @@ weighted avg       0.97      0.97      0.97       114
         <div class="quiz-item">
           <div class="quiz-question">3. Which stage typically takes the most time in a real project?</div>
           <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-          <div class="quiz-answer">Data Cleaning & EDA (Stage 3) — often consuming 30–60% of total project time. Most newcomers expect model training to dominate, but experienced practitioners know that getting clean, well-understood data is where the real effort lives. The model itself is often the quickest part.</div>
+          <div class="quiz-answer">Data Cleaning &amp; EDA (Stage 3) — often consuming 30–60% of total project time. Most newcomers expect model training to dominate, but experienced practitioners know that getting clean, well-understood data is where the real effort lives. The model itself is often the quickest part.</div>
         </div>
       </div>
     </div>
@@ -583,25 +327,22 @@ weighted avg       0.97      0.97      0.97       114
 
     <h2>08 — Go Deeper</h2>
     <p>▶ <a href="https://www.youtube.com/watch?v=6kEGUCrBEU0" target="_blank" rel="noopener">IBM: What is a Data Pipeline?</a><br>
-    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 9 min · Accessible end-to-end walkthrough, no prior knowledge required.</em></p>
-    <p style="margin-top:0.85rem">▶ <a href="https://scikit-learn.org/stable/modules/preprocessing.html" target="_blank" rel="noopener">scikit-learn: Preprocessing & Cleaning Tutorial</a><br>
-    <em style="font-size:0.875rem;color:var(--text-muted)">Official docs · Hands-on · Serves as a detailed supplement for the preprocessing and cleaning phase mentioned in the pipeline.</em></p>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 9 min · A clear walkthrough of the full pipeline — great starting point, no prior knowledge needed.</em></p>
+    <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/code/imoore/intro-to-exploratory-data-analysis-eda-in-python" target="_blank" rel="noopener">Kaggle: Intro to EDA in Python</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Interactive notebook · Run it live in your browser · Covers exactly the EDA stage from this article — missing values, distributions, correlations, and outliers with real code.</em></p>
+    <p style="margin-top:0.85rem">▶ <a href="https://scikit-learn.org/stable/modules/preprocessing.html" target="_blank" rel="noopener">scikit-learn: Data Preprocessing Guide</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Official docs · Hands-on · A detailed reference for the cleaning and feature engineering stages — scaling, encoding, and handling missing data.</em></p>
     <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/learn/intro-to-machine-learning" target="_blank" rel="noopener">Kaggle: Intro to Machine Learning</a><br>
-    <em style="font-size:0.875rem;color:var(--text-muted)">Free interactive course · Run live code in your browser · Perfect companion to this series.</em></p>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free course · Write and run real code in your browser · Covers the full pipeline end-to-end and pairs well with this series.</em></p>
 
     <div class="prose-callout">
       <span class="prose-callout-label">🎯 Interview Questions</span>
       <ol>
-        <li><strong>What is data leakage and why is it dangerous?</strong><br>
-        <em>Data leakage occurs when information from outside the training set improperly influences the model — making evaluation results look better than real-world performance will be. It produces models that appear excellent in testing but fail in production.</em></li>
-        <li><strong>Why do we need three splits (train / validation / test) instead of two?</strong><br>
-        <em>The validation set is used for model selection and hyperparameter tuning. Each tuning decision based on it leaks a small amount of information. The test set is kept completely separate to give a final, unbiased performance estimate that no prior decision has touched.</em></li>
-        <li><strong>Why must the scaler be fit only on training data?</strong><br>
-        <em>Fitting on the full dataset lets the scaler see test data statistics (mean, standard deviation), which is data leakage. The test set must be treated as completely unseen future data — as if it arrived after the model was already trained.</em></li>
-        <li><strong>What is EDA and why does it matter?</strong><br>
-        <em>Exploratory Data Analysis is the process of visualising and summarising data to understand its structure, spot anomalies, and uncover patterns before modelling. Skipping EDA means building models on data you don't actually understand.</em></li>
-        <li><strong>What is the difference between a model parameter and a hyperparameter?</strong><br>
-        <em>Parameters are learned automatically from training data — for example, the weights in a neural network or the coefficients in a regression. Hyperparameters are configuration choices set by the engineer before training begins, such as learning rate, tree depth, or number of neighbours. The model learns parameters; you tune hyperparameters.</em></li>
+        <li><strong>What is data leakage and why is it dangerous?</strong><br><em>Data leakage occurs when information from outside the training set improperly influences the model — making evaluation results look better than real-world performance will be. It produces models that appear excellent in testing but fail in production.</em></li>
+        <li><strong>Why do we need three splits (train / validation / test) instead of two?</strong><br><em>The validation set is used for model selection and hyperparameter tuning. Each tuning decision based on it leaks a small amount of information. The test set is kept completely separate to give a final, unbiased performance estimate that no prior decision has touched.</em></li>
+        <li><strong>Why must the scaler be fit only on training data?</strong><br><em>Fitting on the full dataset lets the scaler see test data statistics (mean, standard deviation), which is data leakage. The test set must be treated as completely unseen future data — as if it arrived after the model was already trained.</em></li>
+        <li><strong>What is EDA and why does it matter?</strong><br><em>Exploratory Data Analysis is the process of visualising and summarising data to understand its structure, spot anomalies, and uncover patterns before modelling. Skipping EDA means building models on data you don't actually understand.</em></li>
+        <li><strong>What is the difference between a model parameter and a hyperparameter?</strong><br><em>Parameters are learned automatically from training data — the weights in a neural network or the coefficients in a regression. Hyperparameters are configuration choices set by the engineer before training begins, such as learning rate, tree depth, or number of neighbours. The model learns parameters; you tune hyperparameters.</em></li>
       </ol>
     </div>
 
@@ -631,9 +372,7 @@ weighted avg       0.97      0.97      0.97       114
   <div class="footer-inner">
     <div class="footer-main">
       <div>
-        <a href="../index.html" class="footer-logo" aria-label="Home">
-          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
-        </a>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
         <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
       </div>
       <nav class="footer-nav" aria-label="Footer navigation">
@@ -643,7 +382,7 @@ weighted avg       0.97      0.97      0.97       114
         <a href="../index.html#contact">Contact</a>
       </nav>
       <div class="social-links">
-        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
         <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
         <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
       </div>
@@ -656,52 +395,23 @@ weighted avg       0.97      0.97      0.97       114
 </footer>
 
 <button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
-
-<!-- Floating feedback trigger button -->
-<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
-  <span class="feedback-trigger-text">Feedback</span>
-</button>
-
-<!-- Overlay backdrop -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
 <div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
-
-<!-- Sliding feedback panel -->
 <aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
   <div class="feedback-header">
     <h2 id="feedbackTitle">Send Feedback</h2>
     <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
   </div>
-  
   <form class="feedback-form" id="feedbackForm">
-    <div class="feedback-field">
-      <label for="feedbackName">Name</label>
-      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
-    </div>
-
-    <div class="feedback-field">
-      <label for="feedbackTopic">Topic</label>
-      <select id="feedbackTopic">
-        <option value="General">General</option>
-        <option value="Suggestion">Suggestion</option>
-        <option value="Bug">Bug</option>
-      </select>
-    </div>
-
-    <div class="feedback-field">
-      <label for="feedbackPage">Page</label>
-      <input type="text" id="feedbackPage" readonly />
-    </div>
-
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
     <div class="feedback-field">
       <label for="feedbackMessage">Message <span class="required">*</span></label>
       <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
       <div class="char-count"><span id="charCount">0</span> / 2000</div>
     </div>
-
-    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
-      Send Feedback
-    </button>
-
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
     <div class="feedback-status" id="feedbackStatus"></div>
   </form>
 </aside>
