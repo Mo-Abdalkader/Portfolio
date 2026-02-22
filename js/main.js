@@ -65,6 +65,7 @@ var TRANSLATIONS = {
   'footer-tagline':         { en: "AI Engineer · Building tomorrow's systems today.", ar: 'مهندس ذكاء اصطناعي · بناء أنظمة المستقبل اليوم.' },
   'footer-copy':            { en: '© 2026 Mohamed Abdalkader. All rights reserved.', ar: '© 2026 محمد عبدالقادر. جميع الحقوق محفوظة.' },
 
+
   // Projects page
   'page-projects-label':    { en: '// my work',                       ar: '// أعمالي' },
   'page-projects-h1':       { en: 'Projects',                         ar: 'المشاريع' },
@@ -316,7 +317,16 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
 });
+// ═══════════════════════════════════════════════════════════════════
+// PATCH v3 — Banner, Back-to-top, Reading Progress, Copy Link
+// ═══════════════════════════════════════════════════════════════════
 
+// ─── SEASONAL BANNER MANAGER ────────────────────────────────────────
+// Logic:
+//   Mar 1 – Mar 19  → Ramadan banner  (gold)
+//   Mar 20 – Mar 25 → Eid Mubarak banner (purple)
+//   Mar 26+         → no banner
+// To skip seasonal logic entirely, set FORCE_BANNER = false
 
 (function() {
   // FORCE_BANNER: 'ramadan' | 'eid' | false
@@ -744,6 +754,7 @@ function copyPostLink(btn) {
     'intro-to-ml.html',            // Day 1  - Feb 19
     'ml-pipeline.html',            // Day 2  - Feb 20
     'how-models-learn.html',       // Day 3  - Feb 21
+    'linear-regression.html',      // Day 4  - Feb 22
   ];
 
   const TOTAL_POSTS = 30;

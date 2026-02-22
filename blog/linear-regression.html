@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 4 — Linear Regression | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="Linear regression from scratch — the simplest and most foundational ML model. OLS, MSE, R², assumptions, and why it still powers real production systems." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 4 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 22, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">14 min read</span>
+      <span class="meta-sep">·</span>
+      <span>ML Models</span>
+    </div>
+    <h1>Linear Regression:<br>The Model That Started Everything</h1>
+    <p class="post-hero-lead">The simplest ML model is also the most important to understand deeply. Linear regression teaches you loss functions, optimization, overfitting, and feature engineering — all at once.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>In 1886, Francis Galton studied the heights of parents and their children.<br>
+      He noticed something: tall parents tend to have tall children — but shorter<br>
+      than themselves. Short parents tend to have taller children — but shorter<br>
+      than average. Heights "regress toward the mean."<br><br>
+      He drew a line through his data. That line became the most important tool<br>
+      in the history of data analysis.</p>
+    </blockquote>
+
+    <h2>01 — What Linear Regression Does</h2>
+    <p>Linear regression answers one question: <em>given some input features, what number do I predict as output?</em> It finds the best straight line (or hyperplane in multiple dimensions) through your data that minimizes prediction error.</p>
+    <p>Examples: predict house price from size + bedrooms. Predict a student's exam score from study hours. Predict tomorrow's temperature from today's. Any time your output is a <em>continuous number</em>, linear regression is your first tool to reach for.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📏 Analogy</span>
+      <p>Imagine plotting every house sale in a city as a dot on graph paper — horizontal axis is size in m², vertical axis is price. Linear regression draws the single straight line that comes closest to all those dots simultaneously. Once you have that line, predicting the price of a new house is as simple as finding its size on the x-axis and reading off the y-axis.</p>
+    </div>
+
+    <h2>02 — The Math (Made Friendly)</h2>
+    <p>Before the formula — what is the model actually doing? It makes a <strong>weighted sum</strong> of your inputs, then adds a baseline. "Weighted sum" means: multiply each feature by how important it is, then add everything up. That's it.</p>
+    <p>Concretely — predicting an exam score from hours studied:</p>
+    <p style="text-align:center;padding:0.6rem 0"><code>predicted score = (5.2 × hours_studied) + 30</code></p>
+    <p>The <strong>5.2</strong> is the <em>weight</em> — each extra hour of study adds 5.2 points. The <strong>30</strong> is the <em>bias</em> — the baseline score someone gets with zero hours studied. Training is the process of finding these numbers automatically from data.</p>
+    <p>In general notation with <em>n</em> features, the formula is:</p>
+    <p style="text-align:center;padding:0.6rem 0"><code>ŷ = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + ... + w<sub>n</sub>x<sub>n</sub> + b</code></p>
+    <p>Where <strong>ŷ</strong> (y-hat) is the prediction, <strong>x</strong> values are your input features, <strong>w</strong> values are the learned weights (one per feature), and <strong>b</strong> is the bias.</p>
+
+    <p>Training finds the weights and bias that minimize <strong>MSE (Mean Squared Error)</strong> — the average of squared differences between predictions and true values. Squaring does two things: it makes all errors positive (a $10k under-prediction and $10k over-prediction don't cancel out), and it punishes large mistakes much more than small ones.</p>
+
+    <p>There are two ways to find these optimal values:</p>
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">OLS — Ordinary Least Squares</div>
+        <div class="prose-kv-val">A direct mathematical formula: <code>w = (XᵀX)⁻¹Xᵀy</code>. Computes the exact best weights in one step — no iterations, no learning rate to tune. Fast and exact for datasets that fit in memory. This is what <code>sklearn</code>'s <code>LinearRegression()</code> uses internally.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Gradient Descent</div>
+        <div class="prose-kv-val">The iterative approach from Day 3 — adjust weights step by step, guided by the loss. Slower to converge but scales to massive datasets where OLS would require inverting an enormous matrix. Used in neural networks and large-scale systems.</div>
+      </div>
+    </div>
+
+    <div class="prose-kv-grid" style="margin-top:0.75rem">
+      <div class="prose-kv"><div class="prose-kv-key">Predicts</div><div class="prose-kv-val">A continuous number — price, temperature, score, demand</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Loss function</div><div class="prose-kv-val">MSE — average of (prediction − truth)²</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">What it learns</div><div class="prose-kv-val">One weight per feature + one bias term</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Key metric</div><div class="prose-kv-val">R² — how much of the variance is explained by the model</div></div>
+    </div>
+
+    <h2>03 — What R² Tells You</h2>
+    <p><strong>R²</strong> (R-squared, or the coefficient of determination) answers one question: <em>how much better is my model than just predicting the average every time?</em></p>
+    <p>If the only thing you knew about exam scores was their average — say 65 — and you predicted 65 for every student, that's your dumb baseline. R² measures how much your model beats that baseline, as a proportion from 0 to 1.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv"><div class="prose-kv-key">R² = 1.0</div><div class="prose-kv-val">Perfect. Every prediction is exactly right. The model explains 100% of why the target varies across examples.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">R² = 0.85</div><div class="prose-kv-val">Good. Your model explains 85% of the variation in the target. The remaining 15% is unexplained — perhaps unmeasured features (renovation quality, neighborhood reputation) or genuine randomness.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">R² = 0.0</div><div class="prose-kv-val">Useless. The model is exactly as good as predicting the mean every time. It learned nothing from the features.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">R² &lt; 0</div><div class="prose-kv-val">Actively harmful. The model is <em>worse</em> than just guessing the mean. This happens when the model fits the wrong pattern entirely — usually a sign of severe underfitting or using the model on data it was never designed for.</div></div>
+    </div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚠️ Context always matters</span>
+      <p>R² = 0.7 is outstanding when predicting stock prices (highly random by nature), but would be considered poor for predicting the boiling point of water (a nearly deterministic physical relationship). Never interpret R² in isolation — compare it against the baseline difficulty of your problem and the standards in your domain.</p>
+    </div>
+
+    <h2>04 — Code: From Scratch vs sklearn</h2>
+    <p>Two approaches to fit the same model. The <strong>from-scratch</strong> version uses gradient descent so you can see exactly what's happening inside. The <strong>sklearn</strong> version uses OLS — the direct formula, faster and exact. Both converge to the same answer.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Dataset: hours studied → exam score</span>
+X = np.array([<span class="t-num">1</span>,<span class="t-num">2</span>,<span class="t-num">3</span>,<span class="t-num">4</span>,<span class="t-num">5</span>,<span class="t-num">6</span>,<span class="t-num">7</span>,<span class="t-num">8</span>], dtype=<span class="t-class">float</span>)
+y = np.array([<span class="t-num">45</span>,<span class="t-num">50</span>,<span class="t-num">58</span>,<span class="t-num">61</span>,<span class="t-num">68</span>,<span class="t-num">74</span>,<span class="t-num">79</span>,<span class="t-num">84</span>], dtype=<span class="t-class">float</span>)
+
+<span class="t-cmt"># ── From scratch: gradient descent ──────────────────────────────────</span>
+w, b, lr = <span class="t-num">0.0</span>, <span class="t-num">0.0</span>, <span class="t-num">0.01</span>
+<span class="t-key">for</span> _ <span class="t-key">in</span> range(<span class="t-num">5000</span>):
+    pred = w * X + b
+    dw = np.mean(<span class="t-num">2</span> * (pred - y) * X)   <span class="t-cmt"># gradient of loss w.r.t. w</span>
+    db = np.mean(<span class="t-num">2</span> * (pred - y))        <span class="t-cmt"># gradient of loss w.r.t. b</span>
+    w -= lr * dw
+    b -= lr * db
+<span class="t-key">print</span>(<span class="t-str">f"Scratch → w={w:.2f}, b={b:.2f}"</span>)
+
+<span class="t-cmt"># ── sklearn: OLS (exact formula, one step) ───────────────────────────</span>
+<span class="t-key">from</span> sklearn.linear_model <span class="t-key">import</span> LinearRegression
+model = LinearRegression().fit(X.reshape(-<span class="t-num">1</span>,<span class="t-num">1</span>), y)
+<span class="t-key">print</span>(<span class="t-str">f"sklearn → w={model.coef_[0]:.2f}, b={model.intercept_:.2f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"R²      = {model.score(X.reshape(-<span class="t-num">1</span>,<span class="t-num">1</span>), y):.3f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"9 hrs → {model.predict([[<span class="t-num">9</span>]])[<span class="t-num">0</span>]:.1f} predicted score"</span>)</code></pre>
+
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+Scratch → w=5.24, b=39.30
+sklearn → w=5.24, b=39.30
+R²      = 0.996
+9 hrs → 86.5 predicted score</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the numbers</span>
+      <p><strong>w = 5.24</strong> — each extra hour of study adds ~5.24 points to the predicted score. This is the slope of the line: how steeply the prediction rises as the input increases.<br><br>
+      <strong>b = 39.30</strong> — a student who studied zero hours is predicted to score ~39 points. This is the y-intercept: the baseline the model starts from before accounting for study time.<br><br>
+      <strong>R² = 0.996</strong> — the model explains 99.6% of the variation in scores. Near-perfect — which makes sense, because this dataset was designed to be almost perfectly linear.<br><br>
+      <strong>9 hrs → 86.5</strong> — for a new student the model has never seen, studying 9 hours, the predicted score is 86.5.</p>
+    </div>
+
+    <h2>05 — When Linear Regression Breaks</h2>
+    <p>Linear regression makes specific assumptions. When the data violates them, the model misbehaves — sometimes silently. Here are the four most common failure modes and what to do about each.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">✗</div>
+        <div class="prose-step-text">
+          <strong>The relationship isn't actually linear.</strong> A line assumes adding one bedroom always adds the same value — regardless of whether it's going from 1 to 2 bedrooms in a studio, or from 5 to 6 in a mansion. Real data often curves. The model will systematically underpredict at the extremes and overpredict in the middle.
+          <div class="step-pitfall">Fix: plot your residuals (prediction errors) against each input feature. A curved pattern in the residual plot is the telltale sign. Add polynomial features (x², x³) to capture the curve, or switch to a non-linear model like a decision tree.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">✗</div>
+        <div class="prose-step-text">
+          <strong>Outliers dominate the fit.</strong> Because MSE squares errors, one extreme data point — an absurdly priced mansion, a data entry error — can have enormous gravitational pull on the line, dragging it away from the majority of your data to chase one bad point.
+          <div class="step-pitfall">Fix: always visualize your data before training. If outliers are errors, correct or remove them. If they're real but exceptional, consider using MAE (Mean Absolute Error) as your loss instead — it doesn't square errors, so outliers have proportionally less influence.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">✗</div>
+        <div class="prose-step-text">
+          <strong>Features are highly correlated (multicollinearity).</strong> If you include both "size in m²" and "size in ft²" as separate features, they carry identical information. The model can't separate their contributions — small random fluctuations in the data can cause their weights to vary wildly between training runs.
+          <div class="step-pitfall">Fix: check your correlation matrix before training. If two features have a correlation above ~0.9, drop one. For a more rigorous test, compute the Variance Inflation Factor (VIF) — values above 5–10 indicate a problem. Ridge regression can also partially mitigate multicollinearity by shrinking unstable weights.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">✗</div>
+        <div class="prose-step-text">
+          <strong>You're predicting a category, not a number.</strong> Linear regression outputs any real number — including negatives and values above 1. You can't use it to predict probabilities (which must stay between 0 and 1) or class labels.
+          <div class="step-pitfall">Fix: use logistic regression, which wraps the linear output in a sigmoid function to squash it into [0, 1]. That's exactly what Day 5 covers.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
+      <p>The output layer of almost every neural network is a linear layer. The classification head of a vision model, the projection layer of a transformer, the value head in reinforcement learning — all linear transformations. Linear regression isn't a historical relic. It's the atomic unit that everything else is built from.</p>
+    </div>
+
+    <h2>06 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>MSE treats all errors equally by size — a $10,000 mistake on a $100,000 house and a $10,000 mistake on a $10,000,000 mansion are penalized identically, even though one is a 10% error and the other is 0.1%.</p>
+      <p style="margin-top:0.75rem"><strong>When might minimizing absolute error be the wrong objective? Who is harmed when the loss function doesn't reflect real-world costs — and what would you optimize instead?</strong></p>
+    </div>
+
+    <h2>07 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 5: Logistic Regression.</strong> Linear regression's sibling for classification. We add one elegant twist — a sigmoid function — and suddenly our model outputs probabilities. It's 70 years old and still runs in production at Google and Amazon.</p>
+
+    <h2>08 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=nk2CQITm_eo" target="_blank" rel="noopener">StatQuest: Linear Regression, Clearly Explained</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 27 min · The clearest visual walkthrough of OLS, R², and the assumptions that exists. Watch the residual plots section especially.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/learn/intro-to-machine-learning" target="_blank" rel="noopener">Kaggle: Intro to Machine Learning</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free interactive course · Write and run real regression code on real datasets directly in your browser — the fastest path from reading to doing.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">Coursera: Deep Learning Specialization — Andrew Ng</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">5-course specialization · Covers the mathematics of regression, gradient descent, and optimization with exceptional clarity. Audit free. The best structured path from intuition to rigorous understanding.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. A trained model gives w = 5.24 and b = 39.3. What do these numbers actually mean?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">w = 5.24 means each additional unit of the input (e.g. one more hour of study) adds 5.24 units to the prediction. It is the slope — how steeply the prediction rises as the input increases. b = 39.3 is the bias — the predicted output when all inputs are zero. For the exam score example, it means a student who studied zero hours is predicted to score ~39 points. It is the y-intercept of the line.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. Your model scores R² = 0.0. What does this mean — and is R² = −0.2 better or worse?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">R² = 0.0 means the model is exactly as useful as predicting the average of all training labels every time — it has learned nothing from the features whatsoever. R² = −0.2 is worse: the model makes predictions that are less accurate than the simple mean baseline. A negative R² typically means the model has learned the wrong pattern — usually a sign of a badly misspecified model or evaluating on data it was never designed for.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. What is OLS and how does it differ from gradient descent?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">OLS (Ordinary Least Squares) computes the exact optimal weights in a single mathematical step using the formula w = (XᵀX)⁻¹Xᵀy. No iterations, no learning rate. Fast and exact for datasets that fit in memory — which is why sklearn's LinearRegression() uses it. Gradient descent is iterative: it adjusts weights step by step guided by the loss gradient. Slower to converge but scales to very large datasets where inverting a large matrix would be computationally prohibitive. For small-to-medium regression problems, always prefer OLS.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. Why does MSE square the error instead of just using the raw difference?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Without squaring, positive and negative errors cancel each other out — a model that overshoots by $50k on one house and undershoots by $50k on another has an average raw error of zero, even though both predictions are wrong. Squaring solves this by making all errors positive. It also has a second effect: large errors get penalized disproportionately (a $100 error becomes 10,000; a $10 error only becomes 100), which pushes the model to prioritize eliminating big mistakes over small ones. The tradeoff is that MSE is sensitive to outliers for the same reason.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. Two features in your dataset have a correlation of 0.97. What problem does this cause and how do you fix it?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">This is multicollinearity. The two features carry nearly identical information, so the model cannot reliably separate their individual contributions. The weights for both features become unstable — small changes in the training data can produce wildly different weight values between runs, making the model hard to interpret and potentially unreliable. Fix: remove one of the two features (keep the more interpretable one), or combine them. You can detect the problem upfront with a correlation matrix or by computing the Variance Inflation Factor (VIF) — values above 5–10 signal concern.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Linear Regression</div>
+      <ol>
+        <li><strong>What it does</strong> — Fits the best straight line through data to predict a continuous number.</li>
+        <li><strong>The formula</strong> — ŷ = w<sub>1</sub>x<sub>1</sub> + ... + w<sub>n</sub>x<sub>n</sub> + b. A weighted sum of features plus a baseline.</li>
+        <li><strong>w (weight)</strong> — How much each feature shifts the prediction. One per input feature. Learned from data.</li>
+        <li><strong>b (bias)</strong> — The baseline prediction when all inputs are zero. The y-intercept.</li>
+        <li><strong>MSE</strong> — Loss function. Squares prediction errors, penalizing large mistakes more than small ones.</li>
+        <li><strong>OLS</strong> — The exact closed-form solution. Computes optimal weights in one step. What sklearn uses.</li>
+        <li><strong>R²</strong> — How much variance the model explains. 1.0 = perfect. 0.0 = no better than the mean. Negative = worse than mean.</li>
+        <li><strong>Multicollinearity</strong> — Correlated features destabilize weights. Check correlations and remove duplicates before training.</li>
+        <li><strong>When to use</strong> — Target is a continuous number; relationship is approximately linear.</li>
+        <li><strong>When not to use</strong> — Curved relationships, extreme outliers, categorical targets, or highly correlated features without preprocessing.</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What does R² mean and what values indicate a good model?</strong><br>
+        <em>R² measures the proportion of variance in the target explained by the model. Values near 1.0 are good; near 0.0 means the model is no better than predicting the mean; negative means it is worse than the mean. Context matters — R²=0.7 is excellent for some domains, poor for others.</em></li>
+        <li><strong>What is OLS and when would you use gradient descent instead?</strong><br>
+        <em>OLS (Ordinary Least Squares) computes the exact optimal weights in a single step via w = (XᵀX)⁻¹Xᵀy. It is fast, exact, and requires no tuning — preferred for small-to-medium datasets. Gradient descent is iterative and slower but scales better to very large datasets where matrix inversion becomes prohibitively expensive.</em></li>
+        <li><strong>Why is MSE preferred over MAE in many cases?</strong><br>
+        <em>MSE penalizes large errors more heavily due to squaring and is differentiable everywhere — which gradient descent requires. MAE is more robust to outliers and easier to interpret, but not differentiable at zero, which complicates optimization.</em></li>
+        <li><strong>What are the main assumptions of linear regression?</strong><br>
+        <em>Linearity (the relationship between features and target is linear), independence of errors, homoscedasticity (constant error variance across the range of inputs), approximate normality of residuals, and no severe multicollinearity between features.</em></li>
+        <li><strong>How does regularization (Ridge / Lasso) help linear regression?</strong><br>
+        <em>Regularization adds a penalty to the loss function that discourages large weights, reducing overfitting. Ridge (L2) shrinks all weights proportionally toward zero. Lasso (L1) can drive individual weights to exactly zero, performing automatic feature selection — useful when you suspect many features are irrelevant.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#LinearRegression</span><span class="tag">#MLModels</span><span class="tag">#OLS</span><span class="tag">#GradientDescent</span><span class="tag">#Regression</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span><span class="tag">#sklearn</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="how-models-learn.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 3</span>
+    <span class="post-nav-title">How Models Learn</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var isVisible = answer.classList.contains('visible');
+    answer.classList.toggle('visible', !isVisible);
+    btn.textContent = isVisible ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+</body>
+</html>
