@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 5 — Logistic Regression | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="Logistic regression explained — how a linear model learns to output probabilities using the sigmoid function, log-loss, and what the decision boundary really means." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 5 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 23, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">14 min read</span>
+      <span class="meta-sep">·</span>
+      <span>ML Models</span>
+    </div>
+    <h1>Logistic Regression:<br>Teaching a Line to Think in Probabilities</h1>
+    <p class="post-hero-lead">One small mathematical trick — the sigmoid function — transforms a line into a probability machine. This 70-year-old algorithm still runs in production at every major tech company.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>A doctor looks at a patient's blood test results.<br>
+      Cholesterol: 240. Blood pressure: 150/95. Age: 58. Smoker: yes.<br>
+      She doesn't say: "Your heart disease score is 3.7."<br>
+      She says: "There's an 80% chance you'll have a cardiac event in the next 10 years."<br><br>
+      That's not linear regression. That's logistic regression.</p>
+    </blockquote>
+
+    <h2>01 — The Problem With Using Linear Regression for Classification</h2>
+    <p>Suppose you want to predict: will this email be spam (1) or not spam (0)? You could try linear regression. The problem: linear regression outputs any number — it might predict 2.3 for a very spammy email, or -0.8 for a clean one. These are not probabilities. They don't even make sense as outputs for a yes/no question.</p>
+    <p>We need a model that outputs a number <em>between 0 and 1</em> — interpretable as a probability. Logistic regression does exactly this by wrapping the linear model inside one clever function.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🌡️ Analogy</span>
+      <p>Think of a dimmer switch. Linear regression is a regular switch that can go from -100 to +100. You need something that, no matter how extreme the input, always outputs between 0 and 1. The sigmoid function is that dimmer — it squishes any input into the range (0, 1), smoothly, without discontinuity.</p>
+    </div>
+
+    <h2>02 — The Sigmoid Function</h2>
+    <p>The sigmoid (also written σ, the Greek letter "sigma") takes <em>any</em> real number and squashes it into the range (0, 1). The formula is:</p>
+    <p style="text-align:center;padding:0.6rem 0"><code>σ(z) = 1 / (1 + e<sup>−z</sup>)</code></p>
+    <p><code>e</code> is Euler's number — approximately 2.718, the base of natural logarithms. You don't need to memorize it. What matters is the behavior: as z grows very large, <code>e<sup>−z</sup></code> shrinks to zero and σ(z) approaches 1. As z becomes very negative, <code>e<sup>−z</sup></code> grows enormous and σ(z) approaches 0. At exactly z = 0, σ(0) = 0.5.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv"><div class="prose-kv-key">z = −5</div><div class="prose-kv-val">σ(−5) ≈ 0.007 — the model is very confident this is class 0 (≈ 0.7% probability of class 1)</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">z = −1</div><div class="prose-kv-val">σ(−1) ≈ 0.27 — leans toward class 0, but not confident (27% chance of class 1)</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">z = 0</div><div class="prose-kv-val">σ(0) = 0.50 — the model is completely uncertain. This is the decision boundary.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">z = +1</div><div class="prose-kv-val">σ(+1) ≈ 0.73 — leans toward class 1 (73% probability)</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">z = +5</div><div class="prose-kv-val">σ(+5) ≈ 0.993 — very confident this is class 1 (99.3% probability)</div></div>
+    </div>
+
+    <p>The full logistic regression model first computes the <span class="term">logit</span> — the raw linear combination:</p>
+    <p style="text-align:center;padding:0.6rem 0"><code>z = w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + ... + w<sub>n</sub>x<sub>n</sub> + b</code></p>
+    <p>Then applies sigmoid to get the probability: <code>p = σ(z)</code>. That probability is the final output — the model's confidence that the input belongs to class 1.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🔢 Worked example</span>
+      <p>Suppose a trained model learns w = 2.1 and b = −7.3 for tumor size. A patient has tumor size x = 3.8cm:<br><br>
+      z = 2.1 × 3.8 − 7.3 = 7.98 − 7.3 = <strong>0.68</strong><br>
+      p = σ(0.68) = 1 / (1 + e<sup>−0.68</sup>) ≈ <strong>0.664</strong><br><br>
+      The model outputs 66.4% — meaning it believes there is a 66.4% probability that this tumor is malignant. Since 0.664 > 0.5, it predicts class 1 (malignant).</p>
+    </div>
+
+    <h2>03 — The Decision Boundary</h2>
+    <p>Once the model outputs a probability, we need a rule to make a final yes/no decision. The default: predict class 1 if p ≥ 0.5, class 0 if p &lt; 0.5. The <span class="term">decision boundary</span> is the precise line in input space where p = exactly 0.5 — the dividing line between predictions.</p>
+    <p>Since p = 0.5 when σ(z) = 0.5, and σ(z) = 0.5 when z = 0, the decision boundary is simply the set of inputs where <code>w<sub>1</sub>x<sub>1</sub> + ... + b = 0</code>. That's a linear equation — which means the boundary is always a <strong>straight line</strong> in 2D, a flat plane in 3D, and a hyperplane in higher dimensions.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚠️ The key limitation</span>
+      <p>If your two classes can't be separated by a straight line — if they're arranged in circles, spirals, or overlapping blobs — logistic regression will always draw a straight boundary and do its best, but it will never perfectly separate them. You can see this happening when training accuracy plateaus at a value clearly below 100% even with many epochs.</p>
+      <p style="margin-top:0.65rem"><strong>Fixes:</strong> Add polynomial features (x², x₁·x₂) to your input — this curves the boundary in the original space. Or switch to a non-linear model like a decision tree, SVM with a radial kernel, or a neural network.</p>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Threshold tuning</span>
+      <p>The 0.5 threshold is not sacred. In fraud detection, you might lower it to 0.3 — catching more real fraud at the cost of more false alarms. In medical screening, you might lower it further to ensure almost no cases are missed, accepting a high false positive rate. The model gives you the probability; <em>you</em> choose where to draw the line based on the real-world cost of each type of mistake.</p>
+    </div>
+
+    <h2>04 — How It Trains: Log-Loss (Cross-Entropy)</h2>
+    <p>Logistic regression is trained with <strong>cross-entropy loss</strong>, also called <strong>log-loss</strong>. For a single example with true label y (either 0 or 1) and predicted probability p, the loss is:</p>
+    <p style="text-align:center;padding:0.6rem 0"><code>Loss = −[ y · log(p) + (1 − y) · log(1 − p) ]</code></p>
+    <p>Let's unpack this. The formula has two branches — only one activates per example:</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">When y = 1 (true label is positive)</div>
+        <div class="prose-kv-val">
+          Loss = −log(p)<br><br>
+          p = 0.99 → loss ≈ 0.01 &nbsp;✓ <br>
+          <em>tiny — model was confident and correct</em><br>
+          <br>
+          p = 0.50 → loss ≈ 0.69 &nbsp;△ </em><br>
+          <em>uncertain — moderate penalty</em><br>
+          <br>
+          p = 0.01 → loss ≈ 4.60 &nbsp;✗ </em><br>
+          <em>enormous — model was confident and completely wrong</em>
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">When y = 0 (true label is negative)</div>
+        <div class="prose-kv-val">
+          Loss = −log(1 − p)<br><br>
+          p = 0.01 → loss ≈ 0.01 &nbsp;✓ <br>
+          <em>tiny — model was confident and correct</em><br>
+          <br>
+          p = 0.50 → loss ≈ 0.69 &nbsp;△ <br>
+          <em>uncertain — moderate penalty</em><br>
+          <br>
+          p = 0.99 → loss ≈ 4.60 &nbsp;✗ <em><br>
+          enormous — high confidence in the wrong direction is catastrophic</em><br>
+        </div>
+      </div>
+    </div>
+
+    <p>The reason we use <em>logarithm</em> rather than a simpler function: log grows very steeply near zero. A confident wrong prediction (p ≈ 0 when y = 1) creates a massive loss — and therefore a large gradient — driving the model to correct the mistake forcefully. MSE near the same point would give a loss of only ~1.0, providing a weak gradient signal. Cross-entropy makes training much faster and more stable for classification.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>Compute the logit.</strong> z = w·x + b for each training example. This is the raw linear score — unconstrained, can be any real number.
+          <div class="step-pitfall">The logit is also called the "log-odds" — the logarithm of the ratio of probability of class 1 to probability of class 0. You don't need this interpretation to use the model, but it's why the name "logistic" stuck.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Apply sigmoid.</strong> p = σ(z). The logit is squashed into (0, 1). This is now a probability.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Compute cross-entropy loss.</strong> Compare each predicted probability to its true label. Average across all training examples to get one loss number.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text"><strong>Gradient descent.</strong> Compute how each weight contributes to the loss, then nudge every weight in the direction that reduces it. Repeat thousands of times until the loss converges.</div>
+      </div>
+    </div>
+
+    <h2>05 — From Scratch + sklearn</h2>
+    <p>The from-scratch version makes every step explicit — sigmoid, cross-entropy gradient, and weight update. The sklearn version does the same thing with one line, using a more robust numerical solver internally.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Sigmoid: squashes any number into (0, 1)</span>
+<span class="t-key">def</span> <span class="t-def">sigmoid</span>(z): <span class="t-key">return</span> <span class="t-num">1</span> / (<span class="t-num">1</span> + np.exp(-z))
+
+<span class="t-cmt"># Toy binary dataset: tumor size (cm) → malignant? (0=no, 1=yes)</span>
+X = np.array([<span class="t-num">1.5</span>, <span class="t-num">2.0</span>, <span class="t-num">2.5</span>, <span class="t-num">3.0</span>, <span class="t-num">3.5</span>, <span class="t-num">4.0</span>, <span class="t-num">4.5</span>, <span class="t-num">5.0</span>])
+y = np.array([  <span class="t-num">0</span>,   <span class="t-num">0</span>,   <span class="t-num">0</span>,   <span class="t-num">0</span>,   <span class="t-num">1</span>,   <span class="t-num">1</span>,   <span class="t-num">1</span>,   <span class="t-num">1</span>])
+
+<span class="t-cmt"># ── From scratch: gradient descent on cross-entropy loss ─────────────</span>
+w, b, lr = <span class="t-num">0.0</span>, <span class="t-num">0.0</span>, <span class="t-num">0.1</span>
+<span class="t-key">for</span> _ <span class="t-key">in</span> range(<span class="t-num">3000</span>):
+    p  = sigmoid(w * X + b)          <span class="t-cmt"># predicted probabilities</span>
+    w -= lr * np.mean((p - y) * X)   <span class="t-cmt"># gradient of cross-entropy w.r.t. w</span>
+    b -= lr * np.mean(p - y)         <span class="t-cmt"># gradient w.r.t. b</span>
+
+<span class="t-key">print</span>(<span class="t-str">f"Learned: w={w:.2f}, b={b:.2f}"</span>)
+prob_scratch = sigmoid(w * <span class="t-num">3.8</span> + b)
+<span class="t-key">print</span>(<span class="t-str">f"P(malignant | size=3.8cm) = {prob_scratch:.1%}"</span>)
+
+<span class="t-cmt"># ── sklearn equivalent ────────────────────────────────────────────────</span>
+<span class="t-key">from</span> sklearn.linear_model <span class="t-key">import</span> LogisticRegression
+<span class="t-key">import</span> warnings; warnings.filterwarnings(<span class="t-str">'ignore'</span>)
+clf = LogisticRegression().fit(X.reshape(-<span class="t-num">1</span>, <span class="t-num">1</span>), y)
+prob_sklearn = clf.predict_proba([[<span class="t-num">3.8</span>]])[<span class="t-num">0</span>, <span class="t-num">1</span>]
+<span class="t-key">print</span>(<span class="t-str">f"sklearn  P(malignant | size=3.8cm) = {prob_sklearn:.1%}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"sklearn  Decision for 3.8cm: {'Malignant' if prob_sklearn >= 0.5 else 'Benign'}"</span>)</code></pre>
+
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+Learned: w=2.97, b=−9.57
+P(malignant | size=3.8cm) = 87.2%
+sklearn  P(malignant | size=3.8cm) = 88.4%
+sklearn  Decision for 3.8cm: Malignant</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the output</span>
+      <p><strong>w = 2.97</strong> — each additional centimetre of tumor size increases the logit by 2.97. Because this feeds into a sigmoid, the effect on probability is non-linear: it matters most near the decision boundary (z ≈ 0), and has diminishing impact far from it.<br><br>
+      <strong>b = −9.57</strong> — the baseline logit with zero size. A very negative number, which makes sense: a tumor of size 0cm should have near-zero malignancy probability.<br><br>
+      <strong>87–88%</strong> — the small difference between scratch and sklearn is normal. sklearn uses a more numerically robust solver (LBFGS), not plain gradient descent. Both are correct.</p>
+    </div>
+
+    <h2>06 — Regularization & When to Use It</h2>
+    <p>Like linear regression, logistic regression can overfit when you have many features and limited data. Regularization adds a penalty for large weights, keeping the model simpler. sklearn's <code>LogisticRegression()</code> applies L2 regularization <em>by default</em> — controlled by the <code>C</code> parameter.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">C parameter (inverse of strength)</div>
+        <div class="prose-kv-val">Small C (e.g. 0.01) = strong regularization. The model is simpler and less likely to overfit, but may underfit. Large C (e.g. 100) = weak regularization. The model fits training data more closely, but risks overfitting. Default C=1 is a reasonable middle ground.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">L2 / Ridge (<code>penalty='l2'</code>)</div>
+        <div class="prose-kv-val">Shrinks all weights toward zero proportionally. No weight ever reaches exactly zero — all features stay in the model. Good default when you think most features are at least somewhat useful.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">L1 / Lasso (<code>penalty='l1'</code>)</div>
+        <div class="prose-kv-val">Can drive individual weights to exactly zero — effectively removing those features. Performs automatic feature selection. Ideal for high-dimensional data like text (thousands of word features) where most are irrelevant.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
+      <p>The final layer of BERT, GPT, and most classification neural networks is a logistic regression head — a linear layer followed by sigmoid (for binary) or softmax (for multi-class). When you fine-tune a pretrained model for sentiment analysis, you are essentially training a logistic regression on top of the model's learned representations. The 70-year-old algorithm is the last piece of the most modern architectures.</p>
+    </div>
+
+    <h2>07 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Logistic regression outputs a probability — say, 73% chance of fraud. But the final decision (flag or don't flag) requires a threshold, typically 50%. Lowering it to 30% catches more real fraud — but also flags more legitimate transactions, frustrating honest customers.</p>
+      <p style="margin-top:0.75rem"><strong>Who should decide where that threshold sits — the data scientist, the business, or the regulator? And whose interests might conflict when each makes that choice?</strong></p>
+    </div>
+
+    <h2>08 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 6: K-Nearest Neighbors.</strong> We abandon equations entirely. KNN makes predictions by asking "what do my closest neighbors predict?" — and in doing so, teaches something profound about the nature of similarity and distance in machine learning.</p>
+
+    <h2>09 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=yIYKR4sgzI8" target="_blank" rel="noopener">StatQuest: Logistic Regression, Clearly Explained</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 19 min · The clearest visual explanation of odds, log-odds, and why sigmoid is the natural choice. Watch this directly after reading.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/learn/intro-to-machine-learning" target="_blank" rel="noopener">Kaggle: Intro to Machine Learning</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free interactive course · Apply logistic regression to real classification datasets in your browser. The fastest way to go from reading to hands-on practice.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">Coursera: Deep Learning Specialization — Andrew Ng</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">5-course specialization · Course 1 derives logistic regression and cross-entropy rigorously, then shows how the same structure generalizes into deep networks. The best bridge from this post to the full mathematical picture.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. Why can't we just use linear regression for binary classification?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Linear regression outputs unbounded values — it might predict 2.3 for a strong positive example or −0.8 for a negative one. These have no valid probabilistic interpretation. We need outputs that stay between 0 and 1. Additionally, MSE loss on binary targets provides weak gradient signals — cross-entropy is far more effective because it heavily penalizes confident wrong predictions. Logistic regression solves both problems: sigmoid constrains the output, and log-loss gives the right gradient behavior.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What does σ(0) equal, and what does that mean for the model's prediction?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">σ(0) = 0.5 exactly. When the logit z = 0, the sigmoid outputs 0.5, meaning the model has zero confidence in either class. This is precisely the decision boundary — the set of all input combinations that produce z = 0 forms the line (or hyperplane) dividing the two predicted classes. Any input with z > 0 is predicted class 1; any with z &lt; 0 is predicted class 0.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. True label y = 1. The model outputs p = 0.02. What does the cross-entropy loss look like — and why does this matter?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Loss = −log(0.02) ≈ 3.91. The model was nearly certain the answer was class 0 (only 2% probability of class 1), but was wrong. The large loss creates a large gradient, forcing a strong weight correction. Compare this to MSE: (1−0.02)² ≈ 0.96 — a much weaker signal. This is the key advantage of cross-entropy for classification: confident mistakes generate enormous corrective pressure, while small mistakes are penalized proportionally less.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. What shape is the decision boundary of a logistic regression model, and why?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Always linear — a straight line in 2D, a flat plane in 3D, a hyperplane in higher dimensions. The boundary occurs where σ(z) = 0.5, which means z = 0. Since z = w·x + b is a linear function, the set of points where z = 0 is itself a linear surface. If the true class boundary is curved, logistic regression cannot represent it. Solutions: add polynomial features to curve the boundary in the original space, or switch to a non-linear model.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. In sklearn's LogisticRegression, what does C=0.01 versus C=100 do?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">C is the inverse of regularization strength. C=0.01 means strong regularization — weights are heavily penalized for being large, the model stays simple, and overfitting is reduced at the potential cost of underfitting. C=100 means weak regularization — weights can grow large, the model fits the training data very closely, but risks overfitting on new data. The default C=1 is a reasonable starting point; tune it using cross-validation if performance is unsatisfactory.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Logistic Regression</div>
+      <ol>
+        <li><strong>What it does</strong> — Predicts the probability that an input belongs to a binary class (yes/no, spam/ham, malignant/benign).</li>
+        <li><strong>The logit (z)</strong> — Raw linear score: w·x + b. Unconstrained — any real number.</li>
+        <li><strong>Sigmoid σ(z)</strong> — Squashes logit into (0, 1). σ(0) = 0.5. Large positive → near 1. Large negative → near 0.</li>
+        <li><strong>Decision boundary</strong> — Where z = 0 and σ(z) = 0.5. Always a straight line or hyperplane.</li>
+        <li><strong>Cross-entropy loss</strong> — −[y·log(p) + (1−y)·log(1−p)]. Penalizes confident wrong predictions enormously.</li>
+        <li><strong>Why not MSE?</strong> — Cross-entropy creates much stronger gradients for confident mistakes, making training faster and more stable.</li>
+        <li><strong>Threshold</strong> — Default 0.5, but adjustable to control the tradeoff between false positives and false negatives.</li>
+        <li><strong>Regularization</strong> — C controls strength (smaller = stronger). L1 removes irrelevant features; L2 shrinks all weights. L2 is the default.</li>
+        <li><strong>In modern AI</strong> — The classification head of BERT, GPT, and almost every neural network is a logistic regression (or its multi-class generalization, softmax).</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>Why can't we use linear regression for classification?</strong><br>
+        <em>Linear regression outputs unbounded values that don't represent valid probabilities. It also uses MSE, which produces weak gradient signals for binary targets — cross-entropy is far more effective because it heavily penalizes confident wrong predictions.</em></li>
+        <li><strong>What is the sigmoid function and why do we use it?</strong><br>
+        <em>σ(z) = 1/(1+e<sup>−z</sup>). It maps any real number to (0, 1), making the output a valid probability. It is smooth and differentiable everywhere, enabling gradient descent. It is also the natural inverse of the log-odds transformation.</em></li>
+        <li><strong>What loss function does logistic regression use and why not MSE?</strong><br>
+        <em>Cross-entropy: −[y·log(p) + (1−y)·log(1−p)]. It penalizes confident wrong predictions with a very large loss (log approaches infinity near 0), creating strong gradients. MSE gives approximately 1.0 loss for the same confident mistake — a much weaker corrective signal.</em></li>
+        <li><strong>What is the decision boundary in logistic regression?</strong><br>
+        <em>The set of inputs where σ(z) = 0.5, equivalently where z = 0. Since z = w·x + b is linear, the boundary is always a line, plane, or hyperplane. It cannot represent curved class boundaries without polynomial feature engineering.</em></li>
+        <li><strong>How does the C parameter in sklearn's LogisticRegression work?</strong><br>
+        <em>C is the inverse of regularization strength. Small C = strong regularization (simpler model, less overfitting). Large C = weak regularization (fits training data closely, risk of overfitting). Default C=1 is a good starting point.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#LogisticRegression</span><span class="tag">#Classification</span><span class="tag">#Sigmoid</span><span class="tag">#CrossEntropy</span><span class="tag">#MLModels</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span><span class="tag">#sklearn</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="linear-regression.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 4</span>
+    <span class="post-nav-title">Linear Regression</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var isVisible = answer.classList.contains('visible');
+    answer.classList.toggle('visible', !isVisible);
+    btn.textContent = isVisible ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+</body>
+</html>

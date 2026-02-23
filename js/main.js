@@ -755,6 +755,7 @@ function copyPostLink(btn) {
     'ml-pipeline.html',            // Day 2  - Feb 20
     'how-models-learn.html',       // Day 3  - Feb 21
     'linear-regression.html',      // Day 4  - Feb 22
+    'logistic-regression.html',    // Day 5  - Feb 23
   ];
 
   const TOTAL_POSTS = 30;
