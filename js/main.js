@@ -65,7 +65,6 @@ var TRANSLATIONS = {
   'footer-tagline':         { en: "AI Engineer · Building tomorrow's systems today.", ar: 'مهندس ذكاء اصطناعي · بناء أنظمة المستقبل اليوم.' },
   'footer-copy':            { en: '© 2026 Mohamed Abdalkader. All rights reserved.', ar: '© 2026 محمد عبدالقادر. جميع الحقوق محفوظة.' },
 
-
   // Projects page
   'page-projects-label':    { en: '// my work',                       ar: '// أعمالي' },
   'page-projects-h1':       { en: 'Projects',                         ar: 'المشاريع' },
@@ -756,6 +755,7 @@ function copyPostLink(btn) {
     'how-models-learn.html',       // Day 3  - Feb 21
     'linear-regression.html',      // Day 4  - Feb 22
     'logistic-regression.html',    // Day 5  - Feb 23
+    'knn.html',                    // Day 6  - Feb 24
   ];
 
   const TOTAL_POSTS = 30;
