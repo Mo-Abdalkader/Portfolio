@@ -756,6 +756,7 @@ function copyPostLink(btn) {
     'linear-regression.html',      // Day 4  - Feb 22
     'logistic-regression.html',    // Day 5  - Feb 23
     'knn.html',                    // Day 6  - Feb 24
+    'naive-bayes.html',            // Day 7  - Feb 25
   ];
 
   const TOTAL_POSTS = 30;
