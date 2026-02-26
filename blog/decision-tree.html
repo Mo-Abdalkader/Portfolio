@@ -138,40 +138,46 @@
     </div>
 
     <h2>02 — How the Tree Grows: Gini Impurity &amp; Information Gain</h2>
-    <p>At each node, the algorithm searches for the best split: which feature, and which threshold, produces the purest child nodes? "Purity" means one class dominates — the opposite of a 50/50 mix. Two metrics quantify this:</p>
+    <p>At each node, the algorithm searches for the best split: which feature, and which threshold, produces the purest child nodes? "Purity" means one class dominates — the opposite of a 50/50 mix. Three concepts build on each other here, so walk through them in order:</p>
 
-    <div class="prose-kv-grid">
-      <div class="prose-kv">
-        <div class="prose-kv-key">Gini Impurity — "how mixed is this node?"</div>
-        <div class="prose-kv-val">
-          Formula: <code>Gini = 1 − Σ(pᵢ²)</code> where pᵢ is the fraction of class i in the node.<br><br>
-          <strong>Worked example:</strong> A node has 6 cats and 4 dogs (10 total).<br>
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>Gini Impurity — "how mixed is this node right now?"</strong><br><br>
+          Formula: <code>Gini = 1 − Σ(pᵢ²)</code> &nbsp;where pᵢ is the fraction of class i in the node.<br><br>
+          <strong>Worked example.</strong> A node has <strong>6 cats</strong> and <strong>4 dogs</strong> (10 total):<br>
           p(cat) = 0.6 &nbsp;·&nbsp; p(dog) = 0.4<br>
           Gini = 1 − (0.6² + 0.4²) = 1 − (0.36 + 0.16) = <strong>0.48</strong> — quite mixed.<br><br>
-          After a split: left child has 5 cats &amp; 1 dog → Gini = 1 − (0.833² + 0.167²) = <strong>0.28</strong><br>
-          Right child has 1 cat &amp; 3 dogs → Gini = 1 − (0.25² + 0.75²) = <strong>0.375</strong><br><br>
-          A pure node (all one class) → Gini = 0. Maximally mixed (50/50 binary) → Gini = 0.5.
+          Two reference points to memorise:<br>
+          — Pure node (all one class): Gini = 1 − (1.0²) = <strong>0</strong> — perfect, nothing to split.<br>
+          — Maximally mixed (50/50 binary): Gini = 1 − (0.5² + 0.5²) = <strong>0.5</strong> — worst case.
+          <div class="step-pitfall">The tree wants to <em>minimise</em> Gini in the children it creates. A split that produces two pure leaves (Gini = 0 each) is perfect. A split that produces two 50/50 leaves is useless.</div>
         </div>
       </div>
-      <div class="prose-kv">
-        <div class="prose-kv-key">Information Gain — "how much did this split help?"</div>
-        <div class="prose-kv-val">
-          Information Gain measures how much a split reduces uncertainty compared to the parent node:<br><br>
-          <code>IG = Impurity(parent) − weighted average Impurity(children)</code><br><br>
-          <strong>Example continued:</strong> Parent Gini = 0.48. After split:<br>
-          Left child: 6 samples, Gini = 0.28<br>
-          Right child: 4 samples, Gini = 0.375<br>
-          Weighted avg = (6/10)×0.28 + (4/10)×0.375 = 0.168 + 0.15 = 0.318<br>
-          IG = 0.48 − 0.318 = <strong>0.162</strong><br><br>
-          The tree picks the split with the highest Information Gain — the one that most reduces impurity. A gain of 0 means the split was useless.
+
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text">
+          <strong>Information Gain — "how much did a specific split actually help?"</strong><br><br>
+          <code>IG = Gini(parent) − [ (n_left/n) × Gini(left) + (n_right/n) × Gini(right) ]</code><br><br>
+          <strong>Continuing the same example.</strong> We split the 10-animal node. Suppose:<br>
+          — Left child: 5 cats &amp; 1 dog (6 samples) → Gini = 1 − (0.833² + 0.167²) = <strong>0.278</strong><br>
+          — Right child: 1 cat &amp; 3 dogs (4 samples) → Gini = 1 − (0.25² + 0.75²) = <strong>0.375</strong><br><br>
+          Weighted child impurity = (6/10) × 0.278 + (4/10) × 0.375 = 0.167 + 0.150 = <strong>0.317</strong><br>
+          IG = 0.48 − 0.317 = <strong>0.163</strong><br><br>
+          This split reduced impurity by 0.163. The tree evaluates every possible (feature, threshold) pair and picks the one with the <em>highest</em> Information Gain — the split that most cleans up the node.
+          <div class="step-pitfall">IG = 0 means the split was completely useless — children are no purer than the parent. IG = parent's Gini means the split created two perfectly pure children — the maximum achievable.</div>
         </div>
       </div>
-      <div class="prose-kv">
-        <div class="prose-kv-key">Entropy — the alternative impurity measure</div>
-        <div class="prose-kv-val">
+
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text">
+          <strong>Entropy — the alternative impurity measure</strong><br><br>
           Formula: <code>Entropy = −Σ(pᵢ · log₂(pᵢ))</code><br><br>
-          Information theory measure of uncertainty. Pure node → Entropy = 0. Maximally mixed binary node → Entropy = 1. When used with Information Gain, this is called the ID3 / C4.5 criterion.<br><br>
-          <strong>In practice:</strong> Gini and entropy produce nearly identical trees. Gini is the sklearn default (faster to compute, no logarithm). Prefer entropy only when you specifically want the Information Gain interpretation.
+          An information-theory measure of uncertainty rather than mislabelling probability. Pure node → Entropy = 0. Maximally mixed binary node → Entropy = 1. When used as the impurity measure inside Information Gain, this is the classic <strong>ID3 / C4.5</strong> criterion.<br><br>
+          <strong>Gini vs Entropy in practice:</strong> they produce nearly identical trees on virtually every real dataset. The difference is computational — Gini requires only squaring (fast), entropy requires a logarithm (slower). Gini is the sklearn default. Use <code>criterion="entropy"</code> only if you specifically want the information-theoretic interpretation in your write-up or need to match a legacy system.
         </div>
       </div>
     </div>
