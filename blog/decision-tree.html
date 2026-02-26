@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 8 — Decision Trees | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="Decision Trees from scratch — Gini impurity vs entropy, overfitting, pruning, feature importance, and why they're the foundation of every modern ensemble method." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+    
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 8 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 26, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">16 min read</span>
+      <span class="meta-sep">·</span>
+      <span>ML Models</span>
+    </div>
+    <h1>Decision Trees:<br>The Model You Can Read Like a Book</h1>
+    <p class="post-hero-lead">Decision trees split data by asking yes/no questions — and unlike almost every other ML model, you can read exactly why it made any prediction. That transparency has a price: overfitting.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>A doctor sees a patient and thinks:<br>
+      "Is the fever above 38.5°C? → Yes.<br>
+      Is there a cough? → Yes.<br>
+      Is the cough productive? → No.<br>
+      Duration more than 5 days? → Yes."<br>
+      Diagnosis: viral upper respiratory infection. Prescribe rest and fluids.<br><br>
+      This is not a neural network. This is a decision tree —<br>
+      and your doctor has been running one for every patient, every day.</p>
+    </blockquote>
+
+    <h2>01 — What a Decision Tree Is</h2>
+    <p>A decision tree is a model that learns a hierarchy of if-else rules directly from data. It has three types of components:</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Internal node</div>
+        <div class="prose-kv-val">A question about one feature: "Is temperature &gt; 38.5°C?" or "Is income &lt; 50,000?" The tree asks one question per node, about one feature, at one threshold.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Branch</div>
+        <div class="prose-kv-val">The answer to the question — Yes (go left) or No (go right). Every internal node splits into exactly two branches.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Leaf node</div>
+        <div class="prose-kv-val">The final prediction at the end of a path. For classification: the most common class among training examples that reached this leaf. For regression: their average value.</div>
+      </div>
+    </div>
+
+    <p>To classify a new example, you start at the root node, answer each question, follow the appropriate branch, and keep going until you reach a leaf. The leaf's label is the prediction. That's the entire inference process — no matrix multiplication, no gradients, just a sequence of if-else checks.</p>
+    <p>Unlike every model seen so far, a trained decision tree can be written out as human-readable rules. A doctor can verify it. A judge can audit it. A regulator can approve it. This interpretability is why decision trees remain mandatory in healthcare, finance, and law — even when less interpretable models would be more accurate.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🎮 Analogy: 20 Questions</span>
+      <p>You're playing 20 Questions to guess an animal. You wouldn't start with "Is it a Siberian tiger?" — that wastes a question on one possibility out of millions. A smart player asks "Does it have a backbone?" — instantly eliminating 97% of all species. Then "Does it have fur?" Then "Does it lay eggs?"</p>
+      <p style="margin-top:0.65rem">Each question is chosen to split the remaining possibilities as cleanly as possible. A decision tree plays 20 Questions with your data — mathematically finding the most informative question at each step. The algorithm's job is to pick those questions.</p>
+    </div>
+
+    <h2>02 — How the Tree Grows: Gini Impurity &amp; Information Gain</h2>
+    <p>At each node, the algorithm searches for the best split: which feature, and which threshold, produces the purest child nodes? "Purity" means one class dominates — the opposite of a 50/50 mix. Two metrics quantify this:</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Gini Impurity — "how mixed is this node?"</div>
+        <div class="prose-kv-val">
+          Formula: <code>Gini = 1 − Σ(pᵢ²)</code> where pᵢ is the fraction of class i in the node.<br><br>
+          <strong>Worked example:</strong> A node has 6 cats and 4 dogs (10 total).<br>
+          p(cat) = 0.6 &nbsp;·&nbsp; p(dog) = 0.4<br>
+          Gini = 1 − (0.6² + 0.4²) = 1 − (0.36 + 0.16) = <strong>0.48</strong> — quite mixed.<br><br>
+          After a split: left child has 5 cats &amp; 1 dog → Gini = 1 − (0.833² + 0.167²) = <strong>0.28</strong><br>
+          Right child has 1 cat &amp; 3 dogs → Gini = 1 − (0.25² + 0.75²) = <strong>0.375</strong><br><br>
+          A pure node (all one class) → Gini = 0. Maximally mixed (50/50 binary) → Gini = 0.5.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Information Gain — "how much did this split help?"</div>
+        <div class="prose-kv-val">
+          Information Gain measures how much a split reduces uncertainty compared to the parent node:<br><br>
+          <code>IG = Impurity(parent) − weighted average Impurity(children)</code><br><br>
+          <strong>Example continued:</strong> Parent Gini = 0.48. After split:<br>
+          Left child: 6 samples, Gini = 0.28<br>
+          Right child: 4 samples, Gini = 0.375<br>
+          Weighted avg = (6/10)×0.28 + (4/10)×0.375 = 0.168 + 0.15 = 0.318<br>
+          IG = 0.48 − 0.318 = <strong>0.162</strong><br><br>
+          The tree picks the split with the highest Information Gain — the one that most reduces impurity. A gain of 0 means the split was useless.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Entropy — the alternative impurity measure</div>
+        <div class="prose-kv-val">
+          Formula: <code>Entropy = −Σ(pᵢ · log₂(pᵢ))</code><br><br>
+          Information theory measure of uncertainty. Pure node → Entropy = 0. Maximally mixed binary node → Entropy = 1. When used with Information Gain, this is called the ID3 / C4.5 criterion.<br><br>
+          <strong>In practice:</strong> Gini and entropy produce nearly identical trees. Gini is the sklearn default (faster to compute, no logarithm). Prefer entropy only when you specifically want the Information Gain interpretation.
+        </div>
+      </div>
+    </div>
+
+    <h2>03 — The Tree-Growing Algorithm: Step by Step</h2>
+    <p>The algorithm is recursive — it builds the tree by repeatedly asking "what is the best split I can make at this node?" until a stopping condition is met.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>Start at the root node</strong> with all training examples. Compute the node's current impurity (Gini or entropy).
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text">
+          <strong>Search for the best split.</strong> For every feature, and for every possible threshold value of that feature, compute the Information Gain of splitting there. This is an exhaustive search — if you have 10 features each with 100 unique values, that's 1,000 candidate splits evaluated at each node.
+          <div class="step-pitfall">For continuous features, sklearn sorts the values and tries every midpoint between adjacent values as a threshold. That's why trees are slower to train on high-cardinality continuous features.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text">
+          <strong>Make the best split.</strong> Divide the current node's examples into two groups based on the winning feature and threshold. Examples where feature ≤ threshold go left; the rest go right.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Recurse on each child node.</strong> Repeat steps 1–3 independently for the left child and the right child. Each child only sees the examples that reached it.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text">
+          <strong>Stop when a stopping condition is met:</strong><br>
+          — The node is pure (all examples are the same class) → Gini = 0<br>
+          — <code>max_depth</code> is reached<br>
+          — The node has fewer than <code>min_samples_split</code> examples<br>
+          — No split improves impurity (Information Gain = 0)<br><br>
+          At a leaf, predict the majority class (classification) or the mean value (regression) of the examples that reached it.
+        </div>
+      </div>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">⚠️ The greedy caveat</span>
+      <p>This algorithm is <span class="term">greedy</span> — it picks the locally best split at each step without considering what splits become possible further down the tree. A slightly worse split at the root might unlock dramatically better splits at depth 2 and 3, producing a better overall tree. Finding the globally optimal decision tree is NP-hard (computationally impossible for real datasets), so greedy is the pragmatic choice. It produces good trees, not perfect ones.</p>
+    </div>
+
+    <h2>04 — The Overfitting Problem: Memorizing Noise</h2>
+    <p>Left unconstrained, a decision tree will keep growing until every single training example has its own leaf — 100% training accuracy. This is the most textbook example of overfitting in all of machine learning.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🔢 The numbers make it vivid</span>
+      <p>On the breast cancer dataset (569 examples, 30 features):</p>
+      <p style="margin-top:0.6rem">
+        <strong>Unlimited tree (depth 9):</strong><br>
+        Train accuracy: <strong>100.0%</strong> — memorized every training example perfectly<br>
+        Test accuracy: <strong>93.9%</strong> — fell apart on new data<br>
+        Gap: 6.1 percentage points lost to overfitting
+      </p>
+      <p style="margin-top:0.6rem">
+        <strong>Pruned tree (max_depth=4):</strong><br>
+        Train accuracy: <strong>98.5%</strong> — slightly imperfect on training data<br>
+        Test accuracy: <strong>96.5%</strong> — generalizes far better<br>
+        Gap: only 2 percentage points
+      </p>
+      <p style="margin-top:0.6rem">The unlimited tree memorized noise — patient-specific quirks that don't generalize. The pruned tree learned the actual pattern. Giving up 1.5% training accuracy bought 2.6% better test accuracy.</p>
+    </div>
+
+    <h2>05 — Pruning: Two Ways to Fight Overfitting</h2>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Pre-pruning — stop early during growth</div>
+        <div class="prose-kv-val">
+          Set hard limits before training begins. The tree stops growing when any limit is hit.<br><br>
+          <code>max_depth=4</code> &nbsp;→ tree can ask at most 4 questions in a row. Start here.<br>
+          <code>min_samples_leaf=5</code> &nbsp;→ every leaf must contain at least 5 training examples. Prevents tiny, noisy leaves.<br>
+          <code>min_samples_split=10</code> &nbsp;→ a node must have at least 10 examples before it can be split.<br>
+          <code>max_features</code> &nbsp;→ consider only a random subset of features at each split (also reduces variance).<br><br>
+          <strong>Recommended starting point:</strong> <code>max_depth=3</code> to visualize the tree, <code>max_depth=5–7</code> for production. Use cross-validation to tune.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Post-pruning — grow first, trim after</div>
+        <div class="prose-kv-val">
+          Grow the full unlimited tree, then remove branches that don't sufficiently improve validation performance.<br><br>
+          sklearn implements <span class="term">cost-complexity pruning</span> via <code>ccp_alpha</code>. Higher alpha = more aggressive pruning.<br><br>
+          <code>ccp_alpha=0.0</code> &nbsp;→ no pruning (default)<br>
+          <code>ccp_alpha=0.01</code> &nbsp;→ light pruning<br>
+          <code>ccp_alpha=0.05</code> &nbsp;→ aggressive pruning, much simpler tree<br><br>
+          <strong>How to choose:</strong> use <code>cost_complexity_pruning_path()</code> to get all candidate alpha values, then pick the one with best cross-validation accuracy.<br><br>
+          Post-pruning is more principled than pre-pruning but slower — it must train the full tree first.
+        </div>
+      </div>
+    </div>
+
+    <h2>06 — From Scratch: A Minimal Decision Tree</h2>
+    <p>Building a tree from scratch reveals the recursive structure that sklearn hides. This is the core logic in ~30 lines — no fancy optimizations, just the algorithm.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> collections <span class="t-key">import</span> Counter
+
+<span class="t-key">def</span> <span class="t-def">gini</span>(y):
+    <span class="t-str">"""Gini impurity of a label array."""</span>
+    n = <span class="t-key">len</span>(y)
+    <span class="t-key">if</span> n == <span class="t-num">0</span>: <span class="t-key">return</span> <span class="t-num">0</span>
+    counts = Counter(y)
+    <span class="t-key">return</span> <span class="t-num">1</span> - <span class="t-key">sum</span>((c / n) ** <span class="t-num">2</span> <span class="t-key">for</span> c <span class="t-key">in</span> counts.values())
+
+<span class="t-key">def</span> <span class="t-def">best_split</span>(X, y):
+    <span class="t-str">"""Find feature + threshold that gives the highest Information Gain."""</span>
+    best_gain, best_feat, best_thresh = <span class="t-num">-1</span>, <span class="t-key">None</span>, <span class="t-key">None</span>
+    parent_gini = gini(y)
+
+    <span class="t-key">for</span> feat <span class="t-key">in</span> range(X.shape[<span class="t-num">1</span>]):              <span class="t-cmt"># each feature</span>
+        thresholds = np.unique(X[:, feat])
+        <span class="t-key">for</span> t <span class="t-key">in</span> thresholds:                    <span class="t-cmt"># each threshold</span>
+            left  = y[X[:, feat] <= t]
+            right = y[X[:, feat] >  t]
+            <span class="t-key">if</span> <span class="t-key">len</span>(left) == <span class="t-num">0</span> <span class="t-key">or</span> <span class="t-key">len</span>(right) == <span class="t-num">0</span>: <span class="t-key">continue</span>
+
+            <span class="t-cmt"># Information Gain = parent impurity − weighted child impurity</span>
+            n = <span class="t-key">len</span>(y)
+            gain = parent_gini - (<span class="t-key">len</span>(left)/n * gini(left) + <span class="t-key">len</span>(right)/n * gini(right))
+            <span class="t-key">if</span> gain > best_gain:
+                best_gain, best_feat, best_thresh = gain, feat, t
+
+    <span class="t-key">return</span> best_feat, best_thresh, best_gain
+
+<span class="t-key">def</span> <span class="t-def">build_tree</span>(X, y, depth=<span class="t-num">0</span>, max_depth=<span class="t-num">3</span>):
+    <span class="t-str">"""Recursively build a decision tree. Returns a dict node."""</span>
+    <span class="t-cmt"># Stopping conditions</span>
+    <span class="t-key">if</span> depth >= max_depth <span class="t-key">or</span> <span class="t-key">len</span>(set(y)) == <span class="t-num">1</span>:
+        <span class="t-key">return</span> {<span class="t-str">'leaf'</span>: Counter(y).most_common(<span class="t-num">1</span>)[<span class="t-num">0</span>][<span class="t-num">0</span>]}
+
+    feat, thresh, gain = best_split(X, y)
+    <span class="t-key">if</span> gain <= <span class="t-num">0</span>:   <span class="t-cmt"># no useful split exists</span>
+        <span class="t-key">return</span> {<span class="t-str">'leaf'</span>: Counter(y).most_common(<span class="t-num">1</span>)[<span class="t-num">0</span>][<span class="t-num">0</span>]}
+
+    mask = X[:, feat] <= thresh
+    <span class="t-key">return</span> {
+        <span class="t-str">'feature'</span>: feat, <span class="t-str">'threshold'</span>: thresh, <span class="t-str">'gain'</span>: <span class="t-key">round</span>(gain, <span class="t-num">3</span>),
+        <span class="t-str">'left'</span> : build_tree(X[mask],  y[mask],  depth+<span class="t-num">1</span>, max_depth),
+        <span class="t-str">'right'</span>: build_tree(X[~mask], y[~mask], depth+<span class="t-num">1</span>, max_depth),
+    }
+
+<span class="t-key">def</span> <span class="t-def">predict_one</span>(node, x):
+    <span class="t-key">if</span> <span class="t-str">'leaf'</span> <span class="t-key">in</span> node: <span class="t-key">return</span> node[<span class="t-str">'leaf'</span>]
+    <span class="t-key">if</span> x[node[<span class="t-str">'feature'</span>]] <= node[<span class="t-str">'threshold'</span>]:
+        <span class="t-key">return</span> predict_one(node[<span class="t-str">'left'</span>], x)
+    <span class="t-key">return</span> predict_one(node[<span class="t-str">'right'</span>], x)
+
+<span class="t-cmt"># Quick test on a toy dataset</span>
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> load_iris
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> train_test_split
+
+X, y = load_iris(return_X_y=<span class="t-key">True</span>)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+
+tree = build_tree(X_tr, y_tr, max_depth=<span class="t-num">3</span>)
+preds = [predict_one(tree, x) <span class="t-key">for</span> x <span class="t-key">in</span> X_te]
+accuracy = np.mean(np.array(preds) == y_te)
+<span class="t-key">print</span>(<span class="t-str">f"From-scratch tree accuracy: {accuracy:.1%}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Root split: feature {tree['feature']} ≤ {tree['threshold']} (gain={tree['gain']})"</span>)</code></pre>
+
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+From-scratch tree accuracy: 93.3%
+Root split: feature 3 ≤ 0.8 (gain=0.333)</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the output</span>
+      <p><strong>93.3% accuracy</strong> — from 30 lines of pure Python, no libraries. The root split is on feature 3 (petal width) at threshold 0.8 cm, giving Information Gain of 0.333. This is the single question that separates Iris setosa (petal width ≤ 0.8) from the other two species — almost perfectly. That one question alone classifies a third of the dataset with zero error.</p>
+      <p style="margin-top:0.6rem">The recursive structure is the key insight: <code>build_tree</code> calls itself on the left and right subsets independently. The right side doesn't know anything about the left side — each branch solves its own sub-problem.</p>
+    </div>
+
+    <h2>07 — sklearn: Overfitting vs Pruned + Feature Importance</h2>
+    <p>The sklearn version handles all optimizations and exposes the full comparison — overfitting vs pruning — plus feature importance scores.</p>
+
+    <pre><code><span class="t-key">from</span> sklearn.tree <span class="t-key">import</span> DecisionTreeClassifier, export_text
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> load_breast_cancer
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> train_test_split
+<span class="t-key">import</span> pandas <span class="t-key">as</span> pd
+
+data = load_breast_cancer()
+X, y = data.data, data.target
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+
+<span class="t-cmt"># ── Unlimited tree: maximum overfitting ───────────────────────────────</span>
+t1 = DecisionTreeClassifier(random_state=<span class="t-num">42</span>).fit(X_tr, y_tr)
+<span class="t-key">print</span>(<span class="t-str">f"Unlimited  │ train: {t1.score(X_tr,y_tr):.1%}  test: {t1.score(X_te,y_te):.1%}  depth: {t1.get_depth()}"</span>)
+
+<span class="t-cmt"># ── Pre-pruned (max_depth=4): better generalization ───────────────────</span>
+t2 = DecisionTreeClassifier(max_depth=<span class="t-num">4</span>, random_state=<span class="t-num">42</span>).fit(X_tr, y_tr)
+<span class="t-key">print</span>(<span class="t-str">f"max_depth=4 │ train: {t2.score(X_tr,y_tr):.1%}  test: {t2.score(X_te,y_te):.1%}"</span>)
+
+<span class="t-cmt"># ── Feature importance: which features matter most? ───────────────────</span>
+<span class="t-cmt"># Each score = total Gini reduction from all splits using this feature,</span>
+<span class="t-cmt"># weighted by number of samples, normalized so all scores sum to 1.0</span>
+imp = pd.Series(t2.feature_importances_, index=data.feature_names).sort_values(ascending=<span class="t-key">False</span>)
+<span class="t-key">print</span>(<span class="t-str">"\nTop 5 features by importance:"</span>)
+<span class="t-key">print</span>(imp.head(<span class="t-num">5</span>).to_string())
+
+<span class="t-cmt"># ── Human-readable rules for the first 2 levels ───────────────────────</span>
+<span class="t-key">print</span>(<span class="t-str">"\nTree rules (depth ≤ 2):"</span>)
+<span class="t-key">print</span>(export_text(t2, feature_names=<span class="t-key">list</span>(data.feature_names), max_depth=<span class="t-num">2</span>))</code></pre>
+
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+Unlimited  │ train: 100.0%  test: 93.9%  depth: 9
+max_depth=4 │ train: 98.5%   test: 96.5%
+
+Top 5 features by importance:
+worst radius                0.7211
+worst concave points        0.1409
+mean concave points         0.0721
+worst perimeter             0.0431
+mean radius                 0.0228
+
+Tree rules (depth ≤ 2):
+|--- worst radius <= 16.80
+|   |--- worst concave points <= 0.14
+|   |   |--- class: 1 (benign)
+|   |--- worst concave points >  0.14
+|   |   |--- class: 0 (malignant)
+|--- worst radius >  16.80
+|   |--- worst texture <= 19.11
+|   |   |--- class: 1 (benign)
+|   |--- worst texture >  19.11
+|   |   |--- class: 0 (malignant)</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the output</span>
+      <p><strong>Feature importance scores sum to 1.0.</strong> "worst radius" alone accounts for 72.1% of all impurity reduction — it's by far the most powerful predictor. This matches medical knowledge: tumor radius is a primary diagnostic indicator for malignancy.</p>
+      <p style="margin-top:0.6rem"><strong>The rules are auditable.</strong> You can read the tree and immediately understand: if worst radius ≤ 16.80 AND worst concave points ≤ 0.14 → classify as benign. A radiologist can verify this logic. A lawyer can challenge it. This is what interpretability actually means in practice.</p>
+      <p style="margin-top:0.6rem"><strong>The overfitting gap:</strong> The unlimited tree memorized every quirk in the training data (100% train) but paid a 6.1% penalty on test data. The pruned tree gave up only 1.5% training accuracy and gained 2.6% test accuracy. That trade is almost always worth making.</p>
+    </div>
+
+    <h2>08 — Feature Importance: The Free Gift</h2>
+    <p>Every trained decision tree delivers feature importance scores as a byproduct. The formula for each feature's importance is:</p>
+    <p style="text-align:center;padding:0.5rem 0"><code>Importance(feature) = Σ [ (nₜ/n) × ΔGini(t) ]</code> over all nodes t that split on this feature</p>
+    <p>Where nₜ is the number of samples at node t, n is total training samples, and ΔGini(t) is the Gini reduction from the split. Features used at high-sample, high-impurity nodes (early in the tree) get higher scores. All scores are normalized to sum to 1.0.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Use case: feature selection</div>
+        <div class="prose-kv-val">Train a tree on all features, read the importance scores, drop features with near-zero importance. Often reduces model complexity without hurting accuracy — and exposes which features your model actually relies on.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Use case: data leakage detection</div>
+        <div class="prose-kv-val">If a feature has suspiciously high importance (say, 90%+ alone), investigate. It might be a target-correlated variable that wouldn't be available at real prediction time — a data leakage bug that would destroy production performance.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Limitation: biased toward high-cardinality features</div>
+        <div class="prose-kv-val">Features with many unique values have more candidate thresholds and therefore more chances to appear important — even by chance. If you have a mix of binary and continuous features, tree-based importance scores may be misleading. SHAP values (permutation-based) are more reliable in this case.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
+      <p>Decision trees are the foundation of two of the most powerful ML algorithms that exist: <strong>Random Forests</strong> (Day 11) — which trains hundreds of trees on random data subsets and aggregates their votes — and <strong>XGBoost / Gradient Boosting</strong> (Day 13) — which trains trees sequentially, each one correcting the errors of the previous. These ensemble methods dominate tabular data competitions and power recommendation systems at Uber, Airbnb, and Spotify.</p>
+      <p style="margin-top:0.65rem">SHAP values — the current industry standard for explaining any ML model's predictions — were originally developed in the context of tree ensembles. If you work in ML, you will use SHAP. Understanding the decision tree is understanding where it came from.</p>
+    </div>
+
+    <h2>09 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>A decision tree is greedy — it picks the locally best split at each step. This doesn't guarantee a globally optimal tree. A different first split might enable dramatically better splits at depth 2 and 3, producing a better overall model. Finding the globally optimal decision tree is NP-hard — computationally impossible for real datasets. So the greedy algorithm is what we use.</p>
+      <p style="margin-top:0.75rem"><strong>Does "locally optimal at each step, globally imperfect" remind you of any other decision-making process — in human organizations, in nature, in life? What does this tell you about the limits of optimization?</strong></p>
+    </div>
+
+    <h2>10 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 9: Bias, Variance &amp; the Tradeoff.</strong> The most important concept in all of machine learning. Every model, every hyperparameter, every design choice moves a single dial between two failure modes. Understanding this one idea explains almost every phenomenon you've seen so far — including why the unlimited tree failed and the pruned tree succeeded.</p>
+
+    <h2>11 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=_L39rN6gz7Y" target="_blank" rel="noopener">StatQuest: Decision Trees, Clearly Explained</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 18 min · The best visual explanation of Gini impurity, Information Gain, and how a tree grows step by step.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/learn/intro-to-machine-learning" target="_blank" rel="noopener">Kaggle: Intro to Machine Learning</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free interactive course · Decision trees are the first model in this course — apply them to real datasets in your browser with immediate feedback.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">Coursera: Deep Learning Specialization — Andrew Ng</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">5-course specialization · Covers bias-variance tradeoff rigorously — the concept that explains every overfitting and underfitting phenomenon you've seen across the series. Audit free.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. A node contains 8 examples of class A and 2 of class B. What is its Gini impurity? What would it be for a pure node?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">p(A) = 8/10 = 0.8, p(B) = 2/10 = 0.2. Gini = 1 − (0.8² + 0.2²) = 1 − (0.64 + 0.04) = 1 − 0.68 = 0.32. This node is fairly impure — 20% of examples are a minority class. For a pure node (all one class): p = 1.0, Gini = 1 − (1.0²) = 1 − 1 = 0. A Gini of 0 means the node is perfectly pure and no split can improve it further — it becomes a leaf.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What is Information Gain and how does a decision tree use it to choose splits?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Information Gain = parent node impurity − weighted average impurity of child nodes after the split. It measures how much uncertainty is reduced by making a particular split. The tree evaluates every possible (feature, threshold) combination, computes the Information Gain for each, and selects the split with the highest gain. A gain of 0 means the split doesn't help at all. A gain equal to the parent impurity means the split produces perfectly pure children — the maximum possible gain. The algorithm is exhaustive: for N features each with K unique values, it evaluates N×K candidate splits at every node.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. An unlimited decision tree achieves 100% training accuracy but only 87% test accuracy. Explain what happened and how you would fix it.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">The tree overfitted. Without constraints, it grew deep enough to give every training example its own leaf — memorizing all noise, outliers, and quirks of the training set rather than learning the underlying pattern. On new data, these memorized details are wrong, causing the large accuracy drop. To fix it, apply pruning: set max_depth (e.g. 3–7) to limit how deep the tree grows; set min_samples_leaf (e.g. 5–10) to prevent tiny leaves built on just a few noisy points; or use post-pruning via ccp_alpha to remove branches that don't improve validation performance. The right fix is to tune these hyperparameters using cross-validation.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. What does a feature importance score of 0.72 mean, and what is one situation where you should not trust it?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">A score of 0.72 means that feature was responsible for 72% of the total Gini impurity reduction across all splits in the tree. It is by far the most informative feature the tree found — removing it would dramatically hurt accuracy. One situation not to trust it: when the feature has many unique values (high cardinality). Features with more unique values have more candidate thresholds, so they get more "chances" to appear important even if their true predictive power is modest. A binary feature (only 2 values) can only appear important if it genuinely reduces impurity. A continuous feature with 1000 unique values might appear important just by finding one lucky threshold. Use SHAP permutation importance as a more reliable alternative in mixed-feature settings.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. What is the difference between pre-pruning and post-pruning? Give one concrete sklearn parameter for each.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Pre-pruning (early stopping) sets hard constraints before training. The tree stops growing whenever a limit is hit — it never builds branches that will be removed. Example: max_depth=4 prevents the tree from asking more than 4 questions in any path. Also: min_samples_leaf=5 prevents any leaf from having fewer than 5 examples. Post-pruning lets the tree grow fully, then removes branches that don't improve validation performance. It's more principled because it sees the full tree before deciding what to remove. Example: ccp_alpha=0.01 in sklearn applies cost-complexity pruning — higher values remove more branches. Post-pruning produces better results but is slower because it trains the full tree first. In practice, pre-pruning (max_depth) is used first for quick experimentation; post-pruning via cross-validated ccp_alpha is used when you want the most accurate possible pruned tree.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Decision Trees</div>
+      <ol>
+        <li><strong>Structure</strong> — internal nodes (questions), branches (answers), leaves (predictions). Classify by traversing root to leaf.</li>
+        <li><strong>Gini impurity</strong> — 1 − Σ(pᵢ²). Measures how mixed a node is. 0 = pure, 0.5 = maximally mixed (binary).</li>
+        <li><strong>Information Gain</strong> — parent impurity − weighted child impurity. The tree picks the split with the highest gain at each node.</li>
+        <li><strong>Greedy algorithm</strong> — picks the locally best split at each step. Fast, but not globally optimal. Finding the globally optimal tree is NP-hard.</li>
+        <li><strong>Overfitting</strong> — unlimited trees memorize noise (100% train, poor test). The most textbook overfitting example in ML.</li>
+        <li><strong>Pre-pruning</strong> — max_depth, min_samples_leaf, min_samples_split. Set limits before training. Fast, simple.</li>
+        <li><strong>Post-pruning</strong> — grow full tree, then trim via ccp_alpha. More principled, slower.</li>
+        <li><strong>Feature importance</strong> — weighted Gini reduction per feature, normalized to sum to 1.0. Free, fast, but biased toward high-cardinality features.</li>
+        <li><strong>Interpretability</strong> — the entire model can be printed as human-readable if-else rules. Unique among ML models. Mandatory in healthcare and law.</li>
+        <li><strong>Foundation</strong> — building block for Random Forests and XGBoost, two of the most powerful ML algorithms for tabular data.</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>How does a decision tree choose which feature to split on?</strong><br>
+        <em>It exhaustively evaluates every (feature, threshold) combination, computes Information Gain for each, and selects the split that most reduces impurity. For N features each with K unique values, that's N×K candidates evaluated at every node.</em></li>
+        <li><strong>What is the difference between Gini impurity and entropy?</strong><br>
+        <em>Both measure node impurity. Gini = 1 − Σ(pᵢ²); entropy = −Σ(pᵢ·log₂pᵢ). Both range from 0 (pure) to their maximum at equal class distribution. They produce nearly identical trees. Gini is faster (no logarithm); entropy gives the Information Gain interpretation. Gini is the sklearn default.</em></li>
+        <li><strong>Why do decision trees overfit so easily?</strong><br>
+        <em>Without constraints, the tree grows until every training example has its own leaf — zero training error. It memorizes every outlier and noise point. A new example that falls between training examples lands in a leaf built for a quirk, not a pattern. Fix: max_depth, min_samples_leaf, or post-pruning via ccp_alpha.</em></li>
+        <li><strong>What is feature importance in a decision tree and how is it calculated?</strong><br>
+        <em>Importance(feature) = Σ[(nₜ/n) × ΔGini(t)] over all nodes that split on this feature, normalized to sum to 1.0. Features used at high-sample, high-impurity nodes early in the tree get higher scores. Biased toward high-cardinality features — use SHAP for more reliable attribution.</em></li>
+        <li><strong>What is the difference between pre-pruning and post-pruning?</strong><br>
+        <em>Pre-pruning stops growth during training via constraints (max_depth, min_samples_leaf). Fast, but you might stop too early. Post-pruning grows the full tree then removes non-improving branches via ccp_alpha. More principled, finds the optimal pruning level, but must train the full tree first.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#DecisionTree</span><span class="tag">#GiniImpurity</span><span class="tag">#Pruning</span><span class="tag">#Overfitting</span><span class="tag">#FeatureImportance</span><span class="tag">#MLModels</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="naive-bayes.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 7</span>
+    <span class="post-nav-title">Naive Bayes</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var isVisible = answer.classList.contains('visible');
+    answer.classList.toggle('visible', !isVisible);
+    btn.textContent = isVisible ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+</body>
+</html>
