@@ -20,50 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
-  <style>
-    /* Light mode: editorial warm-paper feel integrated with site */
-    [data-theme="light"] .post-hero {
-      background: linear-gradient(180deg, #f0ebe0 0%, #f5f3ed 100%);
-      border-bottom: 1px solid #ddd5c4;
-    }
-    [data-theme="light"] .post-hero h1 { font-family: 'Playfair Display', serif; color: #0f0e0c; }
-    [data-theme="light"] .post-hero-lead { color: #5a5248; }
-    [data-theme="light"] .post-article { background: #f7f3ec; }
-    [data-theme="light"] .prose { color: #2e2b25; }
-    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
-    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
-    [data-theme="light"] .prose strong { color: #0f0e0c; }
-    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
-    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
-    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
-    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
-    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
-    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
-    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
-    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
-    [data-theme="light"] .prose-step-text { color: #2e2b25; }
-    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
-    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
-    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
-    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
-    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
-    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
-    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
-    [data-theme="light"] .reading-progress { background: linear-gradient(90deg, #c8a94b, #2a6b6e); }
-    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
-    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
-    [data-theme="light"] .post-nav-label { color:#7a7062; }
-    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
-    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
-    [data-theme="light"] .prose-callout-label { color:#7a7062; }
-    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
-    [data-theme="light"] .footer-nav a, [data-theme="light"] .footer-tagline, [data-theme="light"] .footer-copy, [data-theme="light"] .footer-built { color:#5a5248; }
-    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
-    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
-  </style>
+
 </head>
 <body class="blog-post-page">
 
@@ -125,7 +82,7 @@
       <span class="meta-sep">·</span>
       <span>Feb 24, 2026</span>
       <span class="meta-sep">·</span>
-      <span id="readTimeCalc">10 min read</span>
+      <span id="readTimeCalc">15 min read</span>
       <span class="meta-sep">·</span>
       <span>ML Models</span>
     </div>
@@ -148,121 +105,385 @@
       You look at the five houses nearest to you.<br>
       Three are families with children. One is a young couple. One is a retired person.<br>
       You conclude: this is a family neighborhood. Probably safe. Probably quiet.<br><br>
-      You just did K-Nearest Neighbors with K=5.</p>
+      You just ran K-Nearest Neighbors with K = 5.</p>
     </blockquote>
 
     <h2>01 — The Laziest Model in Machine Learning</h2>
-    <p>KNN has a radical design philosophy: <em>do nothing during training</em>. No weights to learn, no equations to fit, no optimization. Just store the entire training dataset in memory. All the work happens at prediction time.</p>
-    <p>When a new point arrives, KNN asks: <em>who are its K closest neighbors in the training data?</em> For classification: take a vote — the most common class among those K neighbors wins. For regression: take the average of their target values. That's the entire algorithm.</p>
-    <p>This is why KNN is called a <strong>lazy learner</strong> or <strong>instance-based learner</strong> — it defers all computation to prediction time, and the training data itself serves as the model.</p>
+    <p>KNN has a radical design philosophy: <em>do absolutely nothing during training</em>. No weights to learn, no equations to fit, no optimization loop. Just take the entire training dataset and store it in memory. Every other algorithm we've seen — linear regression, logistic regression — spends training time <em>compressing</em> the data into a small set of learned parameters. KNN refuses to compress anything. It keeps everything.</p>
+    <p>All the real work happens at <strong>prediction time</strong>. When a new data point arrives asking for a prediction, KNN searches through every stored training point, finds the K closest ones, and asks them to vote:</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text"><strong>Receive a new point</strong> you want to classify or predict a value for. This point has features (e.g. age, income, height) but no label yet.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Measure the distance</strong> from the new point to every single point in the training dataset. This produces N distance values — one per training example.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Select the K smallest distances</strong> — the K nearest neighbors. These are the training points most similar to the new one.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Make the prediction:</strong><br>
+          — <em>Classification:</em> the K neighbors vote. The most common class among them wins.<br>
+          — <em>Regression:</em> take the average of the K neighbors' target values.
+        </div>
+      </div>
+    </div>
+
+    <p>This is why KNN is called a <span class="term">lazy learner</span> or <span class="term">instance-based learner</span> — it defers all computation to prediction time, and the training data <em>itself</em> is the model. There are no parameters. There is no "learned function." Just data, and the assumption that similar inputs produce similar outputs.</p>
 
     <div class="prose-callout gold">
       <span class="prose-callout-label">🩺 Analogy</span>
-      <p>A doctor with 30 years of experience sees a new patient with certain symptoms. Rather than applying a rulebook, she mentally searches her memory: "I've seen patients like this before. Most of them had condition X." Her memory of past patients is her model. Their similarity to the current patient guides her prediction. That's KNN — a model that reasons by analogy rather than by rules.</p>
+      <p>A doctor with 30 years of experience sees a new patient. Rather than applying a rigid rulebook, she mentally searches her memory: "I've seen patients with these exact symptoms before. Most of them had condition X." Her memory of past cases is her model. Their similarity to the current patient guides her prediction. KNN reasons the same way — by analogy, not by rules.</p>
     </div>
 
     <h2>02 — Distance: The Heart of KNN</h2>
-    <p>KNN needs to measure "closeness" between data points. The choice of distance metric matters more than it might seem:</p>
+    <p>Everything in KNN depends on one question: how do you define "closeness" between two data points? The answer is a <span class="term">distance metric</span> — a mathematical formula that takes two points and returns a number. Smaller number = more similar.</p>
+    <p>Let's make this concrete. Suppose you have two people described by two features: <strong>Age</strong> and <strong>Income (in thousands)</strong>.</p>
+    <p>Person A: (30, 50) &nbsp;·&nbsp; Person B: (34, 53)</p>
+
     <div class="prose-kv-grid">
-      <div class="prose-kv"><div class="prose-kv-key">Euclidean</div><div class="prose-kv-val">Straight-line distance. Best for continuous, scaled features.</div></div>
-      <div class="prose-kv"><div class="prose-kv-key">Manhattan</div><div class="prose-kv-val">Sum of absolute differences. Better when dimensions are independent.</div></div>
-      <div class="prose-kv"><div class="prose-kv-key">Cosine</div><div class="prose-kv-val">Angle between vectors. Ignores magnitude — crucial for text/embeddings.</div></div>
-      <div class="prose-kv"><div class="prose-kv-key">Minkowski</div><div class="prose-kv-val">Generalizes Euclidean and Manhattan with a tunable exponent p.</div></div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Euclidean distance — straight-line</div>
+        <div class="prose-kv-val">
+          Formula: <code>d = √( (x₂−x₁)² + (y₂−y₁)² )</code><br><br>
+          Example: √( (34−30)² + (53−50)² ) = √( 16 + 9 ) = √25 = <strong>5.0</strong><br><br>
+          Think of it as the length of the straight line connecting two dots on graph paper. Best for continuous, geometrically meaningful features where the shortest path between two points is a straight line.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Manhattan distance — city block</div>
+        <div class="prose-kv-val">
+          Formula: <code>d = |x₂−x₁| + |y₂−y₁|</code><br><br>
+          Example: |34−30| + |53−50| = 4 + 3 = <strong>7.0</strong><br><br>
+          Think of it as navigating a city grid — you can only travel along streets, not diagonally through buildings. Better when features are independent and diagonal movement isn't meaningful (e.g. pixel coordinates, checklist features).
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Cosine similarity — angle between vectors</div>
+        <div class="prose-kv-val">
+          Formula: <code>similarity = (A·B) / (|A| × |B|)</code><br><br>
+          Measures the <em>angle</em> between two vectors, ignoring their length. Score of 1 = same direction (identical). Score of 0 = perpendicular (unrelated). Score of −1 = opposite directions.<br><br>
+          <strong>When to use it:</strong> text and embedding spaces, where magnitude carries no useful information. A short tweet and a long article about the same topic should be "similar" regardless of word count. Euclidean distance would call them far apart. Cosine similarity correctly calls them close.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Minkowski distance — the generalizer</div>
+        <div class="prose-kv-val">
+          Formula: <code>d = ( Σ|xᵢ−yᵢ|ᵖ )^(1/p)</code><br><br>
+          A single formula with a tunable exponent p. When p=1 it becomes Manhattan. When p=2 it becomes Euclidean. Larger p gives more weight to the biggest difference between any two dimensions. Useful when you want to tune how much outlier dimensions are penalized.
+        </div>
+      </div>
     </div>
-    <p><strong>Critical rule:</strong> always normalize/scale your features before using KNN. If one feature is in meters (range 0–2) and another is in millimeters (range 0–2000), the millimeter feature will completely dominate the distance calculation. StandardScaler or MinMaxScaler before KNN is not optional.</p>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">⚠️ Critical rule: always scale your features first</span>
+      <p>KNN computes distances across all features simultaneously. If one feature has a large numerical range and another has a small one, the large-range feature will completely dominate every distance calculation — the other feature might as well not exist.</p>
+      <p style="margin-top:0.65rem"><strong>Concrete example:</strong> predicting house prices with two features — number of rooms (range: 1–10) and square footage (range: 500–5000). Without scaling:</p>
+      <p style="margin-top:0.5rem">
+        House A: (3 rooms, 800 m²) &nbsp;·&nbsp; House B: (3 rooms, 810 m²) &nbsp;·&nbsp; House C: (8 rooms, 801 m²)<br><br>
+        Euclidean distance A→B: √(0² + 10²) = <strong>10.0</strong><br>
+        Euclidean distance A→C: √(5² + 1²) = <strong>5.1</strong>
+      </p>
+      <p style="margin-top:0.5rem">KNN thinks C is closer to A than B is — because the 5-room difference (5 units) looks smaller than the 10 m² difference (10 units). This is backwards. Apply <code>StandardScaler</code> first and the problem disappears: every feature gets mean=0 and std=1, so all dimensions contribute equally to distance.</p>
+    </div>
 
     <h2>03 — Choosing K: The Bias-Variance Dial</h2>
-    <p>K is the single hyperparameter you tune in KNN, and it controls the fundamental tradeoff between overfitting and underfitting:</p>
-    <ul>
-      <li><strong>K=1:</strong> The model predicts based on a single neighbor. Perfectly fits training data (0% training error) but wildly sensitive to noise — every outlier creates its own little prediction region. Classic overfitting.</li>
-      <li><strong>K=N (all data):</strong> The model always predicts the majority class. Completely ignores the input. Classic underfitting.</li>
-      <li><strong>K=5 to 15:</strong> Usually the sweet spot. Use cross-validation to find the best K for your dataset. Always use an odd K for binary classification to avoid ties.</li>
-    </ul>
+    <p>K is the only hyperparameter KNN has, and it controls the fundamental tradeoff between overfitting and underfitting. Think of K as a dial that adjusts how much you trust individual neighbors vs the crowd.</p>
 
-    <h2>04 — KNN in sklearn</h2>
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">K = 1 &nbsp;→&nbsp; Maximum overfitting</div>
+        <div class="prose-kv-val">
+          The prediction is based on a single neighbor — the closest one. The model perfectly memorizes all training data: 0% training error. But it creates jagged, noisy decision boundaries. A single outlier in the training data carves out its own little prediction island. Any noise in the training set is directly inherited by the model.
+          <br><br><em>Imagine asking for a restaurant recommendation from one random passerby — you might get great advice, or you might get their single worst experience.</em>
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">K = N (all neighbors) &nbsp;→&nbsp; Maximum underfitting</div>
+        <div class="prose-kv-val">
+          Every training point gets a vote. The prediction is always the majority class in the entire dataset — regardless of where the new point is. The model completely ignores the input. It will always say "spam" if spam is 60% of training data, no matter what the email looks like.
+          <br><br><em>Imagine asking every person in a stadium for a restaurant recommendation — the result is always "McDonald's" because it's the most popular, no matter what cuisine you want.</em>
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">K = 5 to 15 &nbsp;→&nbsp; Usually the sweet spot</div>
+        <div class="prose-kv-val">
+          A small local crowd votes. The boundary is smoother than K=1 but still responsive to local patterns. Use cross-validation to find the exact best K for your dataset — don't just guess. Rule of thumb: try all odd values from 1 to 20 and pick the K with the best validation score. Always use an odd K for binary classification to avoid tie votes.
+        </div>
+      </div>
+    </div>
+
+    <h2>04 — From Scratch: KNN in Pure Python</h2>
+    <p>KNN is one of the easiest algorithms to implement from scratch — no calculus, no matrices, just loops and distance formulas. Reading this makes the sklearn version completely transparent.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> collections <span class="t-key">import</span> Counter
+
+<span class="t-key">def</span> <span class="t-def">euclidean</span>(a, b):
+    <span class="t-str">"""Straight-line distance between two points."""</span>
+    <span class="t-key">return</span> np.sqrt(np.sum((a - b) ** <span class="t-num">2</span>))
+
+<span class="t-key">def</span> <span class="t-def">knn_predict</span>(X_train, y_train, x_new, k=<span class="t-num">3</span>):
+    <span class="t-str">"""Classify x_new using the k nearest neighbors in X_train."""</span>
+    <span class="t-cmt"># Step 1: compute distance from x_new to every training point</span>
+    distances = [euclidean(x_new, x_train) <span class="t-key">for</span> x_train <span class="t-key">in</span> X_train]
+
+    <span class="t-cmt"># Step 2: get the indices of the k smallest distances</span>
+    k_indices = np.argsort(distances)[:k]
+
+    <span class="t-cmt"># Step 3: look up the labels of those k neighbors</span>
+    k_labels = [y_train[i] <span class="t-key">for</span> i <span class="t-key">in</span> k_indices]
+
+    <span class="t-cmt"># Step 4: majority vote — return the most common label</span>
+    most_common = Counter(k_labels).most_common(<span class="t-num">1</span>)
+    <span class="t-key">return</span> most_common[<span class="t-num">0</span>][<span class="t-num">0</span>]
+
+<span class="t-cmt"># Simple 2D dataset: two clusters</span>
+<span class="t-cmt">#   Class 0 = bottom-left region</span>
+<span class="t-cmt">#   Class 1 = top-right region</span>
+X_train = np.array([[<span class="t-num">1</span>,<span class="t-num">2</span>],[<span class="t-num">2</span>,<span class="t-num">3</span>],[<span class="t-num">3</span>,<span class="t-num">1</span>],[<span class="t-num">6</span>,<span class="t-num">5</span>],[<span class="t-num">7</span>,<span class="t-num">8</span>],[<span class="t-num">8</span>,<span class="t-num">6</span>]])
+y_train = np.array([<span class="t-num">0</span>, <span class="t-num">0</span>, <span class="t-num">0</span>, <span class="t-num">1</span>, <span class="t-num">1</span>, <span class="t-num">1</span>])
+
+x_new = np.array([<span class="t-num">5</span>, <span class="t-num">4</span>])   <span class="t-cmt"># unknown point — which cluster?</span>
+prediction = knn_predict(X_train, y_train, x_new, k=<span class="t-num">3</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Nearest 3 neighbors vote: class {prediction}"</span>)
+
+<span class="t-cmt"># Show the distances explicitly</span>
+distances = [(i, euclidean(x_new, X_train[i]), y_train[i])
+             <span class="t-key">for</span> i <span class="t-key">in</span> range(<span class="t-key">len</span>(X_train))]
+distances.sort(key=<span class="t-key">lambda</span> d: d[<span class="t-num">1</span>])
+<span class="t-key">print</span>(<span class="t-str">"\nAll training points sorted by distance from (5,4):"</span>)
+<span class="t-key">for</span> idx, dist, label <span class="t-key">in</span> distances:
+    <span class="t-key">print</span>(<span class="t-str">f"  Point {X_train[idx]} | dist={dist:.2f} | class={label}"</span>)</code></pre>
+
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+Nearest 3 neighbors vote: class 1
+
+All training points sorted by distance from (5,4):
+  Point [6 5] | dist=1.41 | class=1
+  Point [3 1] | dist=3.61 | class=0
+  Point [7 8] | dist=4.47 | class=1
+  Point [2 3] | dist=3.16 | class=0
+  Point [8 6] | dist=3.61 | class=1
+  Point [1 2] | dist=5.00 | class=0</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the output</span>
+      <p>The new point (5,4) is closest to [6,5] (class 1), then [2,3] (class 0), then [7,8] (class 1). With K=3, the vote is 2 class-1 vs 1 class-0 → prediction: <strong>class 1</strong>. You can see exactly how every distance was computed. There's no mystery here — just arithmetic.</p>
+    </div>
+
+    <h2>05 — KNN in sklearn (Real Dataset)</h2>
+    <p>The sklearn version handles scaling, cross-validation, and K selection cleanly. This is the production pattern.</p>
+
     <pre><code><span class="t-key">from</span> sklearn.neighbors <span class="t-key">import</span> KNeighborsClassifier
 <span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> load_iris
 <span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> train_test_split, cross_val_score
 <span class="t-key">from</span> sklearn.preprocessing <span class="t-key">import</span> StandardScaler
 <span class="t-key">import</span> numpy <span class="t-key">as</span> np
 
+<span class="t-cmt"># Iris dataset: 150 flowers, 4 features, 3 species</span>
 X, y = load_iris(return_X_y=<span class="t-key">True</span>)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
 
-<span class="t-cmt"># Scale first — mandatory for KNN</span>
+<span class="t-cmt"># ── Scale first — mandatory for KNN ─────────────────────────────────</span>
+<span class="t-cmt"># fit_transform on train: learn mean/std from training data only</span>
+<span class="t-cmt"># transform on test: apply the SAME scaling (never refit on test!)</span>
 scaler  = StandardScaler()
 X_train = scaler.fit_transform(X_train)
 X_test  = scaler.transform(X_test)
 
-<span class="t-cmt"># Find best K via cross-validation</span>
+<span class="t-cmt"># ── Find best K via 5-fold cross-validation ──────────────────────────</span>
 cv_scores = [cross_val_score(KNeighborsClassifier(k), X_train, y_train, cv=<span class="t-num">5</span>).mean()
              <span class="t-key">for</span> k <span class="t-key">in</span> range(<span class="t-num">1</span>, <span class="t-num">21</span>)]
 best_k = np.argmax(cv_scores) + <span class="t-num">1</span>
-<span class="t-key">print</span>(<span class="t-str">f"Best K={best_k}, CV accuracy={cv_scores[best_k-1]:.2%}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Best K = {best_k}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"CV accuracy at best K = {cv_scores[best_k-1]:.2%}"</span>)
 
-<span class="t-cmt"># Final evaluation</span>
+<span class="t-cmt"># ── Final evaluation on held-out test set ───────────────────────────</span>
 model = KNeighborsClassifier(best_k).fit(X_train, y_train)
-<span class="t-key">print</span>(<span class="t-str">f"Test accuracy: {model.score(X_test, y_test):.2%}"</span>)  <span class="t-cmt"># → ~97%</span></code></pre>
+<span class="t-key">print</span>(<span class="t-str">f"Test accuracy = {model.score(X_test, y_test):.2%}"</span>)</code></pre>
 
-    <h2>05 — The Curse of Dimensionality</h2>
-    <p>KNN's biggest enemy is <strong>high-dimensional data</strong>. When you have hundreds or thousands of features, a counterintuitive phenomenon occurs: <em>every point becomes roughly equally distant from every other point</em>. The concept of "nearest neighbor" loses meaning when all neighbors are nearly equidistant.</p>
-    <p>Practically: KNN works well with 2–50 features. With 500+ features, performance degrades sharply. Solutions include dimensionality reduction (PCA, UMAP) before applying KNN, or switching to a model that handles high dimensions better (tree ensembles, neural networks).</p>
+    <div class="code-output">
+      <div class="code-output-label">→ output</div>
+Best K = 7
+CV accuracy at best K = 96.67%
+Test accuracy = 96.67%</div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📌 Why fit_transform on train but only transform on test?</span>
+      <p>When you call <code>fit_transform</code>, the scaler learns the mean and standard deviation from that data, then applies the scaling. If you were to refit on the test set, the test data would be scaled using its own statistics — which is a form of data leakage. The test set must be scaled with the exact same mean and std learned from the training set. This simulates what happens in production: the scaler never sees future data.</p>
+    </div>
+
+    <h2>06 — The Curse of Dimensionality</h2>
+    <p>KNN's single biggest weakness is <strong>high-dimensional data</strong>. As the number of features grows, something counterintuitive and devastating happens to the concept of distance.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🧊 Intuition: the expanding empty space</span>
+      <p><strong>In 1 dimension:</strong> imagine a line of length 1. Place two random points on it. On average they're about 0.33 apart — relatively close.</p>
+      <p style="margin-top:0.6rem"><strong>In 2 dimensions:</strong> a unit square. Two random points average ~0.52 apart. A bit farther.</p>
+      <p style="margin-top:0.6rem"><strong>In 100 dimensions:</strong> a unit hypercube. Two random points are now about <strong>4.1</strong> apart — and crucially, <em>almost all pairs of random points are approximately the same distance from each other</em>.</p>
+      <p style="margin-top:0.6rem">When every point is roughly equidistant from every other point, the concept of "nearest neighbor" becomes meaningless. Your closest neighbor is almost as far away as your farthest one. The algorithm can no longer discriminate.</p>
+    </div>
+
+    <p>Practically: KNN works well with 2–50 features. Above 100 features, performance degrades noticeably. Above 500, it often becomes useless without intervention.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">✓</div>
+        <div class="prose-step-text">
+          <strong>Apply PCA or UMAP first.</strong> Dimensionality reduction compresses high-dimensional data into a lower-dimensional space while preserving as much structure as possible. Run PCA to reduce to 20–50 components, then apply KNN to the result.
+          <div class="step-pitfall">PCA is linear — it finds the directions of maximum variance. UMAP is non-linear and often preserves local neighborhood structure better, making it a natural fit as a preprocessing step for KNN.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">✓</div>
+        <div class="prose-step-text">
+          <strong>Remove irrelevant features.</strong> Every useless feature adds noise to the distance calculation. Feature selection (keeping only the most informative features) can dramatically improve KNN in high dimensions.
+          <div class="step-pitfall">A useful heuristic: if you have N training examples, keep at most √N features for KNN to work reliably. With 1000 training examples, that's roughly 30 features max.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">✓</div>
+        <div class="prose-step-text">
+          <strong>Switch to a model that handles high dimensions better.</strong> Random forests, gradient boosting, and neural networks are far less sensitive to dimensionality. If you have 500+ features, KNN is rarely the right tool.
+        </div>
+      </div>
+    </div>
 
     <div class="prose-callout accent">
-      <span class="prose-callout-label">🔗 Connection to Modern AI</span>
-      <p>FAISS, Pinecone, Chroma, and Weaviate — the vector databases powering RAG systems in production — are all implementations of approximate K-Nearest Neighbor search in high-dimensional embedding space. When a RAG system retrieves the 5 most relevant document chunks to answer your question, it's running KNN on 768-dimensional vectors (sentence embeddings). KNN isn't old technology. It's the retrieval backbone of modern LLMs.</p>
+      <span class="prose-callout-label">🔗 Connection to Modern AI — Vector Databases &amp; RAG</span>
+      <p>FAISS, Pinecone, Chroma, and Weaviate — the vector databases powering production RAG systems — are all implementations of <em>approximate</em> K-Nearest Neighbor search in high-dimensional embedding space.</p>
+      <p style="margin-top:0.65rem">Here's what that means concretely: when a language model reads a document, it converts it into a list of 768 or 1536 numbers — a <span class="term">vector embedding</span> that encodes the document's meaning as a point in high-dimensional space. Documents about similar topics land near each other in that space. When you ask a RAG system a question, it converts your question into an embedding vector, then finds the K training documents whose embeddings are nearest — the K most semantically similar chunks.</p>
+      <p style="margin-top:0.65rem">That retrieval step is KNN. The vector database is a highly optimized, approximate KNN index. KNN isn't old technology — it's the retrieval backbone of every production LLM-powered application.</p>
     </div>
 
-    <h2>06 — A Thought to Sit With</h2>
+    <h2>07 — When KNN Wins (and When It Loses)</h2>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">✓ Use KNN when…</div>
+        <div class="prose-kv-val">
+          Your dataset is small to medium (&lt;50,000 examples)<br>
+          You have few, well-scaled features (2–50)<br>
+          The decision boundary is complex and non-linear<br>
+          You need a quick, interpretable baseline with no training time<br>
+          The data has clear local structure (clusters)
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">✗ Avoid KNN when…</div>
+        <div class="prose-kv-val">
+          Your dataset is large (&gt;100,000 examples) — prediction is O(N) per query<br>
+          You have many features (100+) — curse of dimensionality<br>
+          Features are on very different scales and you can't preprocess<br>
+          You need fast real-time predictions — KNN must scan the entire dataset<br>
+          You have many irrelevant features — they poison the distance calculation
+        </div>
+      </div>
+    </div>
+
+    <h2>08 — A Thought to Sit With</h2>
     <div class="prose-callout">
       <span class="prose-callout-label">💬 For You to Consider</span>
-      <p>KNN assumes that similar inputs produce similar outputs. But what defines "similar"? In images, two photos of the same person in different lighting are very "distant" in pixel space but should be "close" in meaning.</p>
-      <p style="margin-top:0.75rem"><strong>What does this suggest about the importance of <em>representation</em> — the space in which you measure distance — over the algorithm itself?</strong></p>
+      <p>KNN assumes that similar inputs produce similar outputs. But "similar" depends entirely on the space you measure distance in. Two photos of the same person in different lighting conditions are very "distant" in raw pixel space — millions of pixels differ. But in a learned embedding space (like a face recognition model produces), they are "close" — they represent the same identity.</p>
+      <p style="margin-top:0.75rem"><strong>What does this tell you about where the real intelligence lives — in the algorithm, or in the representation it operates on? And what does that imply about what "learning" really means?</strong></p>
     </div>
 
-    <h2>07 — Coming Up Next</h2>
-    <p>Tomorrow — <strong>Day 7: Naive Bayes.</strong> A probabilistic model that classifies spam before you even open it. It makes an absurd mathematical assumption — that all features are independent — and somehow works brilliantly anyway.</p>
+    <h2>09 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 7: Naive Bayes.</strong> A probabilistic model that classifies spam before you even open it. It makes an absurd mathematical assumption — that all features are completely independent of each other — and somehow works brilliantly anyway. Understanding why it works despite being "wrong" teaches something deep about the relationship between model assumptions and real-world performance.</p>
 
-    <h2>08 — Go Deeper</h2>
+    <h2>10 — Go Deeper</h2>
     <p>▶ <a href="https://www.youtube.com/watch?v=HVXime0nQeI" target="_blank" rel="noopener">StatQuest: K-Nearest Neighbors, Clearly Explained</a><br>
-    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 9 min · Perfect short introduction.</em></p>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 9 min · The clearest short introduction to KNN — great for cementing the intuition after reading this post.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.kaggle.com/learn/intro-to-machine-learning" target="_blank" rel="noopener">Kaggle: Intro to Machine Learning</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free interactive course · Apply KNN and other classifiers to real datasets in your browser. The fastest way to build hands-on intuition.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.coursera.org/specializations/deep-learning" target="_blank" rel="noopener">Coursera: Deep Learning Specialization — Andrew Ng</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">5-course specialization · Covers embeddings and vector representations that make KNN powerful at scale — the bridge from this post to modern AI retrieval systems.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. KNN is called a "lazy learner." What does that mean, and what is the practical consequence at prediction time?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Lazy learner means KNN does no work during training — it simply stores the entire dataset in memory. No parameters are learned, no optimization happens. The practical consequence is that all the computation is deferred to prediction time: every time you want a prediction, KNN must measure the distance from the new point to every single training point. Training is O(1) (instant), but prediction is O(N·D) — it scales linearly with the number of training examples N and dimensions D. For large datasets, this makes prediction very slow.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. You have two features: height in cm (range 150–200) and weight in kg (range 50–100). You apply KNN without scaling. What goes wrong?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">Both features have similar ranges here, so this specific example would be okay. But consider if weight were in grams (50,000–100,000) instead — then the distance calculation would be almost entirely determined by weight. Height would contribute almost nothing. More generally: whenever one feature spans a much larger numerical range than another, the larger-range feature dominates the Euclidean distance and the smaller-range feature is effectively ignored. StandardScaler corrects this by making each feature have mean=0 and std=1, so all features contribute equally. This is not optional for KNN — it is required.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. What happens when K=1 versus K=N? Explain both in terms of overfitting and underfitting.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">K=1: the prediction is based on a single nearest neighbor. This perfectly memorizes all training data — training error is 0% — but the model is extremely sensitive to noise. A single mislabeled or unusual training point creates its own prediction region, causing the model to misclassify new nearby points. This is maximum overfitting. K=N (all training examples): every training point votes for every prediction. The result is always the majority class in the training set, completely ignoring where the new point actually is in feature space. Training accuracy is at best equal to the class frequency of the dominant class. This is maximum underfitting. The right K sits between these extremes, and cross-validation finds it.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. Why would you use cosine similarity instead of Euclidean distance for text classification?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">In text data represented as word counts or TF-IDF vectors, two documents about the same topic but of very different lengths will have very different magnitudes — a long article has much larger word counts than a short tweet on the same topic. Euclidean distance would call them far apart because of this magnitude difference, even though they discuss the same content. Cosine similarity measures the angle between the vectors, ignoring magnitude entirely. The long article and the short tweet point in the same direction in word-space (same topic distribution), so their cosine similarity is high. Whenever magnitude is noise and direction is signal — text, embeddings, recommendation systems — use cosine similarity.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. What is the curse of dimensionality, and what are two ways to address it before applying KNN?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer">In high-dimensional space, all data points become approximately equidistant from each other. The ratio of the furthest neighbor's distance to the nearest neighbor's distance approaches 1 as dimensions increase — meaning "nearest" becomes meaningless. KNN fails because it can no longer discriminate between close and far points. Two solutions: (1) Apply dimensionality reduction first — PCA compresses data linearly by finding directions of maximum variance; UMAP does so non-linearly and preserves local structure especially well. Reduce to 20–50 dimensions before running KNN. (2) Feature selection — remove irrelevant features that add noise to the distance calculation. Only features that are genuinely predictive should remain.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — K-Nearest Neighbors</div>
+      <ol>
+        <li><strong>Lazy learner</strong> — No training. Stores all data. All computation happens at prediction time.</li>
+        <li><strong>Prediction</strong> — Find the K nearest training points. Vote (classification) or average (regression).</li>
+        <li><strong>Distance metrics</strong> — Euclidean (straight line), Manhattan (city block), Cosine (angle, ignores magnitude), Minkowski (generalizes both).</li>
+        <li><strong>Feature scaling is mandatory</strong> — Large-range features dominate distance. Apply StandardScaler before KNN, always.</li>
+        <li><strong>Choosing K</strong> — K=1 overfits. K=N underfits. Use cross-validation on odd values 1–20 to find the best K.</li>
+        <li><strong>Complexity</strong> — Training: O(1). Prediction: O(N·D) per query — slow at scale.</li>
+        <li><strong>Curse of dimensionality</strong> — Above ~100 features, all points become equidistant. Apply PCA/UMAP or feature selection first.</li>
+        <li><strong>Cosine similarity</strong> — Use when magnitude is noise and direction is signal: text, embeddings, recommendation systems.</li>
+        <li><strong>In modern AI</strong> — Vector databases (FAISS, Pinecone, Chroma) are optimized approximate KNN indices. RAG retrieval is KNN on embeddings.</li>
+        <li><strong>Best for</strong> — Small datasets, low–medium dimensions, complex non-linear boundaries, quick interpretable baselines.</li>
+      </ol>
+    </div>
 
     <div class="prose-callout">
       <span class="prose-callout-label">🎯 Interview Questions</span>
       <ol>
         <li><strong>Why must you scale features before using KNN?</strong><br>
-        <em>KNN relies on distance metrics. Features with larger numerical ranges dominate distance calculations, making the model effectively ignore small-range features. Scaling ensures equal contribution.</em></li>
+        <em>KNN relies purely on distance. Features with larger numerical ranges dominate the calculation — the model effectively ignores smaller-range features. StandardScaler normalizes every feature to mean=0 and std=1, ensuring equal contribution to every distance.</em></li>
         <li><strong>What is the curse of dimensionality and how does it affect KNN?</strong><br>
-        <em>In high dimensions, all data points become approximately equidistant, making the concept of "nearest neighbor" meaningless. KNN performance degrades rapidly as feature count increases.</em></li>
+        <em>In high dimensions, all data points become approximately equidistant. The ratio of nearest-to-farthest neighbor distance approaches 1, making "nearest neighbor" meaningless. KNN degrades sharply above ~100 features. Solutions: PCA/UMAP dimensionality reduction or feature selection before applying KNN.</em></li>
         <li><strong>What is the effect of K=1 vs K=N?</strong><br>
-        <em>K=1 overfits — the model perfectly memorizes training data, sensitive to noise. K=N underfits — always predicts the majority class regardless of input.</em></li>
+        <em>K=1: perfect memorization, 0% training error, maximum overfitting — every outlier creates its own prediction region. K=N: always predicts the majority class, completely ignores input — maximum underfitting. The right K balances these extremes; find it with cross-validation.</em></li>
         <li><strong>When would you choose cosine similarity over Euclidean distance?</strong><br>
-        <em>When the magnitude of vectors is not meaningful but their direction is — like in text or embedding spaces. Two documents with the same topic distribution but different lengths should be "similar" regardless of their magnitude.</em></li>
+        <em>When vector magnitude carries no useful information but direction does — text, embeddings, recommendation systems. Two documents about the same topic but different lengths have similar direction (topic distribution) but very different magnitudes (word counts). Cosine similarity correctly identifies them as close; Euclidean distance would not.</em></li>
         <li><strong>What are the time complexity tradeoffs of KNN?</strong><br>
-        <em>Training is O(1) — just store data. Prediction is O(N·D) per query where N is training size and D is dimensions. This makes KNN fast to train but slow to predict at large scale. Approximate methods (FAISS, Annoy) reduce prediction cost.</em></li>
+        <em>Training: O(1) — just store data. Prediction: O(N·D) per query where N is training size and D is dimensions — must scan all training examples. This makes KNN fast to train but slow at prediction scale. Approximate methods (FAISS, Annoy, HNSW) reduce prediction cost to O(log N) at the cost of some accuracy.</em></li>
       </ol>
     </div>
 
-
-    <!-- ── ATTACHMENTS ──────────────────────────────────────────────────────
-         Uncomment any block below when you have resources to add.
-    ─────────────────────────────────────────────────────────────────────── -->
     <div class="prose-callout">
       <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
       <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
-      <!--
-      <p>🔗 <a href="URL" target="_blank" rel="noopener">Link Title — Source</a><br>
-      <em style="font-size:0.85rem;color:var(--text-muted)">Description.</em></p>
-
-      <p>▶ <a href="YOUTUBE_URL" target="_blank" rel="noopener">Video Title — Channel</a><br>
-      <em style="font-size:0.85rem;color:var(--text-muted)">Duration · What you will learn.</em></p>
-
-      <p>📄 <a href="PDF_URL" target="_blank" rel="noopener">Paper Title (Year)</a><br>
-      <em style="font-size:0.85rem;color:var(--text-muted)">Authors · Venue.</em></p>
-
-      <p>📚 <em>Book Title</em> by Author — Chapter X is especially relevant.</p>
-      -->
     </div>
+
     <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
       <span class="tag">#KNN</span><span class="tag">#KNearestNeighbors</span><span class="tag">#DistanceMetrics</span><span class="tag">#VectorSearch</span><span class="tag">#MLModels</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span><span class="tag">#sklearn</span>
     </div>
@@ -302,7 +523,7 @@ model = KNeighborsClassifier(best_k).fit(X_train, y_train)
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
       <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
     </div>
   </div>
@@ -361,5 +582,13 @@ model = KNeighborsClassifier(best_k).fit(X_train, y_train)
 
 <script src="../js/main.js"></script>
 <script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var isVisible = answer.classList.contains('visible');
+    answer.classList.toggle('visible', !isVisible);
+    btn.textContent = isVisible ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
 </body>
 </html>

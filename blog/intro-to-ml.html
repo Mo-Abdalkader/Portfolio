@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Day 1 — What is Machine Learning? | 30-Day AI Ramadan Series</title>
-  <meta name="description" content="Machine learning explained from zero — what it is, how it differs from normal programming, the three types, and why it now powers everything from your Netflix feed to medical diagnosis." />
+  <meta name="description" content="Machine learning explained from zero — what it is, how it differs from normal programming, the four types, and why it now powers everything from your Netflix feed to medical diagnosis." />
   <link rel="icon" type="image/png" href="../assets/logo.png" />
   <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -130,7 +130,7 @@
       <span>Foundations</span>
     </div>
     <h1>What is Machine Learning?<br>And Why Does It Actually Matter?</h1>
-    <p class="post-hero-lead">A complete, honest introduction to ML — what it really is, how it differs from normal programming, the three families of algorithms, and where Deep Learning fits inside all of it.</p>
+    <p class="post-hero-lead">A complete, honest introduction to ML — what it really is, how it differs from normal programming, the four families of algorithms, and where Deep Learning fits inside all of it.</p>
     <div class="post-hero-actions">
       <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
       <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
@@ -166,8 +166,8 @@
     <p>Tom Mitchell gave a more precise version (1997): <em>"A computer program is said to learn from experience E with respect to some task T and performance measure P, if its performance at task T, as measured by P, improves with experience E."</em></p>
     <p>In plain language: an ML model gets <strong>better at a task</strong> the more <strong>data</strong> it sees. That improvement is measurable. That's it.</p>
 
-    <h2>03 — The Three Families of Machine Learning</h2>
-    <p>All of ML breaks into three broad families depending on what kind of data you have and what you're trying to do:</p>
+    <h2>03 — The Four Families of Machine Learning</h2>
+    <p>All of ML breaks into four broad families depending on what kind of data you have and what you're trying to do:</p>
 
     <div class="prose-steps">
       <div class="prose-step">
@@ -199,13 +199,24 @@
           <em>Real-world examples:</em> Medical image analysis (a few hundred labeled scans + thousands of unlabeled ones), web content classification, speech recognition.
         </div>
       </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Reinforcement Learning — learning from consequences.</strong>
+          There are no labels, no pre-packaged answers. Instead, an <em>agent</em> takes actions inside an environment, receives a reward or penalty based on the outcome, and gradually learns a strategy (called a <em>policy</em>) that maximises cumulative reward. Think of it as training a dog — you don't hand it a rulebook, you reward the good behaviour and let it figure out the rest.
+          <br><br>
+          This family of ML is uniquely suited to sequential decision-making: situations where the right action now depends on what will happen later.
+          <br><br>
+          <em>Real-world examples:</em> AlphaGo and AlphaZero (board games), robotic arm control, autonomous vehicle navigation, real-time bidding in ad systems, training large language models with human feedback (RLHF — the technique behind ChatGPT's conversational quality).
+        </div>
+      </div>
     </div>
 
     <div class="prose-kv-grid">
       <div class="prose-kv"><div class="prose-kv-key">Supervised</div><div class="prose-kv-val">Labeled data. Input → Output mapping.</div></div>
       <div class="prose-kv"><div class="prose-kv-key">Unsupervised</div><div class="prose-kv-val">No labels. Find hidden structure.</div></div>
       <div class="prose-kv"><div class="prose-kv-key">Semi-supervised</div><div class="prose-kv-val">Some labels + lots of unlabeled data.</div></div>
-      <div class="prose-kv"><div class="prose-kv-key">Reinforcement</div><div class="prose-kv-val">Learn by trial, error, and reward signals.</div></div>
+      <div class="prose-kv"><div class="prose-kv-key">Reinforcement</div><div class="prose-kv-val">Agent + environment + reward. Learn by doing.</div></div>
     </div>
 
     <h2>04 — Where Does Deep Learning Fit?</h2>
@@ -243,7 +254,7 @@
 
     <h2>08 — Go Deeper</h2>
     <p style="margin-top:0.75rem">▶ <a href="https://www.youtube.com/watch?v=aircAruvnKk" target="_blank" rel="noopener">Simplilearn: What Is Machine Learning? 2026</a><br>
-    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 8 min  · This Machine Learning basics video will help you understand what Machine Learning is</em></p>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 8 min · A solid visual overview covering the core ideas introduced in this post — good as a companion watch.</em></p>
 
     <div class="prose-callout">
       <span class="prose-callout-label">🎯 Interview Questions</span>
@@ -263,8 +274,7 @@
 
     <div class="prose-callout">
       <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
-      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
-
+      <p>🔗 <a href="https://developers.google.com/machine-learning/intro-to-ml" target="_blank" rel="noopener">Google Developers — Introduction to Machine Learning</a></p>
     </div>
     <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
       <span class="tag">#MachineLearning</span><span class="tag">#AI</span><span class="tag">#SupervisedLearning</span><span class="tag">#DeepLearning</span><span class="tag">#Foundations</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span><span class="tag">#DataScience</span>
@@ -305,8 +315,8 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
-      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with &hearts; HTML &middot; CSS &middot; JS</span>
     </div>
   </div>
 </footer>
