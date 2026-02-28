@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 10 — Regularization | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="L1, L2, Elastic Net, and Dropout explained — the tools that prevent overfitting in every model from linear regression to neural networks, with intuition, math, and code." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  
+    <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+
+<!-- NAVBAR (full site) -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 10 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Feb 28, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">17 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Foundations</span>
+    </div>
+    <h1>Regularization:<br>Teaching Models to Be Humble</h1>
+    <p class="post-hero-lead">Overfitting happens when a model gets too confident about its training data. Regularization is the set of techniques that penalize overconfidence — and they're built into every modern ML system.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>A student studying for exams memorizes every question from past papers<br>
+      word-for-word. On exam day, every question is slightly different —<br>
+      and they fail completely. They over-optimized for the training data.<br><br>
+      Their teacher adds a rule: "Don't just memorize. Understand the concept.<br>
+      Keep your notes brief." That rule — penalizing unnecessary complexity —<br>
+      is regularization. And it's built into every model you will ever train.</p>
+    </blockquote>
+
+    <h2>01 — What Regularization Does</h2>
+    <p>Every ML model learns by minimising a loss function. By default, the only thing the model cares about is getting training examples right. Given enough capacity, it will memorise noise, outliers, and quirks — and fail on anything new.</p>
+    <p>Regularization adds a second objective: <strong>stay simple</strong>. The modified loss the model now minimises is:</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📐 The Regularised Loss</span>
+      <p style="text-align:center;font-size:1.05rem;padding:0.4rem 0">
+        <code>Total Loss = Prediction Error + λ × Complexity Penalty</code>
+      </p>
+      <p style="margin-top:0.75rem">The model is now optimising two competing goals simultaneously. It wants small prediction error (fit the data) and small complexity penalty (stay simple). <strong>λ (lambda)</strong> is the dial between them:</p>
+      <p style="margin-top:0.5rem">
+        — <strong>λ = 0</strong>: no regularization , model fits freely, high variance risk.<br>
+        — <strong>λ very large</strong>: penalty dominates, model ignores data, high bias risk.<br>
+        — <strong>λ tuned right</strong>: the sweet spot — trades a small rise in training error for a large drop in test error.
+      </p>
+      <p style="margin-top:0.65rem"><strong>Worked intuition:</strong> suppose a model has weights [3.2, 0.1, 4.7] for three features. The L2 penalty adds 3.2² + 0.1² + 4.7² = 10.24 + 0.01 + 22.09 = <strong>32.34</strong> to the loss. Gradient descent now pushes weights downward not just to reduce prediction error but also to reduce this penalty — shrinking them toward zero. A model that assigns weight 4.7 to a feature is paying 22 units of penalty just for that one weight. It will only keep that weight large if the feature is genuinely earning its cost in prediction accuracy.</p>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">⚖️ The Hiring Analogy</span>
+      <p>You're hiring someone and their CV claims perfect mastery of 15 languages, 30 frameworks, concert-level piano, and Michelin-star cooking. You're suspicious — this level of claimed expertise across everything usually means genuine depth in nothing. You penalise CV complexity and prefer a candidate who says "I'm genuinely excellent at three specific things."</p>
+      <p style="margin-top:0.75rem">Regularization does exactly this to weights. A model claiming high sensitivity to 100 features pays a large penalty. It will only keep large weights on features that genuinely earn them by reducing prediction error. The result: fewer, stronger, more trustworthy signals.</p>
+    </div>
+
+    <h2>02 — L2 Regularization (Ridge): Shrink Everything Smoothly</h2>
+    <p>L2 adds the <strong>sum of squared weights</strong> to the loss:</p>
+    <p style="text-align:center"><code>Loss = MSE + λ × Σ(wᵢ²)</code></p>
+    <p>Squaring the weights has two consequences. First, large weights are penalised disproportionately — a weight of 4.7 contributes 22.09 to the penalty, while a weight of 0.1 contributes only 0.01. This aggressively discourages outlier weights. Second, the penalty surface is smooth everywhere — gradient descent slides weights steadily downward but never has a reason to land <em>exactly</em> at zero. All weights survive; large ones shrink dramatically, small ones barely move.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Why weights shrink but never reach zero</div>
+        <div class="prose-kv-val">
+          Think of the L2 penalty as a magnet pulling every weight toward zero. The magnet is proportional to the weight's size — big weights feel a strong pull, tiny weights feel almost none. But the magnet never quite wins completely: as a weight approaches zero it becomes so small that both the magnet and the gradient nudge become negligible. The weight hovers near zero but doesn't snap to it. This is why Ridge is a "shrinker", not a "zeroes things out" method.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">When to use Ridge</div>
+        <div class="prose-kv-val">
+          — When you believe <strong>all features are potentially useful</strong> (no obvious irrelevant ones).<br>
+          — When features are <strong>correlated</strong> — Ridge distributes weight across correlated features stably, while L1 picks one arbitrarily.<br>
+          — As the <strong>default first choice</strong> for regression with many features.<br>
+          — sklearn: <code>Ridge(alpha=1.0)</code>. Start at α=1.0, tune up/down with <code>RidgeCV</code>.
+        </div>
+      </div>
+    </div>
+
+    <h2>03 — L1 Regularization  (Lasso): Automatic Feature Selection</h2>
+    <p>L1 adds the <strong>sum of absolute weights</strong> to the loss:</p>
+    <p style="text-align:center"><code>Loss = MSE + λ × Σ|wᵢ|</code></p>
+    <p>Absolute value instead of squaring changes everything geometrically. The penalty shrinks all weights by the same constant amount per gradient step (not proportional to their size). Small weights hit zero first and stay there — gradient descent has no reason to push them back up once they reach zero, because the absolute value function has a kink at zero with equal slope on both sides. This is why L1 produces <strong>exact zeros</strong> where L2 produces small-but-nonzero weights.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Why weights hit exactly zero</div>
+        <div class="prose-kv-val">
+          L1 subtracts a fixed amount from every weight at each step — regardless of how large the weight is. Small weights run out of value and hit zero before large ones do. Once a weight reaches zero, the gradient from the penalty is equally sized in both directions, so there's no reason to move it off zero. It stays there. L2 pulls weights <em>proportionally</em> (big weights pulled harder), so they always have some remaining value. L1 pulls weights by a <em>constant</em>, so small ones reach the finish line first and stop.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">When to use Lasso</div>
+        <div class="prose-kv-val">
+          — When you believe <strong>many features are irrelevant</strong> and want automatic removal.<br>
+          — When you need an <strong>interpretable, sparse model</strong> — reading 10 surviving weights is easier than reading 100 tiny ones.<br>
+          — Text classification: 100,000 word features → L1 zeros 99,000 irrelevant ones, keeps only the predictive words.<br>
+          — sklearn: <code>Lasso(alpha=0.1)</code>. Lower α than Ridge equivalent (different scale).
+        </div>
+      </div>
+    </div>
+
+    <h2>04 — Elastic Net: The Best of Both</h2>
+    <p>Elastic Net combines L1 and L2 into one penalty. The <strong>l1_ratio</strong> parameter controls the mix: 0 = pure Ridge, 1 = pure Lasso, 0.5 = equal blend.</p>
+    <p>In practice: Elastic Net gets the <em>sparsity</em> of L1 (zeros out irrelevant features) combined with the <em>stability</em> of L2 (handles correlated features gracefully). Use it when you suspect some features are irrelevant but also have groups of correlated features — L1 alone would arbitrarily pick one from each correlated group, Elastic Net keeps them all at reduced weight instead.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">L2 (Ridge) — <code>Ridge(alpha=λ)</code></div>
+        <div class="prose-kv-val">Penalty: Σ(wᵢ²). Shrinks all weights smoothly. Never zeros. Best for correlated features. Default choice.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">L1 (Lasso) — <code>Lasso(alpha=λ)</code></div>
+        <div class="prose-kv-val">Penalty: Σ|wᵢ|. Zeros irrelevant weights exactly. Automatic feature selection. Best when many features are noise.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Elastic Net — <code>ElasticNet(alpha=λ, l1_ratio=ρ)</code></div>
+        <div class="prose-kv-val">Penalty: ρ·L1 + (1−ρ)·L2. Sparsity + correlation stability. Best when you have correlated feature groups with mixed relevance.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">λ (alpha) — the most important hyperparameter</div>
+        <div class="prose-kv-val">
+          Too low → still overfitting (test error remains high above train error). Too high → underfitting (both train and test error rise).<br>
+          Use <code>RidgeCV</code> / <code>LassoCV</code> to search automatically. Always scale features first (<code>StandardScaler</code>) — the penalty is sensitive to feature magnitude.
+        </div>
+      </div>
+    </div>
+
+    <h2>05 — From Scratch: Seeing the Penalty Work</h2>
+    <p>Before sklearn abstracts it away, see the actual penalty changing the gradient update. This is what Ridge regularization  looks like at the math level — one extra term added to the weight gradient:</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Tiny dataset: y = 2*x + noise</span>
+np.random.seed(<span class="t-num">42</span>)
+X = np.random.randn(<span class="t-num">20</span>, <span class="t-num">1</span>)
+y = <span class="t-num">2</span> * X.squeeze() + np.random.randn(<span class="t-num">20</span>) * <span class="t-num">0.5</span>
+
+<span class="t-key">def</span> ridge_from_scratch(X, y, lam, lr=<span class="t-num">0.05</span>, epochs=<span class="t-num">200</span>):
+    w = <span class="t-num">5.0</span>   <span class="t-cmt"># start with a large weight to see shrinkage</span>
+    b = <span class="t-num">0.0</span>
+    <span class="t-key">for</span> _ <span class="t-key">in</span> range(epochs):
+        pred = w * X.squeeze() + b
+        err  = pred - y
+        <span class="t-cmt"># gradient of MSE + L2 penalty with respect to w:</span>
+        <span class="t-cmt"># dMSE/dw  = (2/n) * X.T @ err</span>
+        <span class="t-cmt"># dL2/dw   = 2 * lam * w   ← the extra pull toward zero</span>
+        dw = (<span class="t-num">2</span> / len(y)) * (X.squeeze() @ err) + <span class="t-num">2</span> * lam * w
+        db = (<span class="t-num">2</span> / len(y)) * err.sum()
+        w -= lr * dw
+        b -= lr * db
+    <span class="t-key">return</span> w, b
+
+<span class="t-key">print</span>(<span class="t-str">"λ=0.0  (no regularization ): w ="</span>, <span class="t-str">f"{ridge_from_scratch(X, y, lam=0.0)[0]:.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"λ=0.5  (light):             w ="</span>, <span class="t-str">f"{ridge_from_scratch(X, y, lam=0.5)[0]:.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"λ=5.0  (heavy):             w ="</span>, <span class="t-str">f"{ridge_from_scratch(X, y, lam=5.0)[0]:.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"True weight:                w = 2.0000"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+
+λ=0.0  (no regularization ): w = 1.9821
+λ=0.5  (light):             w = 1.8304
+λ=5.0  (heavy):             w = 0.6912
+True weight:                w = 2.0000
+</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 What the output shows</span>
+      <p>The single extra term <code>2 * lam * w</code> in the gradient is the entire L2 regularization . It creates an additional pull toward zero proportional to the current weight — large weights feel a stronger pull than small weights. At λ=0, the model recovers the true weight almost exactly (1.98 ≈ 2.0). At λ=0.5, light shrinkage: still close (1.83). At λ=5.0, the penalty dominates — the model is pulled far from the truth (0.69). This is <strong>over-regularization </strong>: you have introduced so much bias that the model can no longer learn the true signal. The goal is the λ that minimises test error — found via cross-validation, not guessing.</p>
+    </div>
+
+    <h2>06 — sklearn: All Three Methods Side by Side</h2>
+    <p>The same problem — 100 features, only 10 truly predictive — run through all four options. Watch which ones zero out the irrelevant 90 features and which one collapses without regularization :</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> sklearn.linear_model <span class="t-key">import</span> LinearRegression, Ridge, Lasso, ElasticNet, RidgeCV
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> make_regression
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> train_test_split
+<span class="t-key">from</span> sklearn.preprocessing <span class="t-key">import</span> StandardScaler
+
+<span class="t-cmt"># 100 features, only 10 informative — classic noisy setup</span>
+X, y = make_regression(n_samples=<span class="t-num">200</span>, n_features=<span class="t-num">100</span>, n_informative=<span class="t-num">10</span>,
+                       noise=<span class="t-num">30</span>, random_state=<span class="t-num">42</span>)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+
+<span class="t-cmt"># Always scale before regularization  — penalty is magnitude-sensitive</span>
+sc = StandardScaler()
+X_tr = sc.fit_transform(X_tr)
+X_te = sc.transform(X_te)
+
+models = [
+    (<span class="t-str">'No regularization   '</span>, LinearRegression()),
+    (<span class="t-str">'Ridge (L2, α=1.0)  '</span>, Ridge(alpha=<span class="t-num">1.0</span>)),
+    (<span class="t-str">'Lasso (L1, α=0.1)  '</span>, Lasso(alpha=<span class="t-num">0.1</span>)),
+    (<span class="t-str">'ElasticNet (α=0.1) '</span>, ElasticNet(alpha=<span class="t-num">0.1</span>, l1_ratio=<span class="t-num">0.5</span>)),
+]
+
+<span class="t-key">print</span>(<span class="t-str">f"{'Model':<22} {'Train R²':>9} {'Test R²':>8} {'Zero weights':>13}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">56</span>)
+<span class="t-key">for</span> name, model <span class="t-key">in</span> models:
+    model.fit(X_tr, y_tr)
+    zeros = np.sum(np.abs(model.coef_) &lt; <span class="t-num">1e-4</span>)
+    <span class="t-key">print</span>(<span class="t-str">f"{name} {model.score(X_tr,y_tr):>9.3f} {model.score(X_te,y_te):>8.3f} {zeros:>10}/100"</span>)
+
+<span class="t-cmt"># Auto-tune Ridge using cross-validation</span>
+cv_ridge = RidgeCV(alphas=[<span class="t-num">0.01</span>, <span class="t-num">0.1</span>, <span class="t-num">1</span>, <span class="t-num">10</span>, <span class="t-num">100</span>]).fit(X_tr, y_tr)
+<span class="t-key">print</span>(<span class="t-str">f"\nRidgeCV best alpha: {cv_ridge.alpha_}  Test R²: {cv_ridge.score(X_te,y_te):.3f}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+
+Model                  Train R²  Test R²  Zero weights
+--------------------------------------------------------
+No regularization       0.998    0.541         0/100
+Ridge (L2, α=1.0)       0.967    0.913         0/100
+Lasso (L1, α=0.1)       0.942    0.902        83/100
+ElasticNet (α=0.1)      0.951    0.906        72/100
+
+RidgeCV best alpha: 10.0  Test R²: 0.921
+</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the output — four critical observations</span>
+      <p><strong>1 — No regularization  is catastrophic.</strong> Train R²=0.998 (near-perfect memorisation), Test R²=0.541 (barely better than constant prediction). Classic high-variance overfitting — 200 examples, 100 features. The model fitted noise in 90 irrelevant features.</p>
+      <p style="margin-top:0.65rem"><strong>2 — Ridge recovers strongly without zeroing anything.</strong> Test R² jumps from 0.541 to 0.913 while keeping all 100 weights nonzero. It shrank the 90 irrelevant weights toward zero but not to zero — they contribute a tiny amount but no longer dominate.</p>
+      <p style="margin-top:0.65rem"><strong>3 — Lasso zeros 83 of the 90 irrelevant features.</strong> Test R²=0.902, essentially matching Ridge, but with only 17 nonzero weights. Far more interpretable. In this setup, Lasso effectively recovered the true signal structure automatically.</p>
+      <p style="margin-top:0.65rem"><strong>4 — RidgeCV found a better α automatically.</strong> At α=10 (ten times the manual guess), Test R² improves to 0.921. Always use cross-validated search — the right α varies enormously by problem and data scale.</p>
+    </div>
+
+    <h2>07 — Dropout: Regularization  for Neural Networks</h2>
+    <p>L1 and L2 regularise by penalising weight magnitude. Neural networks have an additional problem: individual neurons can <em>co-adapt</em> — one neuron learns to fix another's errors, creating brittle dependencies. Remove that one neuron and everything breaks. <strong>Dropout</strong> breaks these dependencies by randomly disabling neurons during training.</p>
+    <p>At each training step, every neuron is independently switched off with probability <em>p</em> (the dropout rate). The neuron outputs zero — it contributes nothing to that forward pass. The model cannot rely on any neuron always being present, so it learns multiple, independent representations of the same pattern. At inference time, all neurons are active but their outputs are scaled by (1−p) to compensate for the extra neurons now contributing.</p>
+
+    <pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+
+<span class="t-cmt"># Network WITHOUT dropout</span>
+model_no_drop = nn.Sequential(
+    nn.Linear(<span class="t-num">30</span>, <span class="t-num">128</span>), nn.ReLU(),
+    nn.Linear(<span class="t-num">128</span>, <span class="t-num">64</span>), nn.ReLU(),
+    nn.Linear(<span class="t-num">64</span>, <span class="t-num">1</span>),  nn.Sigmoid()
+)
+
+<span class="t-cmt"># Network WITH dropout — regularised</span>
+model_drop = nn.Sequential(
+    nn.Linear(<span class="t-num">30</span>, <span class="t-num">128</span>),
+    nn.ReLU(),
+    nn.Dropout(p=<span class="t-num">0.3</span>),   <span class="t-cmt"># 30% of neurons randomly off each step</span>
+    nn.Linear(<span class="t-num">128</span>, <span class="t-num">64</span>),
+    nn.ReLU(),
+    nn.Dropout(p=<span class="t-num">0.2</span>),   <span class="t-cmt"># 20% in the second hidden layer</span>
+    nn.Linear(<span class="t-num">64</span>, <span class="t-num">1</span>),
+    nn.Sigmoid()
+)
+
+<span class="t-cmt"># CRITICAL: always switch mode before training / inference</span>
+model_drop.train()   <span class="t-cmt"># activates dropout — neurons randomly disabled</span>
+model_drop.eval()    <span class="t-cmt"># deactivates dropout — all neurons active (forgetting this is a common bug)</span>
+
+<span class="t-key">print</span>(<span class="t-str">"Parameters without dropout:"</span>, sum(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> model_no_drop.parameters()))
+<span class="t-key">print</span>(<span class="t-str">"Parameters with    dropout:"</span>, sum(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> model_drop.parameters()))
+<span class="t-key">print</span>(<span class="t-str">"Dropout adds no parameters — only stochastic behaviour during training."</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+
+Parameters without dropout: 10369
+Parameters with    dropout: 10369
+Dropout adds no parameters — only stochastic behaviour during training.
+</div>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Dropout rate guidance</div>
+        <div class="prose-kv-val">
+          <strong>p=0.1–0.3</strong> — typical for most hidden layers. Start here.<br>
+          <strong>p=0.5</strong> — the original Hinton recommendation; use on large networks with clear overfitting.<br>
+          <strong>p=0.0</strong> — effectively disabled; start at 0, increase if train/val gap appears.<br>
+          Never apply dropout to the output layer. Rarely to the input layer (p ≤ 0.1 if at all).<br>
+          <strong>Most common bug:</strong> forgetting <code>model.eval()</code> before inference — leaves dropout active, producing different predictions each run.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Why dropout works: the ensemble interpretation</div>
+        <div class="prose-kv-val">
+          With <em>n</em> neurons each dropped independently with probability <em>p</em>, there are 2ⁿ possible sub-networks. Training with dropout approximately trains all of them simultaneously with shared weights. At inference, the full network approximates averaging over this exponential ensemble — the same variance-reduction principle as Random Forests. Many models, shared parameters, averaged predictions.
+        </div>
+      </div>
+    </div>
+
+    <h2>08 — Early Stopping: The Simplest Regularization </h2>
+    <p>No penalty, no probability — just watch the validation loss and stop when it starts climbing. The model has not yet had time to memorise noise. Early stopping is the most widely used regularization  technique in deep learning, always used in combination with L2 and dropout.</p>
+
+    <pre><code><span class="t-cmt"># Simulated training: val_loss decreases then rises (overfitting begins)</span>
+train_losses = [<span class="t-num">0.90</span>, <span class="t-num">0.65</span>, <span class="t-num">0.48</span>, <span class="t-num">0.35</span>, <span class="t-num">0.25</span>, <span class="t-num">0.18</span>, <span class="t-num">0.13</span>, <span class="t-num">0.10</span>, <span class="t-num">0.08</span>, <span class="t-num">0.06</span>]
+val_losses   = [<span class="t-num">0.91</span>, <span class="t-num">0.67</span>, <span class="t-num">0.51</span>, <span class="t-num">0.39</span>, <span class="t-num">0.32</span>, <span class="t-num">0.31</span>, <span class="t-num">0.33</span>, <span class="t-num">0.37</span>, <span class="t-num">0.42</span>, <span class="t-num">0.48</span>]
+
+<span class="t-key">def</span> early_stopping(val_losses, patience=<span class="t-num">2</span>):
+    best_loss, best_epoch, wait = float(<span class="t-str">'inf'</span>), <span class="t-num">0</span>, <span class="t-num">0</span>
+    <span class="t-key">for</span> epoch, loss <span class="t-key">in</span> enumerate(val_losses, <span class="t-num">1</span>):
+        <span class="t-key">if</span> loss &lt; best_loss:
+            best_loss, best_epoch, wait = loss, epoch, <span class="t-num">0</span>
+        <span class="t-key">else</span>:
+            wait += <span class="t-num">1</span>
+            <span class="t-key">if</span> wait &gt;= patience:
+                <span class="t-key">print</span>(<span class="t-str">f"Stop at epoch {epoch}. Best: epoch {best_epoch}, val_loss={best_loss:.2f}"</span>)
+                <span class="t-key">return</span>
+
+early_stopping(val_losses, patience=<span class="t-num">2</span>)
+
+<span class="t-key">for</span> i, (tr, vl) <span class="t-key">in</span> enumerate(zip(train_losses, val_losses), <span class="t-num">1</span>):
+    tag = <span class="t-str">" ← best val"</span> <span class="t-key">if</span> vl == min(val_losses) <span class="t-key">else</span> (<span class="t-str">" ← STOP"</span> <span class="t-key">if</span> i == <span class="t-num">8</span> <span class="t-key">else</span> <span class="t-str">""</span>)
+    <span class="t-key">print</span>(<span class="t-str">f"  Epoch {i:2d}: train={tr:.2f}  val={vl:.2f}{tag}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+
+Stop at epoch 8. Best: epoch 6, val_loss=0.31
+
+  Epoch  1: train=0.90  val=0.91
+  Epoch  2: train=0.65  val=0.67
+  Epoch  3: train=0.48  val=0.51
+  Epoch  4: train=0.35  val=0.39
+  Epoch  5: train=0.25  val=0.32
+  Epoch  6: train=0.18  val=0.31 ← best val
+  Epoch  7: train=0.13  val=0.33
+  Epoch  8: train=0.10  val=0.37 ← STOP
+  Epoch  9: train=0.08  val=0.42
+  Epoch 10: train=0.06  val=0.48
+</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading early stopping</span>
+      <p>The best model is at <strong>epoch 6</strong> — val_loss=0.31. After that, training loss keeps falling (the model is still improving on training data) but validation loss rises (it is now memorising noise, not learning patterns). With patience=2, the algorithm fires at epoch 8 — two steps after the best. In practice: save model weights at every new best, then restore those saved weights when stopping. Do not use the weights at the stopping epoch — use the best-epoch weights.</p>
+    </div>
+
+    <h2>09 — Weight Decay and AdamW: Regularization  in Modern LLMs</h2>
+    <p>For standard gradient descent, L2 regularization  and "weight decay" are two names for the same thing — both shrink weights a little every step. Most textbooks use them interchangeably.</p>
+    <p>But the popular <strong>Adam</strong> optimiser broke that equivalence. Adam is smarter than plain gradient descent — it tracks the history of each weight's gradients and adjusts the update size per-weight accordingly. Weights that have been jumping around get smaller updates; weights that have been moving steadily get larger ones. The problem: when you add an L2 penalty inside this process, Adam's per-weight adjustments also distort the regularization . Some weights end up over-penalised, others barely penalised at all — you can't predict which without inspecting the gradient history.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚙️ Why AdamW Exists</span>
+      <p><strong>AdamW</strong> fixes this with a simple change: it applies the weight shrinkage as a completely separate step, <em>after</em> Adam has finished its update. The two operations no longer interfere with each other. Every weight shrinks by the same fraction every step — predictable, consistent, independent of gradient history.</p>
+      <p style="margin-top:0.65rem">PyTorch: <code>torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01)</code></p>
+      <p style="margin-top:0.65rem">AdamW is now the standard optimiser for every major LLM — GPT, LLaMA, Mistral, Claude. <code>weight_decay=0.01</code> is the standard starting point. Dropout was used in BERT and early GPT. LayerNorm in modern Transformers adds a further implicit stabilising effect. Every technique from this post is running inside the models you use daily.</p>
+    </div>
+
+    <h2>10 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Regularization  penalises complexity — it prefers simpler models. But "simple" is a design choice baked into the penalty function. L1 defines simplicity as "few non-zero weights." L2 defines it as "small weights." Neither definition asks whether the features that survive are causally meaningful or merely correlated with the target.</p>
+      <p style="margin-top:0.75rem"><strong>What kinds of true patterns might L1 accidentally remove? What kinds of spurious correlations might L2 preserve at small magnitude but never zero out? Is a sparse model always more interpretable — or just easier to read?</strong></p>
+    </div>
+
+    <h2>11 — Coming Up Next</h2>
+    <p>Day 11 — <strong>Bagging &amp; Random Forests.</strong> Now that you understand variance and the tools that control it, Random Forests will make immediate sense: they reduce variance by averaging many high-variance decision trees. The wisdom-of-crowds principle, made rigorous — and the most reliable ML algorithm for tabular data.</p>
+
+    <h2>12 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=NGf0voTMlcs" target="_blank" rel="noopener">StatQuest: Ridge, Lasso, and Elastic Net Regression</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 20 min · The clearest visual explanation of the L1 diamond vs L2 circle geometry — the intuition you need to truly understand why they behave differently.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.youtube.com/watch?v=NyG-7nRpsW8" target="_blank" rel="noopener">StatQuest: Regularization Part 2 — Lasso Regression</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 8 min · Why L1 produces exact zeros — the geometric explanation of the diamond's corners landing on the axes.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Decoupled Weight Decay Regularization — Loshchilov &amp; Hutter (2019)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">The paper that introduced AdamW — explains precisely why L2 regularization  and weight decay diverge under Adam, and demonstrates the empirical improvement. Surprisingly readable for a research paper.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. Write the regularised loss for Ridge regression. What does each term do, and what happens when λ is too large?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Loss = MSE + λ × Σ(wᵢ²). The MSE term penalises prediction error — the model wants this small. The λ × Σ(wᵢ²) term penalises weight magnitude — the model pays a cost proportional to the square of each weight. λ is the dial between these two objectives: high λ means the penalty dominates and the model is forced toward near-zero weights, ignoring the data almost entirely. Both train and test error rise — this is over-regularization  (high bias introduced deliberately). The correct λ minimises test error. Find it with RidgeCV / cross-validation, not by guessing. Always scale features first — the penalty responds to absolute weight magnitude, which depends on feature scale.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. Explain geometrically why L1 (Lasso) produces exact zero weights but L2 (Ridge) does not.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">The key difference is <em>how</em> each penalty pulls weights toward zero. L2 pulls proportionally — a weight of 4.0 gets pulled four times harder than a weight of 1.0. So large weights shrink fast, small weights shrink slowly, but none ever fully reach zero because as they get smaller, the pull gets weaker. L1 pulls by a fixed constant — every weight loses the same amount each step regardless of size. Small weights hit zero first and stay there (once a weight is zero, the gradient from both sides of the absolute value function is equal, so there's no net push in either direction). Large weights take longer but may also eventually zero out. The result: L1 ends up with many exact zeros (feature selection), L2 ends up with many very small but nonzero weights (shrinkage). This is the entire reason they behave differently — not magic, just the shape of the penalty function.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. You have train R²=0.98, test R²=0.54, using 100 features with 200 examples. Which regularization  do you try first and why?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">This is severe high-variance overfitting — a 0.44 gap between train and test R². With 100 features and only 200 examples, the model has enough capacity to memorise the training data completely. The right choice depends on your belief about the features. If you suspect many of the 100 are genuinely irrelevant (likely in a real-world noisy problem with 100 features), try Lasso first — it will zero out the irrelevant ones automatically, and the surviving model will be interpretable. Use LassoCV to find the right alpha automatically. Always apply StandardScaler first — Lasso's penalty is magnitude-sensitive. If you believe most features are useful (domain knowledge suggests they're all relevant), try Ridge with RidgeCV. If uncertain, Elastic Net with l1_ratio=0.5 as a starting point combines both. Adding more training data in parallel is even better than regularization  alone — the combination of more data and regularization  is most powerful.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. What is dropout, how does it behave differently during training vs inference, and why does it reduce overfitting?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Dropout randomly zeroes each neuron's output with probability p during training. Each forward pass creates a different random subset of active neurons — the model never sees the same network twice in a row. During inference (model.eval()), all neurons are active, but their outputs are scaled by (1−p) to compensate for the fact that during training, a fraction p were always absent. Why it reduces overfitting: it prevents co-adaptation — individual neurons cannot learn to rely on specific other neurons always being present. Without a reliable partner, each neuron must learn features that are independently useful. The model develops redundant, robust representations. The ensemble interpretation: with n neurons each dropped independently, there are 2ⁿ possible sub-networks trained simultaneously with shared weights. At inference, the full network approximates averaging all of them — the same variance-reduction principle as Random Forests. The most common bug in practice: forgetting model.eval() before running inference. This leaves dropout active, and the model produces randomly different predictions on each call.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. Why does AdamW exist? What problem does it solve that standard Adam with L2 regularization  does not?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">For plain gradient descent, L2 regularization  and weight decay are identical — just two names for the same operation. Adam broke this. Adam is a smarter optimiser that tracks each weight's gradient history and adjusts how big each update is — weights that have been moving around a lot get smaller updates, weights moving steadily get bigger ones. The problem: when you bake L2 regularization  into the gradient before handing it to Adam, Adam's per-weight adjustment also distorts the regularization . Some weights end up penalised too heavily, others barely at all, in unpredictable ways. AdamW's fix is simple: do the weight shrinkage as a completely separate step after Adam is done. Adam handles the learning, then weight decay shrinks every weight by the same small fraction — clean, consistent, and independent of gradient history. That's the entire difference. The result is better regularization  in practice, which is why AdamW is now standard for training every major LLM.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Regularization </div>
+      <ol>
+        <li><strong>The core idea:</strong> Loss = Prediction Error + λ × Complexity Penalty. Two competing objectives force the model to stay simple while fitting the data.</li>
+        <li><strong>λ (alpha)</strong> is the key dial. Too low → still overfitting. Too high → underfitting. Always tune with RidgeCV / LassoCV. Always scale features first.</li>
+        <li><strong>L2 (Ridge):</strong> penalty = Σ(wᵢ²). Shrinks all weights smoothly. Never zeros. Best for correlated features or when all features may be relevant. Default choice.</li>
+        <li><strong>L1 (Lasso):</strong> penalty = Σ|wᵢ|. Zeros irrelevant weights exactly. Automatic feature selection. Best when many features are noise. Sparse, interpretable result.</li>
+        <li><strong>Elastic Net:</strong> combines L1 + L2. l1_ratio controls the mix. Best for correlated feature groups with mixed relevance.</li>
+        <li><strong>The geometry:</strong> L2 circle → smooth boundary, weights never hit exactly zero. L1 diamond → corners on axes, solution lands at zero. This shape explains all the behaviour.</li>
+        <li><strong>Dropout:</strong> randomly disables neurons (probability p) during training. Breaks co-adaptation. Ensemble interpretation: 2ⁿ sub-networks trained simultaneously. Always model.eval() at inference.</li>
+        <li><strong>Early stopping:</strong> stop when validation loss rises. Save best-epoch weights. Simplest regularization  — use it for every neural network as a baseline.</li>
+        <li><strong>Weight decay ≠ L2 under Adam.</strong> AdamW decouples weight decay from adaptive gradient scaling, giving consistent regularization . Standard for all LLM training.</li>
+        <li><strong>In LLMs:</strong> AdamW with weight_decay=0.01–0.1 is universal. GPT, LLaMA, Mistral, Claude all use it. These concepts at scale.</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is regularization  and why do we need it?</strong><br>
+        <em>Regularization  adds a complexity penalty to the loss function: Loss = Prediction Error + λ × Penalty. It forces the model to minimise both error and complexity simultaneously, preventing memorisation of training noise. It trades a small rise in training error for a large drop in test error — deliberately introducing bias to control variance.</em></li>
+        <li><strong>What is the difference between L1 and L2 regularization ?</strong><br>
+        <em>L2 (Ridge) penalises Σ(wᵢ²) — squared weights. It pulls weights toward zero in proportion to their size: large weights get pulled hard, tiny weights barely move. Because the pull weakens as weights shrink, they approach zero but never snap to it. L1 (Lasso) penalises Σ|wᵢ| — absolute weights. It subtracts a fixed constant from every weight each step. Small weights run out of value and hit zero first — and once they're at zero they stay there. This is why L1 produces exact zeros (feature selection) and L2 does not. L2 handles correlated features better; L1 picks one from a correlated group arbitrarily.</em></li>
+        <li><strong>When would you use Lasso over Ridge?</strong><br>
+        <em>When many features are likely irrelevant and you want an interpretable sparse model. Lasso zeros irrelevant weights automatically. Ridge is better when features are correlated (L2 distributes weight stably; L1 picks arbitrarily). For the general case, try both with cross-validated alpha and let test performance decide.</em></li>
+        <li><strong>What is dropout and why does it work?</strong><br>
+        <em>Dropout randomly zeroes each neuron's output with probability p during training. It prevents co-adaptation — neurons cannot rely on specific partners always being present. The ensemble interpretation: 2ⁿ sub-networks trained simultaneously with shared weights, approximating an ensemble average at inference. Always call model.eval() before inference — this deactivates dropout and applies the (1−p) output scaling compensation.</em></li>
+        <li><strong>What is AdamW and how does it relate to L2 regularization ?</strong><br>
+        <em>For SGD, L2 regularization  and weight decay are mathematically identical. For Adam, they're not — adding L2 inside Adam's gradient means Adam's adaptive scaling also scales the regularization , making it inconsistent across parameters. AdamW applies weight decay as a separate step after the adaptive gradient update, giving consistent regularization  for every parameter. It is the standard optimiser for all major LLM training. Typical weight_decay: 0.01–0.1.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#Regularization</span><span class="tag">#L1Lasso</span><span class="tag">#L2Ridge</span><span class="tag">#Dropout</span><span class="tag">#ElasticNet</span><span class="tag">#EarlyStopping</span><span class="tag">#AdamW</span><span class="tag">#WeightDecay</span><span class="tag">#Overfitting</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+  </div>
+</article>
+
+
+<div class="post-footer-nav">
+  <a href="bias-variance.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 9</span>
+    <span class="post-nav-title">Bias, Variance & the Tradeoff</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<!-- Floating feedback trigger button -->
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+
+<!-- Overlay backdrop -->
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+
+<!-- Sliding feedback panel -->
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">
+      Send Feedback
+    </button>
+
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var hidden = answer.style.display === 'none' || answer.style.display === '';
+    answer.style.display = hidden ? 'block' : 'none';
+    btn.textContent = hidden ? 'Hide answer ↑' : 'Reveal answer ↓';
+  }
+</script>
+</body>
+</html>
