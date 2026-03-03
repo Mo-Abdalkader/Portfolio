@@ -760,8 +760,9 @@ function copyPostLink(btn) {
     'decision-tree.html',          // Day 8  - Feb 26
     'bias-variance.html',          // Day 9  - Feb 27
     'regularization.html',         // Day 10 - Feb 28
-    'random-forest.html',
-    'boosting.html'
+    'random-forest.html',          // Day 11 - Mar 1
+    'boosting.html',               // Day 12 - Mar 2
+    'xgboost.html',                // Day 13 - Mar 3
   ];
 
   const TOTAL_POSTS = 30;
