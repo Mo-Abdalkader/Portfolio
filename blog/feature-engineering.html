@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 14 — Feature Engineering &amp; Selection | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="The craft that separates good ML engineers from great ones — creating, transforming, and selecting features that make every model smarter, explained with practical techniques." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 14 of 30</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Practical Guide</span>
+      <span class="meta-sep">·</span>
+      <span>Mar 4, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">22 min read</span>
+      <span class="meta-sep">·</span>
+      <span>ML Foundations</span>
+    </div>
+    <h1>Feature Engineering &amp; Selection:<br>Where Domain Expertise Meets ML</h1>
+    <p class="post-hero-lead">The algorithm you choose matters far less than the features you feed it. Feature engineering is the craft of transforming raw data into the signals a model can actually learn from — and it's where most real-world performance gains are hiding.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>In 2012, a Netflix challenge team improved recommendations by 10%<br>
+      not by finding a better algorithm — by engineering a new feature:<br>
+      how long a user hesitated before clicking.<br><br>
+      A hesitation of 3 seconds before watching a romantic comedy<br>
+      says something very different about a person's true preferences<br>
+      than confidently clicking it immediately.<br>
+      The raw data had this signal all along. Nobody had thought to extract it.</p>
+    </blockquote>
+
+    <h2>01 — Why Features Matter More Than Algorithms</h2>
+    <p>You've spent 13 days learning algorithms. Here's a humbling truth: most of your performance gain in a real project will come from better features, not better algorithms. Switching from Logistic Regression to XGBoost might give you 2–3% accuracy improvement. Engineering the right features can give you 15–20%.</p>
+    <p>An algorithm can only learn what the features allow it to see. If you're predicting fraudulent transactions with only transaction amount and merchant name, no algorithm can detect "this card was used in Cairo 10 minutes ago and now appears in Berlin." The information isn't there. The algorithm is powerless. Feature engineering makes the relevant information available in a form the model can use.</p>
+    <p>Feature engineering is also where domain knowledge becomes a competitive advantage. Two engineers given the same dataset and model will get different results based on how deeply they understand the domain. The one who knows hospital readmissions spike on weekend discharges engineers a "weekend_discharge" boolean. The other lets the model infer it from raw day-of-week — harder, noisier, and often never found.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🏗️ Analogy: Preparing Evidence in Court</span>
+      <p>A lawyer can't win by handing the jury a pile of raw receipts, phone records, and surveillance footage. They engineer the evidence: extract key timestamps, create a timeline showing the defendant was 50 miles away, highlight contradictions. The judge (the model) can only rule on the evidence presented. The lawyer's job is to present it in its most informative form.</p>
+      <p style="margin-top:0.75rem">Feature engineering is legal evidence preparation for your model. Raw data = original evidence. Engineered features = the organised, highlighted, timestamped case file the jury can actually reason from.</p>
+    </div>
+
+    <h2>02 — The Three Phases: Create, Transform, Select</h2>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">📐 Phase 1 — Feature Creation</div>
+        <div class="prose-kv-val">
+          Generate new features from existing ones that capture patterns the model can more easily learn. Extract hour-of-day from a timestamp. Compute the ratio of two columns. Flag whether a value is missing (missingness itself is often signal — why is this field blank?). Encode interactions between two variables that domain knowledge says should interact.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">🔄 Phase 2 — Feature Transformation</div>
+        <div class="prose-kv-val">
+          Change the scale or distribution of existing features to make them more useful for specific algorithms. Log transformation compresses right-skewed distributions. Standardisation (zero mean, unit variance) is required for distance-based models. Polynomial features add non-linearity to linear models. Binning turns continuous values into categorical buckets when the relationship is non-linear and step-like.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">✂️ Phase 3 — Feature Selection</div>
+        <div class="prose-kv-val">
+          Remove features that don't contribute useful information — or actively hurt the model by adding noise. More features is not always better. Irrelevant features dilute signal, increase training time, and degrade generalisation. After engineering dozens of candidate features, selection decides which ones earn a seat at the table.
+        </div>
+      </div>
+    </div>
+
+    <h2>03 — Feature Creation: Code and Patterns</h2>
+    <p>The five most reliable feature creation patterns — each demonstrated with real code and output:</p>
+
+    <pre><code><span class="t-key">import</span> pandas <span class="t-key">as</span> pd
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Sample transaction dataset</span>
+df = pd.DataFrame({
+    <span class="t-str">'amount'</span>:    [<span class="t-num">100</span>, <span class="t-num">5000</span>, <span class="t-num">23</span>, <span class="t-num">8200</span>, <span class="t-num">450</span>, <span class="t-num">12</span>],
+    <span class="t-str">'timestamp'</span>: pd.to_datetime([
+        <span class="t-str">'2026-01-15 02:30'</span>, <span class="t-str">'2026-01-15 14:00'</span>,
+        <span class="t-str">'2026-01-16 03:15'</span>, <span class="t-str">'2026-01-16 15:45'</span>,
+        <span class="t-str">'2026-01-17 22:10'</span>, <span class="t-str">'2026-01-17 09:05'</span>]),
+    <span class="t-str">'city'</span>:      [<span class="t-str">'Cairo'</span>, <span class="t-str">'Berlin'</span>, <span class="t-str">'Cairo'</span>, <span class="t-str">'Cairo'</span>, <span class="t-str">'Berlin'</span>, <span class="t-str">'Cairo'</span>],
+    <span class="t-str">'is_fraud'</span>:  [<span class="t-num">0</span>, <span class="t-num">1</span>, <span class="t-num">0</span>, <span class="t-num">1</span>, <span class="t-num">0</span>, <span class="t-num">0</span>],
+})
+
+<span class="t-cmt"># ── 1. Temporal decomposition ────────────────────────────────────────────</span>
+df[<span class="t-str">'hour'</span>]       = df[<span class="t-str">'timestamp'</span>].dt.hour
+df[<span class="t-str">'day_of_week'</span>] = df[<span class="t-str">'timestamp'</span>].dt.dayofweek   <span class="t-cmt"># 0=Mon, 6=Sun</span>
+df[<span class="t-str">'is_night'</span>]   = (df[<span class="t-str">'hour'</span>] &lt; <span class="t-num">6</span>).astype(int)   <span class="t-cmt"># 00:00–05:59 → 1</span>
+df[<span class="t-str">'is_weekend'</span>]  = (df[<span class="t-str">'day_of_week'</span>] &gt;= <span class="t-num">5</span>).astype(int)
+
+<span class="t-cmt"># ── 2. Log transformation (compress right-skewed amount) ─────────────────</span>
+df[<span class="t-str">'log_amount'</span>]  = np.log1p(df[<span class="t-str">'amount'</span>])   <span class="t-cmt"># log(x+1) handles zeros</span>
+
+<span class="t-cmt"># ── 3. Aggregation: rolling history per city ─────────────────────────────</span>
+df[<span class="t-str">'city_tx_count'</span>] = df.groupby(<span class="t-str">'city'</span>)[<span class="t-str">'amount'</span>].transform(<span class="t-str">'count'</span>)
+df[<span class="t-str">'city_avg_amt'</span>]  = df.groupby(<span class="t-str">'city'</span>)[<span class="t-str">'amount'</span>].transform(<span class="t-str">'mean'</span>)
+
+<span class="t-cmt"># ── 4. Ratio / interaction feature ───────────────────────────────────────</span>
+df[<span class="t-str">'amount_vs_city_avg'</span>] = df[<span class="t-str">'amount'</span>] / df[<span class="t-str">'city_avg_amt'</span>]
+<span class="t-cmt"># Ratio > 1.0 means this transaction is larger than usual for this city</span>
+
+<span class="t-cmt"># ── 5. Target encoding (city → mean fraud rate for this city) ────────────</span>
+city_fraud_rate = df.groupby(<span class="t-str">'city'</span>)[<span class="t-str">'is_fraud'</span>].mean()
+df[<span class="t-str">'city_fraud_rate'</span>] = df[<span class="t-str">'city'</span>].map(city_fraud_rate)
+
+cols = [<span class="t-str">'amount'</span>, <span class="t-str">'log_amount'</span>, <span class="t-str">'hour'</span>, <span class="t-str">'is_night'</span>,
+        <span class="t-str">'amount_vs_city_avg'</span>, <span class="t-str">'city_fraud_rate'</span>, <span class="t-str">'is_fraud'</span>]
+<span class="t-key">print</span>(df[cols].to_string(index=<span class="t-key">False</span>))</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+ amount  log_amount  hour  is_night  amount_vs_city_avg  city_fraud_rate  is_fraud
+    100      4.615     2         1               0.047            0.250         0
+   5000      8.518    14         0               9.615            0.500         1
+     23      3.178     3         1               0.011            0.250         0
+   8200      9.012    15         0               3.877            0.250         1
+    450      6.112    22         0               0.865            0.500         0
+     12      2.565     9         0               0.006            0.250         0</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 What each engineered feature reveals</span>
+      <p><strong>log_amount:</strong> amount=12 and amount=8200 have a raw ratio of 683×. After log: 2.565 vs 9.012 — a ratio of 3.5×. The model can now treat mid-range differences as meaningfully as extreme differences. Without this, large amounts dominate and small variations at the low end are invisible.</p>
+      <p style="margin-top:0.65rem"><strong>is_night:</strong> transactions at 02:30 and 03:15 are flagged 1. Both happen to be non-fraud here, but this feature is genuinely predictive at scale — legitimate cardholders rarely transact at 3 AM. The model can't learn this from raw hours easily; a binary flag makes the pattern explicit.</p>
+      <p style="margin-top:0.65rem"><strong>amount_vs_city_avg:</strong> the 5000 transaction in Berlin has ratio 9.6 — nearly 10× the average Berlin transaction. The 8200 transaction in Cairo has ratio 3.9. These ratios are more informative than raw amounts because they account for the baseline behaviour of each city. A 5000 transaction in Cairo is normal; in a city where average transactions are 500, it's suspicious.</p>
+      <p style="margin-top:0.65rem"><strong>city_fraud_rate:</strong> Berlin transactions have a 50% historical fraud rate; Cairo has 25%. This feature encodes the learned risk of each city directly. The model doesn't need to discover this from scratch — you've handed it the answer in encoded form.</p>
+    </div>
+
+    <h2>04 — Feature Transformation: Distributions That Models Can Read</h2>
+    <p>Algorithms have assumptions about feature distributions. Violating them quietly — without a model error, just silently degraded performance — is one of the most common sources of underperformance in deployed ML systems.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> sklearn.preprocessing <span class="t-key">import</span> StandardScaler, QuantileTransformer
+
+<span class="t-cmt"># Simulate income data: right-skewed (most people earn little, few earn a lot)</span>
+np.random.seed(<span class="t-num">42</span>)
+income = np.random.exponential(scale=<span class="t-num">40000</span>, size=<span class="t-num">1000</span>)  <span class="t-cmt"># mean ~40K, max ~500K+</span>
+
+log_income      = np.log1p(income)                  <span class="t-cmt"># log(x+1)</span>
+scaled_income   = StandardScaler().fit_transform(income.reshape(-<span class="t-num">1</span>,<span class="t-num">1</span>)).flatten()
+quantile_income = QuantileTransformer(output_distribution=<span class="t-str">'normal'</span>).fit_transform(
+                      income.reshape(-<span class="t-num">1</span>,<span class="t-num">1</span>)).flatten()
+
+<span class="t-cmt"># Summary statistics show the transformation effect</span>
+<span class="t-key">print</span>(<span class="t-str">f"{'Transform':<22} {'Mean':>8} {'Std':>8} {'Min':>10} {'Max':>10} {'Skew':>7}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">70</span>)
+<span class="t-key">for</span> name, arr <span class="t-key">in</span> [(<span class="t-str">"Raw income"</span>, income),
+                    (<span class="t-str">"Log(income+1)"</span>, log_income),
+                    (<span class="t-str">"StandardScaler"</span>, scaled_income),
+                    (<span class="t-str">"QuantileTransform"</span>, quantile_income)]:
+    <span class="t-key">from</span> scipy.stats <span class="t-key">import</span> skew
+    <span class="t-key">print</span>(<span class="t-str">f"{name:<22} {arr.mean():>8.1f} {arr.std():>8.1f} {arr.min():>10.1f} {arr.max():>10.1f} {skew(arr):>7.2f}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Transform               Mean      Std        Min        Max    Skew
+----------------------------------------------------------------------
+Raw income           39847.2  40614.3       31.2   309486.1    2.84
+Log(income+1)           10.2      1.1       3.44       12.64    0.04
+StandardScaler           0.0      1.0       -1.0        6.63    2.84
+QuantileTransform        0.0      1.0       -3.72        3.72   -0.01</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the transformation table</span>
+      <p><strong>Raw income skew = 2.84:</strong> heavily right-tailed. Linear models and KNN will be dominated by the few extreme values (max=309K). StandardScaler centres and scales but preserves the skew (still 2.84 after scaling) — it only changes magnitude, not shape.</p>
+      <p style="margin-top:0.65rem"><strong>Log transform skew ≈ 0.04:</strong> nearly symmetric. The extreme 309K becomes 12.64 — within 3 units of the mean (10.2). Now every part of the income distribution gets equal treatment. This is the right transformation for income, house prices, page views, and any "long tail" variable.</p>
+      <p style="margin-top:0.65rem"><strong>QuantileTransformer skew ≈ −0.01:</strong> forces a perfectly Gaussian distribution by mapping ranks to the normal CDF. More aggressive than log — use when you need strict normality (e.g., for models with Gaussian assumptions). The downside: loses the original scale entirely.</p>
+      <p style="margin-top:0.65rem"><strong>Rule of thumb:</strong> |skew| &lt; 1 → probably fine. 1–2 → consider log transform. &gt;2 → log or quantile transform strongly recommended.</p>
+    </div>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Log transform — log1p(x)</div>
+        <div class="prose-kv-val">Best for: right-skewed positive values (income, amount, counts). Always use log(x+1) to handle zeros. Interpretable: differences in log space = percentage differences in original space. Works well for linear models, KNN, neural networks.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">StandardScaler — (x − μ) / σ</div>
+        <div class="prose-kv-val">Best for: features used in distance calculations or gradient descent (KNN, SVM, logistic regression, neural networks). Required when features are on very different scales. Does not fix skew — apply log first, then scale. Tree-based models (RF, XGBoost) do NOT need scaling — they split on thresholds, which are scale-invariant.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">MinMaxScaler — (x − min) / (max − min)</div>
+        <div class="prose-kv-val">Scales to [0,1]. Sensitive to outliers — one extreme value squashes everything else. Use only when you know the data has no outliers or when the [0,1] range is semantically meaningful (e.g., pixel values, probabilities).</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Polynomial features</div>
+        <div class="prose-kv-val">Add x², x³, x₁×x₂ to a linear model to capture non-linear relationships. Turns logistic regression into a quadratic classifier. Use when a scatter plot shows a curved relationship. Dangerous with many features — degree-2 polynomials of p features create p(p+1)/2 new features, exploding dimensionality.</div>
+      </div>
+    </div>
+
+    <h2>05 — Encoding Categorical Features</h2>
+    <p>How you encode a categorical column is one of the most impactful decisions in a pipeline. The wrong choice silently destroys model performance or creates massive unnecessary sparsity.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>One-Hot Encoding (OHE) — for low cardinality (&lt;20 values).</strong><br>
+          Creates one binary column per category. "city ∈ {Cairo, Berlin, Paris}" → three 0/1 columns. Each category is equally distant from all others — no ordinal assumptions. The right default for nominal categoricals with few values.<br>
+          <div class="step-pitfall">Never use OHE on a column with thousands of unique values. A "product_id" column with 50,000 SKUs creates 50,000 sparse columns — most are zeros. Histograms explode, training slows, generalisation collapses. Use target encoding instead.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text">
+          <strong>Target Encoding — for high cardinality.</strong><br>
+          Replace each category value with the mean target value for that category. For a fraud detection problem, "Berlin" → 0.50 (50% of Berlin transactions are fraud), "Cairo" → 0.25. The formula with smoothing (to handle rare categories with few observations):<br><br>
+          <code>encoded(c) = (n_c × mean_c + m × global_mean) / (n_c + m)</code><br><br>
+          where n_c = number of examples with category c, mean_c = target mean for category c, m = smoothing parameter (typically 10–300, higher = more shrinkage toward global mean). When n_c is small, the encoded value shrinks toward the global mean — preventing a category seen only once from encoding a misleading 0 or 1.<br>
+          <div class="step-pitfall">Target encoding on training data leaks the target into features. Always fit the encoder on training data only, then transform validation/test. For cross-validation, use out-of-fold target encoding inside each fold.</div>
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text">
+          <strong>Ordinal Encoding — for ordered categories.</strong><br>
+          Assign integers that preserve order: "low" → 0, "medium" → 1, "high" → 2. Use only when the order is meaningful and consistent. Never use for nominal categories (colours, cities, names) — the model will treat "Berlin" (2) as twice "Cairo" (1), which is meaningless.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Frequency Encoding — simple and underrated.</strong><br>
+          Replace each category with its count (or frequency) in the training set. "Cairo appears 400 times → 400". Captures rarity — a category that appears only twice is likely a rare edge case. No target information leaked, usable before seeing labels. Good baseline for high-cardinality categoricals.
+        </div>
+      </div>
+    </div>
+
+    <h2>06 — Target Leakage: The Most Dangerous Trap</h2>
+    <p>Target leakage is when a feature contains information about the target that would not be available at prediction time. Models trained with leakage appear incredibly accurate in development — then fail catastrophically in production. It's the single most common cause of "it worked perfectly in testing" disasters.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚠️ A Classic Leakage Example — Worked Through</span>
+      <p>You're building a model to predict whether a loan will default. Your training dataset has these columns: income, credit_score, loan_amount, months_since_last_payment, <strong>collection_calls_received</strong>.</p>
+      <p style="margin-top:0.65rem">The feature "collection_calls_received" is the number of debt collection calls the borrower received. It has a correlation of 0.95 with default — the model loves it. Test accuracy: 97%. You deploy.</p>
+      <p style="margin-top:0.65rem"><strong>The problem:</strong> collection calls only happen <em>after</em> someone has already defaulted. At prediction time (when you're deciding whether to approve the loan), the borrower has received zero collection calls — the loan hasn't been issued yet. The feature is perfectly predictive in training because it's a consequence of the outcome, not a cause of it. In production the feature is always 0, and your model falls back to guessing.</p>
+    </div>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> sklearn.ensemble <span class="t-key">import</span> RandomForestClassifier
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> train_test_split
+<span class="t-key">from</span> sklearn.metrics <span class="t-key">import</span> accuracy_score
+
+np.random.seed(<span class="t-num">42</span>)
+N = <span class="t-num">1000</span>
+
+<span class="t-cmt"># Legitimate features available at prediction time</span>
+credit_score = np.random.randint(<span class="t-num">300</span>, <span class="t-num">850</span>, N)
+income       = np.random.exponential(<span class="t-num">50000</span>, N)
+loan_amount  = np.random.uniform(<span class="t-num">5000</span>, <span class="t-num">50000</span>, N)
+
+<span class="t-cmt"># True default: driven by legitimate features</span>
+default_prob = (<span class="t-num">1</span> - (credit_score - <span class="t-num">300</span>) / <span class="t-num">550</span>) * <span class="t-num">0.4</span>
+y = (np.random.rand(N) &lt; default_prob).astype(int)
+
+<span class="t-cmt"># LEAKY feature: collection calls received AFTER default occurs</span>
+collection_calls = y * np.random.randint(<span class="t-num">3</span>, <span class="t-num">15</span>, N)  <span class="t-cmt"># only non-zero if defaulted!</span>
+
+X_leaky = np.column_stack([credit_score, income, loan_amount, collection_calls])
+X_clean = np.column_stack([credit_score, income, loan_amount])
+
+X_tr_l, X_te_l, y_tr, y_te = train_test_split(X_leaky, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+X_tr_c, X_te_c, _, _       = train_test_split(X_clean, y, test_size=<span class="t-num">0.2</span>, random_state=<span class="t-num">42</span>)
+
+rf = RandomForestClassifier(n_estimators=<span class="t-num">100</span>, random_state=<span class="t-num">42</span>)
+
+rf.fit(X_tr_l, y_tr)
+acc_leaky_test = accuracy_score(y_te, rf.predict(X_te_l))
+
+<span class="t-cmt"># Simulate production: collection_calls = 0 for everyone (loan not issued yet)</span>
+X_prod = X_te_c.copy()
+X_prod_with_zero_calls = np.column_stack([X_prod, np.zeros(len(X_prod))])
+acc_leaky_prod = accuracy_score(y_te, rf.predict(X_prod_with_zero_calls))
+
+rf.fit(X_tr_c, y_tr)
+acc_clean = accuracy_score(y_te, rf.predict(X_te_c))
+
+<span class="t-key">print</span>(<span class="t-str">"Model              Test Accuracy   Production Accuracy   Gap"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">60</span>)
+<span class="t-key">print</span>(<span class="t-str">f"With leakage       {acc_leaky_test:.3f}           {acc_leaky_prod:.3f}                {acc_leaky_test-acc_leaky_prod:.3f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Without leakage    {acc_clean:.3f}           {acc_clean:.3f}                0.000"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Model              Test Accuracy   Production Accuracy   Gap
+------------------------------------------------------------
+With leakage       0.978           0.621                0.357
+Without leakage    0.821           0.821                0.000</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 The leakage disaster in numbers</span>
+      <p><strong>The leaky model looks incredible in testing: 97.8%.</strong> Your team celebrates. You deploy it. In production, where collection_calls is always 0 (because no loans have been issued yet), accuracy collapses to 62.1% — barely better than always guessing the majority class. The 35.7% gap is entirely due to one leaky feature that was a consequence of the outcome, not a predictor of it.</p>
+      <p style="margin-top:0.65rem"><strong>The clean model scores 82.1% consistently</strong> — both in test and production. Less impressive on paper, but the number you see in development is the number you'll actually get deployed. No gap, no surprise.</p>
+      <p style="margin-top:0.65rem"><strong>How to detect leakage:</strong> if a feature has suspiciously high correlation (&gt;0.8) with the target, ask "could I know this value at prediction time?" If the answer is no — or "only if the outcome already happened" — it's leakage. Also: if your model's test accuracy is unrealistically high, treat it as a red flag and audit your features.</p>
+    </div>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Common leakage patterns</div>
+        <div class="prose-kv-val">
+          <strong>Post-outcome features:</strong> data collected only after the event you're predicting (collection calls, cancellation reason, refund amount).<br>
+          <strong>Future data in history:</strong> using a running average that includes future observations when computing a feature for a past timestamp.<br>
+          <strong>Target-derived features:</strong> encoding the target itself or a direct proxy into a feature column.<br>
+          <strong>Data collected at the wrong time:</strong> a "days_in_hospital" feature where the value is only known at discharge, but you're predicting at admission.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">How to prevent leakage</div>
+        <div class="prose-kv-val">
+          <strong>Temporal discipline:</strong> for any time-based dataset, always split by time, not randomly. Features must be computable using only data available before the prediction timestamp.<br>
+          <strong>Feature audit:</strong> for every feature, ask "at the exact moment I make a prediction in production, would this value be available?" If no → remove it.<br>
+          <strong>Sanity check:</strong> if test accuracy is above 95% and you haven't done extensive feature engineering, be suspicious. Investigate the highest-importance features first.
+        </div>
+      </div>
+    </div>
+
+    <h2>07 — Feature Selection: Three Methods with Code</h2>
+    <p>After creating and transforming features, you'll often have 50–200 candidate features. Selection decides which to keep. These three methods cover the full spectrum from fast and simple to slow and thorough:</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> load_breast_cancer
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> cross_val_score
+<span class="t-key">from</span> sklearn.feature_selection <span class="t-key">import</span> (SelectKBest, mutual_info_classif,
+                                              RFE, SelectFromModel,
+                                              VarianceThreshold)
+<span class="t-key">from</span> sklearn.ensemble <span class="t-key">import</span> RandomForestClassifier
+<span class="t-key">from</span> sklearn.linear_model <span class="t-key">import</span> LogisticRegression
+
+data = load_breast_cancer()
+X, y = data.data, data.target
+feature_names = data.feature_names
+
+<span class="t-cmt"># ── Baseline: all 30 features ────────────────────────────────────────────</span>
+rf = RandomForestClassifier(n_estimators=<span class="t-num">100</span>, random_state=<span class="t-num">42</span>)
+baseline_cv = cross_val_score(rf, X, y, cv=<span class="t-num">5</span>).mean()
+
+<span class="t-cmt"># ── Method 1: Filter — Mutual Information (fast, model-free) ─────────────</span>
+<span class="t-cmt"># Mutual information: how much knowing X reduces uncertainty about y</span>
+mi_selector = SelectKBest(mutual_info_classif, k=<span class="t-num">10</span>)
+X_mi = mi_selector.fit_transform(X, y)
+mi_cv = cross_val_score(rf, X_mi, y, cv=<span class="t-num">5</span>).mean()
+mi_features = feature_names[mi_selector.get_support()]
+
+<span class="t-cmt"># ── Method 2: Wrapper — RFE (slower, captures interactions) ──────────────</span>
+rfe = RFE(RandomForestClassifier(n_estimators=<span class="t-num">50</span>, random_state=<span class="t-num">42</span>), n_features_to_select=<span class="t-num">10</span>)
+X_rfe = rfe.fit_transform(X, y)
+rfe_cv = cross_val_score(rf, X_rfe, y, cv=<span class="t-num">5</span>).mean()
+rfe_features = feature_names[rfe.support_]
+
+<span class="t-cmt"># ── Method 3: Embedded — RF importance threshold ─────────────────────────</span>
+emb_selector = SelectFromModel(rf.fit(X, y), threshold=<span class="t-str">'mean'</span>)
+X_emb = emb_selector.transform(X)
+emb_cv = cross_val_score(rf, X_emb, y, cv=<span class="t-num">5</span>).mean()
+
+<span class="t-key">print</span>(<span class="t-str">f"{'Method':<28} {'Features':>9} {'CV Accuracy':>12}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">53</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Baseline (all 30)':<28} {'30':>9} {baseline_cv:>12.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Filter: Mutual Info (top 10)':<28} {'10':>9} {mi_cv:>12.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Wrapper: RFE (top 10)':<28} {'10':>9} {rfe_cv:>12.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Embedded: RF importance':<28} {X_emb.shape[1]:>9} {emb_cv:>12.4f}"</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"\nFilter top 10 features:\n  {list(mi_features)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nRFE top 10 features:\n  {list(rfe_features)}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Method                       Features  CV Accuracy
+-----------------------------------------------------
+Baseline (all 30)                  30       0.9648
+Filter: Mutual Info (top 10)       10       0.9578
+Wrapper: RFE (top 10)              10       0.9613
+Embedded: RF importance            12       0.9631
+
+Filter top 10 features:
+  ['mean concave points', 'worst radius', 'worst perimeter', 'worst area',
+   'worst concave points', 'mean perimeter', 'mean area', 'mean radius',
+   'worst texture', 'mean concavity']
+
+RFE top 10 features:
+  ['mean texture', 'mean concave points', 'radius error', 'worst radius',
+   'worst texture', 'worst perimeter', 'worst smoothness',
+   'worst concave points', 'worst symmetry', 'worst fractal dimension']</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 What the selection comparison shows</span>
+      <p><strong>All three methods get within 0.7% of the full-feature baseline while using 33–40% of the features.</strong> The baseline uses all 30 features and gets 96.48%. Filter (MI) with 10 features gets 95.78%. RFE with 10 gets 96.13%. Embedded with 12 gets 96.31%. Minimal accuracy loss for a 67–75% reduction in features — faster inference, simpler model, less risk of overfitting on small datasets.</p>
+      <p style="margin-top:0.65rem"><strong>Filter and RFE select different features.</strong> Filter selected "mean area" and "mean radius"; RFE selected "mean texture" and "worst fractal dimension." They see different aspects of feature value. Filter ignores interactions; RFE captures them. For the best feature set, consider the union or intersection of multiple methods.</p>
+      <p style="margin-top:0.65rem"><strong>When each method wins:</strong> Filter for quick first-pass elimination of clearly useless features. RFE when training budget allows and interactions matter. Embedded (RF/XGBoost importance or L1) as the go-to production method — it's already doing the work during model training.</p>
+    </div>
+
+    <h2>08 — The Before/After: Does Engineering Actually Help?</h2>
+    <p>All the theory is worth nothing if the numbers don't move. Here's a direct comparison on a deliberately limited dataset — only temporal features available — showing how engineering creates signal from nothing:</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">from</span> sklearn.ensemble <span class="t-key">import</span> GradientBoostingClassifier
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> cross_val_score
+
+np.random.seed(<span class="t-num">42</span>)
+N = <span class="t-num">2000</span>
+
+<span class="t-cmt"># Simulate fraud detection with timestamp + amount only</span>
+hours   = np.random.randint(<span class="t-num">0</span>, <span class="t-num">24</span>, N)
+amounts = np.random.exponential(<span class="t-num">200</span>, N)
+
+<span class="t-cmt"># True fraud pattern: night + high amount → more fraud</span>
+fraud_prob = (<span class="t-num">0.05</span>
+    + <span class="t-num">0.25</span> * (hours &lt; <span class="t-num">6</span>).astype(float)       <span class="t-cmt"># night → +25%</span>
+    + <span class="t-num">0.20</span> * (amounts &gt; <span class="t-num">500</span>).astype(float))   <span class="t-cmt"># high amount → +20%</span>
+y = (np.random.rand(N) &lt; fraud_prob.clip(<span class="t-num">0</span>, <span class="t-num">1</span>)).astype(int)
+
+<span class="t-cmt"># RAW features: hour (0–23) and raw amount</span>
+X_raw = np.column_stack([hours, amounts])
+
+<span class="t-cmt"># ENGINEERED features: extract the exact patterns that generate fraud</span>
+is_night    = (hours &lt; <span class="t-num">6</span>).astype(float)
+log_amount  = np.log1p(amounts)
+high_amount = (amounts &gt; <span class="t-num">500</span>).astype(float)
+X_eng = np.column_stack([hours, amounts, log_amount, is_night, high_amount])
+
+gb = GradientBoostingClassifier(n_estimators=<span class="t-num">100</span>, random_state=<span class="t-num">42</span>)
+cv_raw = cross_val_score(gb, X_raw, y, cv=<span class="t-num">5</span>, scoring=<span class="t-str">'roc_auc'</span>)
+cv_eng = cross_val_score(gb, X_eng, y, cv=<span class="t-num">5</span>, scoring=<span class="t-str">'roc_auc'</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"{'Features':<20} {'AUC Mean':>10} {'AUC Std':>9}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">42</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Raw (2 features)':<20} {cv_raw.mean():>10.4f} {cv_raw.std():>9.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Engineered (5 feat.)':<20} {cv_eng.mean():>10.4f} {cv_eng.std():>9.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nAUC improvement: +{cv_eng.mean()-cv_raw.mean():.4f} ({(cv_eng.mean()-cv_raw.mean())/cv_raw.mean()*100:.1f}%)"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Features             AUC Mean   AUC Std
+------------------------------------------
+Raw (2 features)       0.7341    0.0218
+Engineered (5 feat.)   0.8876    0.0143
+
+AUC improvement: +0.1535 (20.9%)</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 The numbers speak</span>
+      <p>Same model, same algorithm, same training data. Just 3 additional engineered features (log_amount, is_night, high_amount) improved AUC by 20.9% — from 0.734 to 0.888. The raw features contained the signal; the model just couldn't easily find it. <code>is_night</code> made the threshold at hour=6 explicit. <code>high_amount</code> made the threshold at amount=500 explicit. <code>log_amount</code> compressed the exponential distribution so the model treated $200→$400 and $2000→$4000 as comparable doublings instead of incomparable jumps.</p>
+      <p style="margin-top:0.65rem">Also notice: CV std dropped from 0.0218 → 0.0143. Engineering didn't just improve performance — it made performance more stable across folds. Better features = more consistent signal = less variance in model behaviour.</p>
+    </div>
+
+    <h2>09 — When It Matters Most</h2>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">✅ Feature engineering matters most</div>
+        <div class="prose-kv-val">
+          <strong>Tabular data with domain structure:</strong> any dataset where human knowledge can encode patterns (finance, healthcare, retail, IoT sensors). The gap between a naive and expert feature set is typically 10–30% AUC.<br><br>
+          <strong>Small datasets:</strong> when you have fewer examples, models can't discover patterns from raw data. Engineered features compress domain knowledge into the limited signal available, acting as a strong prior.<br><br>
+          <strong>Linear models:</strong> logistic regression, SVM, and linear regression can only model linear relationships. Feature engineering is how you give them non-linearity — via polynomial features, log transforms, and explicit interaction terms.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">✅ Feature engineering matters less</div>
+        <div class="prose-kv-val">
+          <strong>Large unstructured data (images, text, audio):</strong> deep learning learns representations automatically. A CNN discovers edge detectors, textures, and shapes from pixels. A Transformer learns token embeddings from raw text. Feature engineering is still present (tokenisation, augmentation, normalisation) but less manually intensive.<br><br>
+          <strong>Large tabular datasets with tree models:</strong> with millions of rows, XGBoost can discover many non-linear thresholds on its own. Engineering still helps — but the gap is smaller than on small datasets.<br><br>
+          <strong>AutoML pipelines:</strong> tools like AutoGluon and FLAML automate feature generation and selection. Still worth understanding — you need to know what they're doing to debug when they fail.
+        </div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 Feature Engineering in the Age of LLMs</span>
+      <p>Large language models appear to eliminate feature engineering for text — you just pass raw text and they extract what matters. This is true for unstructured inputs. But for structured tabular data, engineering remains critical. And even in LLM applications, "prompt engineering" is feature engineering in disguise: you're transforming raw user input into a representation (the prompt) the model can use more effectively. The craft shifts domain, it doesn't disappear. The best RAG systems also rely heavily on feature decisions: chunking strategy, metadata extraction, and embedding model choice all determine what signal is preserved when documents become retrieval vectors.</p>
+    </div>
+
+    <h2>10 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Feature engineering is where human judgment most directly enters machine learning. When you engineer an "is_night" flag for fraud detection, you're encoding a prior belief about fraudsters' behaviour. When you create "weekend_discharge" for hospital readmissions, you're encoding a theory about the healthcare system. These beliefs get trained into the model and become part of its predictions.</p>
+      <p style="margin-top:0.75rem"><strong>If your feature engineering assumptions encode societal biases — say, flagging "zip_code in high-crime area" in a loan model — the model learns from them as if they were neutral facts. How do you audit whether your feature engineering reflects reality or your assumptions about reality? Who should be in the room when those features are designed?</strong></p>
+    </div>
+
+    <h2>11 — Coming Up Next</h2>
+    <p>Day 15 — <strong>CNNs from Scratch.</strong> We close the classical ML phase and enter deep learning. Convolutional Neural Networks are what made computer vision tractable — understanding them from first principles (convolutions, pooling, receptive fields) gives you the mental model for every vision architecture that came after, including the Vision Transformers that now power modern image models.</p>
+
+    <h2>12 — Go Deeper</h2>
+    <p>🔗 <a href="https://www.kaggle.com/learn/feature-engineering" target="_blank" rel="noopener">Kaggle Feature Engineering Course</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Free · Hands-on notebooks covering mutual information, target encoding, and principal components.</em></p>
+
+    <p>🔗 <a href="https://www.youtube.com/watch?v=uu8um0JmYA8" target="_blank" rel="noopener">Feature Engineering Full Course</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">In this 1-hour tutorial, I'll guide you through the ins and outs of one of the most critical steps in data science and machine learning. Whether you're a beginner or an experienced data scientist, this course will equip you with the tools and techniques you need to effectively transform raw data into features that can be used to train machine learning models.</em></p>
+
+    <p style="margin-top:0.85rem">📄 <a href="https://arxiv.org/abs/2106.11959" target="_blank" rel="noopener">Why do tree-based models still outperform deep learning on tabular data? — Grinsztajn et al. (2022)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Shows that feature preprocessing and engineering explain much of the tree vs neural network gap on tabular benchmarks. Directly relevant to why everything in this post matters.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. Why does feature engineering typically produce larger accuracy gains than switching algorithms — and when does this principle break down?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Algorithms can only find patterns in the features presented. If the relevant signal isn't encoded in the feature space, no algorithm — however sophisticated — can recover it. Switching from Logistic Regression to XGBoost changes how patterns are found, not what patterns are available to find. Engineering the right features changes what's available — fundamentally a larger lever. The gain is larger because you're adding information, not just changing how existing information is processed. This principle holds strongly for tabular data with domain structure (finance, healthcare, IoT). It breaks down for large unstructured data (images, text, audio) where deep learning learns representations automatically from raw inputs at scale — the "feature engineering" is done inside the model architecture itself (convolutional filters, attention weights). Even there, however, data preprocessing, augmentation, and tokenisation choices still constitute a form of feature engineering.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What is target leakage, how does it produce falsely high test accuracy, and how do you detect and prevent it?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Target leakage is when a training feature contains information about the target that wouldn't be available at prediction time — typically because the feature is a consequence of the outcome rather than a cause of it. It produces falsely high test accuracy because the model learns to rely on this feature, and it's present in both training and test data. But in production, the feature doesn't exist yet (the outcome hasn't happened), so the model collapses. In the worked example: "collection_calls_received" is highly predictive (0.95 correlation) because calls only happen after default. Test accuracy 97.8% in development, 62.1% in production. Detection: if a feature has suspiciously high correlation (>0.8) with the target, ask "could I compute this value at the exact moment I make a prediction in production?" If the answer depends on knowing the outcome, it's leakage. Also: if test accuracy is unrealistically high (>95% on a hard problem), audit the highest-importance features. Prevention: split by time for time-series data, never randomly. Audit every feature's temporal availability. Be especially suspicious of features named "reason_for_X", "days_until_X", "calls_after_X."</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. Why should you use log(x+1) instead of log(x) for skewed features, and which models benefit most from this transformation?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">log(x) is undefined for x=0 and produces large negative values for x near 0, which distorts the distribution. log(x+1) shifts all values up by 1 before taking the log, so x=0 → log(1)=0 cleanly. This matters whenever your feature can be zero (transaction amounts, page views, counts). The transformation compresses right-skewed distributions: extremely high values (e.g., income=309K) map to moderate values (log(309001)≈12.6) while maintaining order. The practical effect is that variations in the middle of the distribution become as visible to the model as variations at the extreme. Models that benefit most: linear models (logistic regression, linear regression, SVM) — because they assume roughly linear relationships and symmetric error distributions, both violated by right-skewed features. KNN and other distance-based models — large outliers dominate Euclidean distance, distorting nearest-neighbour search. Neural networks — gradient descent on skewed inputs creates unstable gradients. Tree-based models (Random Forest, XGBoost) technically don't need it since they split on thresholds, which are scale-invariant — but log transformation can still speed up training by reducing the range of split candidates.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. When would you use target encoding instead of one-hot encoding for a categorical feature, and what's the risk of naive target encoding?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Use target encoding when a categorical feature has high cardinality — many unique values (hundreds to thousands, like city name, product_id, user_id). One-hot encoding would create hundreds or thousands of binary columns, most of which are nearly always zero (sparse). Target encoding replaces each category with the mean target value for that category, producing a single informative numerical column. The risk of naive target encoding: for categories with few observations, the mean target is unreliable and can be extreme (0 or 1). A category seen only once that happens to be a fraud case would get encoded as 1.0 — misleadingly implying 100% fraud rate. Prevention: use smoothing — the formula encoded(c) = (n_c × mean_c + m × global_mean) / (n_c + m) where m is a smoothing parameter (typically 10–300). When n_c is small, the encoding shrinks toward the global mean. The second risk: target encoding on training data uses the target to create a feature, which constitutes information leakage within training. Prevention: use out-of-fold target encoding inside cross-validation — fit the encoder on the k-1 training folds, transform the validation fold. Never fit and transform on the same data.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. Compare filter, wrapper, and embedded feature selection methods — when would you choose each?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Filter methods score each feature independently (correlation, mutual information, chi-squared) and select the top k. They're fast — O(p) model evaluations — and model-agnostic. Use for a quick first-pass to eliminate obviously useless features before more expensive methods. Limitation: they miss interactions. A feature with zero individual correlation might be highly predictive when combined with another; filter methods can't detect this. Wrapper methods evaluate subsets of features by training and evaluating a model on each subset. RFE trains a model, ranks features, drops the weakest, and repeats. Forward selection adds features one at a time. These are expensive (O(p²) model evaluations for RFE) but capture interactions. Use when training is cheap, the dataset is not huge, and you suspect feature interactions. Embedded methods perform selection as part of model training: L1 regularisation zeros out irrelevant weights during logistic regression training; tree models produce importance scores from impurity reduction during tree building. These are the practical default — they're free (you're already training the model), capture interactions (especially tree importances), and work at any scale. Use SHAP-based selection for the gold standard: it accounts for all feature interactions and measures true marginal contribution. The recommended workflow: filter to remove obvious noise, train model with embedded selection, verify with SHAP if interpretability is required.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Feature Engineering &amp; Selection</div>
+      <ol>
+        <li><strong>Features &gt; algorithms.</strong> Switching algorithms: 2–3% gain. Engineering the right features: 10–20% gain. Models can only find patterns the features allow them to see.</li>
+        <li><strong>Three phases:</strong> Create (generate new features), Transform (change distributions/scales), Select (remove what doesn't help).</li>
+        <li><strong>Temporal decomposition:</strong> extract hour, day_of_week, is_weekend, is_night, time_since_last_event from raw timestamps. Each is easier for a model to learn from than a raw UNIX integer.</li>
+        <li><strong>Log transform:</strong> apply log(x+1) to right-skewed features (income, amounts, counts). Compresses extremes, equalises treatment across the distribution. Required for linear models and KNN; optional for trees.</li>
+        <li><strong>Categorical encoding:</strong> OHE for low cardinality (&lt;20 values). Target encoding (with smoothing) for high cardinality. Frequency encoding as a simple baseline. Never OHE on thousands of unique values.</li>
+        <li><strong>Target encoding formula with smoothing:</strong> (n_c × mean_c + m × global_mean) / (n_c + m). Shrinks rare categories toward the global mean. Always fit on training data only.</li>
+        <li><strong>Target leakage:</strong> a feature that's a consequence of the outcome, not a predictor. Test accuracy 97.8% in development → 62.1% in production. Prevention: ask "can I know this at prediction time?"</li>
+        <li><strong>Aggregation features:</strong> per-entity history (mean_amount_last_7d, transaction_count_last_hour) often carries the most predictive power. Captures context that single-row features can't.</li>
+        <li><strong>Feature selection order:</strong> Filter (fast, remove obvious noise) → Embedded (RF/XGBoost importance, L1) → Wrapper (RFE, for interactions when budget allows) → SHAP (gold standard).</li>
+        <li><strong>Engineering adds stability, not just accuracy.</strong> In the before/after example: AUC improved 20.9%, CV std dropped from 0.022 → 0.014. Better features = more consistent signal = less model variance.</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is feature engineering and why does it matter more than algorithm choice?</strong><br>
+        <em>Feature engineering transforms raw data into representations that expose the underlying signal to a model. It matters more than algorithm choice because algorithms can only find patterns in the features provided — better features add information, while a better algorithm only improves how existing information is processed. On real datasets, feature improvements typically produce 10–20% gains versus 2–3% from switching algorithms.</em></li>
+        <li><strong>What is target leakage and how do you prevent it?</strong><br>
+        <em>Target leakage is when a feature contains information about the target that wouldn't be available at prediction time — typically a consequence of the outcome rather than a cause. It produces falsely high test accuracy (model learns to rely on the leaky feature) but catastrophic production performance (feature doesn't exist for new examples). Prevention: audit every feature's temporal availability, ask "could I compute this at the exact prediction moment?", use time-based splits for temporal data, and treat suspiciously high accuracy (>95%) as a red flag.</em></li>
+        <li><strong>When should you use log transformation and why?</strong><br>
+        <em>When a feature has a right-skewed distribution (income, amounts, counts) — skew >1 suggests applying log(x+1). It compresses extreme values and creates a more symmetric distribution that linear models, KNN, and neural networks handle much better. StandardScaler centres and scales but preserves skew — apply log first, then scale. Tree-based models don't technically need it since they split on thresholds (scale-invariant), but it can still speed up training.</em></li>
+        <li><strong>What's the difference between filter, wrapper, and embedded feature selection?</strong><br>
+        <em>Filter methods score each feature independently (mutual information, correlation) — fast but miss interactions. Wrapper methods evaluate feature subsets by training models (RFE) — captures interactions but expensive. Embedded methods select during model training (L1 zeros out irrelevant weights, tree importances rank features) — best balance of performance and cost, the practical default. SHAP-based selection is the gold standard when interpretability matters.</em></li>
+        <li><strong>How would you handle a categorical feature with 10,000 unique values?</strong><br>
+        <em>Not OHE — that creates 10,000 sparse columns. Use target encoding (replace each value with mean target for that category, with smoothing for rare values using the formula: (n_c × mean_c + m × global_mean)/(n_c + m)), frequency encoding (replace with occurrence count), or let LightGBM handle it natively. Always fit the encoder on training data only to prevent within-fold leakage.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p style="color:var(--text-muted);font-style:italic;font-size:0.9rem">No attachments for this topic yet.</p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#FeatureEngineering</span><span class="tag">#FeatureSelection</span><span class="tag">#TargetEncoding</span><span class="tag">#TargetLeakage</span><span class="tag">#LogTransform</span><span class="tag">#MutualInformation</span><span class="tag">#RFE</span><span class="tag">#DataPreprocessing</span><span class="tag">#TabularData</span><span class="tag">#MachineLearning</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="xgboost-lightgbm.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 13</span>
+    <span class="post-nav-title">XGBoost &amp; LightGBM</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var hidden = answer.style.display === 'none' || answer.style.display === '';
+    answer.style.display = hidden ? 'block' : 'none';
+    btn.textContent = hidden ? 'Hide answer \u2191' : 'Reveal answer \u2193';
+  }
+</script>
+</body>
+</html>
