@@ -185,12 +185,12 @@ cols = [<span class="t-str">'amount'</span>, <span class="t-str">'log_amount'</s
     <div class="code-output" style="white-space:pre">
       <div class="code-output-label">→ output</div>
  amount  log_amount  hour  is_night  amount_vs_city_avg  city_fraud_rate  is_fraud
-    100      4.615     2         1               0.047            0.250         0
-   5000      8.518    14         0               9.615            0.500         1
-     23      3.178     3         1               0.011            0.250         0
-   8200      9.012    15         0               3.877            0.250         1
-    450      6.112    22         0               0.865            0.500         0
-     12      2.565     9         0               0.006            0.250         0</div>
+    100    4.615121     2         1            0.047990             0.25         0
+   5000    8.517393    14         0            1.834862             0.50         1
+     23    3.178054     3         1            0.011038             0.25         0
+   8200    9.012011    15         0            3.935213             0.25         1
+    450    6.111467    22         0            0.165138             0.50         0
+     12    2.564949     9         0            0.005759             0.25         0</div>
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">💡 What each engineered feature reveals</span>
@@ -227,12 +227,12 @@ quantile_income = QuantileTransformer(output_distribution=<span class="t-str">'n
 
     <div class="code-output" style="white-space:pre">
       <div class="code-output-label">→ output</div>
-Transform               Mean      Std        Min        Max    Skew
+Transform                  Mean      Std        Min        Max    Skew
 ----------------------------------------------------------------------
-Raw income           39847.2  40614.3       31.2   309486.1    2.84
-Log(income+1)           10.2      1.1       3.44       12.64    0.04
-StandardScaler           0.0      1.0       -1.0        6.63    2.84
-QuantileTransform        0.0      1.0       -3.72        3.72   -0.01</div>
+Raw income              38900.2  38880.9      185.7   326897.8    1.87
+Log(income+1)              10.0      1.3        5.2       12.7   -0.83
+StandardScaler             -0.0      1.0       -1.0        7.4    1.87
+QuantileTransform           0.0      1.0       -5.2        5.2    0.00</div>
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">💡 Reading the transformation table</span>
@@ -357,8 +357,8 @@ acc_clean = accuracy_score(y_te, rf.predict(X_te_c))
       <div class="code-output-label">→ output</div>
 Model              Test Accuracy   Production Accuracy   Gap
 ------------------------------------------------------------
-With leakage       0.978           0.621                0.357
-Without leakage    0.821           0.821                0.000</div>
+With leakage       1.000           0.800                0.200
+Without leakage    0.780           0.780                0.000</div>
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">💡 The leakage disaster in numbers</span>
@@ -437,22 +437,18 @@ emb_cv = cross_val_score(rf, X_emb, y, cv=<span class="t-num">5</span>).mean()
 
     <div class="code-output" style="white-space:pre">
       <div class="code-output-label">→ output</div>
-Method                       Features  CV Accuracy
+Method                        Features  CV Accuracy
 -----------------------------------------------------
-Baseline (all 30)                  30       0.9648
-Filter: Mutual Info (top 10)       10       0.9578
-Wrapper: RFE (top 10)              10       0.9613
-Embedded: RF importance            12       0.9631
+Baseline (all 30)                   30       0.9561
+Filter: Mutual Info (top 10)        10       0.9491
+Wrapper: RFE (top 10)               10       0.9631
+Embedded: RF importance             10       0.9438
 
 Filter top 10 features:
-  ['mean concave points', 'worst radius', 'worst perimeter', 'worst area',
-   'worst concave points', 'mean perimeter', 'mean area', 'mean radius',
-   'worst texture', 'mean concavity']
+  [np.str_('mean radius'), np.str_('mean perimeter'), np.str_('mean area'), np.str_('mean concavity'), np.str_('mean concave points'), np.str_('area error'), np.str_('worst radius'), np.str_('worst perimeter'), np.str_('worst area'), np.str_('worst concave points')]
 
 RFE top 10 features:
-  ['mean texture', 'mean concave points', 'radius error', 'worst radius',
-   'worst texture', 'worst perimeter', 'worst smoothness',
-   'worst concave points', 'worst symmetry', 'worst fractal dimension']</div>
+  [np.str_('mean area'), np.str_('mean concavity'), np.str_('mean concave points'), np.str_('area error'), np.str_('worst radius'), np.str_('worst texture'), np.str_('worst perimeter'), np.str_('worst area'), np.str_('worst concavity'), np.str_('worst concave points')]</div>
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">💡 What the selection comparison shows</span>
@@ -461,53 +457,65 @@ RFE top 10 features:
       <p style="margin-top:0.65rem"><strong>When each method wins:</strong> Filter for quick first-pass elimination of clearly useless features. RFE when training budget allows and interactions matter. Embedded (RF/XGBoost importance or L1) as the go-to production method — it's already doing the work during model training.</p>
     </div>
 
-    <h2>08 — The Before/After: Does Engineering Actually Help?</h2>
-    <p>All the theory is worth nothing if the numbers don't move. Here's a direct comparison on a deliberately limited dataset — only temporal features available — showing how engineering creates signal from nothing:</p>
+<h2>08 — The Before/After: Does Engineering Actually Help?</h2>
+<p>All the theory is worth nothing if the numbers don't move. Using the <b>Adult Census Income</b> dataset (predicting if annual income >$50k), we see how moving beyond raw numeric features to socio-economic signals creates a massive leap in predictive power:</p>
 
-    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<pre><code><span class="t-key">import</span> pandas <span class="t-key">as</span> pd
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
 <span class="t-key">from</span> sklearn.ensemble <span class="t-key">import</span> GradientBoostingClassifier
-<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> cross_val_score
+<span class="t-key">from</span> sklearn.model_selection <span class="t-key">import</span> StratifiedKFold, cross_val_score
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> fetch_openml
 
-np.random.seed(<span class="t-num">42</span>)
-N = <span class="t-num">2000</span>
+<span class="t-cmt"># 1. Load Real Dataset (Adult Census Income)</span>
+<span class="t-key">print</span>(<span class="t-str">"Fetching real-world data... Please wait."</span>)
+data = fetch_openml(name=<span class="t-str">'adult'</span>, version=<span class="t-num">2</span>, as_frame=<span class="t-key">True</span>, parser=<span class="t-str">'auto'</span>)
+df = data.frame.dropna().sample(<span class="t-num">5000</span>, random_state=<span class="t-num">42</span>) 
 
-<span class="t-cmt"># Simulate fraud detection with timestamp + amount only</span>
-hours   = np.random.randint(<span class="t-num">0</span>, <span class="t-num">24</span>, N)
-amounts = np.random.exponential(<span class="t-num">200</span>, N)
+<span class="t-cmt"># Target: income >50K</span>
+y = (df[<span class="t-str">'class'</span>] == <span class="t-str">'>50K'</span>).astype(int)
 
-<span class="t-cmt"># True fraud pattern: night + high amount → more fraud</span>
-fraud_prob = (<span class="t-num">0.05</span>
-    + <span class="t-num">0.25</span> * (hours &lt; <span class="t-num">6</span>).astype(float)       <span class="t-cmt"># night → +25%</span>
-    + <span class="t-num">0.20</span> * (amounts &gt; <span class="t-num">500</span>).astype(float))   <span class="t-cmt"># high amount → +20%</span>
-y = (np.random.rand(N) &lt; fraud_prob.clip(<span class="t-num">0</span>, <span class="t-num">1</span>)).astype(int)
+<span class="t-cmt"># 2. RAW FEATURES (Baseline: Only Age and Hours worked)</span>
+X_raw = df[[<span class="t-str">'age'</span>, <span class="t-str">'hours-per-week'</span>]].copy()
 
-<span class="t-cmt"># RAW features: hour (0–23) and raw amount</span>
-X_raw = np.column_stack([hours, amounts])
+<span class="t-cmt"># 3. ADVANCED FEATURE ENGINEERING</span>
+X_eng = X_raw.copy()
 
-<span class="t-cmt"># ENGINEERED features: extract the exact patterns that generate fraud</span>
-is_night    = (hours &lt; <span class="t-num">6</span>).astype(float)
-log_amount  = np.log1p(amounts)
-high_amount = (amounts &gt; <span class="t-num">500</span>).astype(float)
-X_eng = np.column_stack([hours, amounts, log_amount, is_night, high_amount])
+<span class="t-cmt"># Education-Wealth Interaction (Experience Proxy)</span>
+X_eng[<span class="t-str">'edu_age_index'</span>] = df[<span class="t-str">'education-num'</span>] * df[<span class="t-str">'age'</span>]
 
-gb = GradientBoostingClassifier(n_estimators=<span class="t-num">100</span>, random_state=<span class="t-num">42</span>)
-cv_raw = cross_val_score(gb, X_raw, y, cv=<span class="t-num">5</span>, scoring=<span class="t-str">'roc_auc'</span>)
-cv_eng = cross_val_score(gb, X_eng, y, cv=<span class="t-num">5</span>, scoring=<span class="t-str">'roc_auc'</span>)
+<span class="t-cmt"># Life-Stage Binning (Focusing on peak earning years)</span>
+X_eng[<span class="t-str">'is_prime_age'</span>] = df[<span class="t-str">'age'</span>].between(<span class="t-num">30</span>, <span class="t-num">50</span>).astype(int)
 
-<span class="t-key">print</span>(<span class="t-str">f"{'Features':<20} {'AUC Mean':>10} {'AUC Std':>9}"</span>)
-<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">42</span>)
-<span class="t-key">print</span>(<span class="t-str">f"{'Raw (2 features)':<20} {cv_raw.mean():>10.4f} {cv_raw.std():>9.4f}"</span>)
-<span class="t-key">print</span>(<span class="t-str">f"{'Engineered (5 feat.)':<20} {cv_eng.mean():>10.4f} {cv_eng.std():>9.4f}"</span>)
-<span class="t-key">print</span>(<span class="t-str">f"\nAUC improvement: +{cv_eng.mean()-cv_raw.mean():.4f} ({(cv_eng.mean()-cv_raw.mean())/cv_raw.mean()*100:.1f}%)"</span>)</code></pre>
+<span class="t-cmt"># Marital Status (A massive real-world predictor in this dataset)</span>
+X_eng[<span class="t-str">'is_married'</span>] = df[<span class="t-str">'marital-status'</span>].str.contains(<span class="t-str">'Married'</span>).astype(int)
 
-    <div class="code-output" style="white-space:pre">
-      <div class="code-output-label">→ output</div>
-Features             AUC Mean   AUC Std
-------------------------------------------
-Raw (2 features)       0.7341    0.0218
-Engineered (5 feat.)   0.8876    0.0143
+<span class="t-cmt"># Non-linear transformation for skewed work-hour distributions</span>
+X_eng[<span class="t-str">'log_hours'</span>] = np.log1p(df[<span class="t-str">'hours-per-week'</span>])
 
-AUC improvement: +0.1535 (20.9%)</div>
+<span class="t-cmt"># 4. Model & Evaluation</span>
+cv_strat = StratifiedKFold(n_splits=<span class="t-num">5</span>, shuffle=<span class="t-key">True</span>, random_state=<span class="t-num">42</span>)
+model = GradientBoostingClassifier(n_estimators=<span class="t-num">100</span>, max_depth=<span class="t-num">3</span>, random_state=<span class="t-num">42</span>)
+
+cv_raw = cross_val_score(model, X_raw, y, cv=cv_strat, scoring=<span class="t-str">'roc_auc'</span>)
+cv_eng = cross_val_score(model, X_eng, y, cv=cv_strat, scoring=<span class="t-str">'roc_auc'</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"{'Feature Set':<25} {'AUC Mean':>10} {'AUC Std':>9}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">50</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Raw (Age + Hours)':<25} {cv_raw.mean():>10.4f} {cv_raw.std():>9.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Engineered (6 features)':<25} {cv_eng.mean():>10.4f} {cv_eng.std():>9.4f}"</span>)
+</code></pre>
+
+<div class="code-output" style="white-space:pre">
+<div class="code-output-label">→ output</div>
+Fetching real-world data... Please wait.
+
+==================================================
+Feature Set               AUC Mean   AUC Std
+--------------------------------------------------
+Raw (Age + Hours)           0.7383    0.0158
+Engineered (6 features)     0.8809    0.0115
+--------------------------------------------------
+Actual AUC Improvement: 19.32%</div>
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">💡 The numbers speak</span>
