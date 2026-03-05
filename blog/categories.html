@@ -378,16 +378,17 @@
     <div class="series-progress">
       <span class="series-progress-label">🌙 Series progress</span>
       <div class="series-progress-track">
-        <div class="series-progress-fill" style="width:3.33%"></div>
+        <div class="series-progress-fill" style="width:45.16%"></div>
       </div>
-      <span class="series-progress-stat"><em>1</em> / 30 posts published</span>
+      <span class="series-progress-stat"><em>14</em> / 31 posts published</span>
     </div>
 
     <!-- FILTER PILLS -->
     <div class="cat-filter-bar" role="group" aria-label="Filter by category">
-      <button class="cat-pill active" data-cat="all"            onclick="catFilter(this)">All <span class="cat-pill-count">8</span></button>
+      <button class="cat-pill active" data-cat="all"            onclick="catFilter(this)">All <span class="cat-pill-count">9</span></button>
       <button class="cat-pill"        data-cat="foundations"    onclick="catFilter(this)">🧱 Foundations <span class="cat-pill-count">6</span></button>
       <button class="cat-pill"        data-cat="ml-models"      onclick="catFilter(this)">🤖 ML Models <span class="cat-pill-count">8</span></button>
+      <button class="cat-pill"        data-cat="deep-learning"  onclick="catFilter(this)">🧠 Deep Learning <span class="cat-pill-count">1</span></button>
       <button class="cat-pill"        data-cat="cv"             onclick="catFilter(this)">👁️ Computer Vision <span class="cat-pill-count">3</span></button>
       <button class="cat-pill"        data-cat="nlp"            onclick="catFilter(this)">💬 NLP <span class="cat-pill-count">2</span></button>
       <button class="cat-pill"        data-cat="transformers"   onclick="catFilter(this)">⚡ Transformers &amp; LLMs <span class="cat-pill-count">4</span></button>
@@ -550,7 +551,7 @@
           <span class="cat-row-lock">🔒</span>
         </a>
 
-        <a href="xgboost.html" class="cat-row locked">
+        <a href="xgboost-lightgbm.html" class="cat-row locked">
           <span class="cat-day">Day 13</span>
           <span class="cat-row-title">XGBoost &amp; LightGBM</span>
           <span class="cat-row-meta">13 min · Mar 3</span>
@@ -562,8 +563,39 @@
     </div>
 
 
+
+
     <!-- ══════════════════════════════════════════════════════════════
-         👁️  COMPUTER VISION  (Days 15–17)
+         🧠  DEEP LEARNING  (Day 15 — bridge from classical ML)
+    ══════════════════════════════════════════════════════════════════ -->
+    <div class="cat-section open" data-cat="deep-learning" data-animate>
+      <div class="cat-header" onclick="toggleCat(this.parentElement)">
+        <div class="cat-icon">🧠</div>
+        <div>
+          <h2 class="cat-title">Deep Learning</h2>
+          <p class="cat-desc">From neurons to networks — the bridge from classical ML to modern deep learning, backprop, and activations.</p>
+        </div>
+        <div class="cat-meta-right">
+          <!-- UPDATE ↓ -->
+          <span class="cat-count-badge">1 post</span>
+          <span class="cat-chevron">▼</span>
+        </div>
+      </div>
+      <div class="cat-body">
+
+        <a href="neural-networks.html" class="cat-row locked">
+          <span class="cat-day">Day 15</span>
+          <span class="cat-row-title">Neural Networks: From Logistic Regression to Deep Learning</span>
+          <span class="cat-row-meta">23 min · Mar 5</span>
+          <span class="cat-row-arrow">→</span>
+          <span class="cat-row-lock">🔒</span>
+        </a>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         👁️  COMPUTER VISION  (Days 16–18)
     ══════════════════════════════════════════════════════════════════ -->
     <div class="cat-section open" data-cat="cv" data-animate>
       <div class="cat-header" onclick="toggleCat(this.parentElement)">
@@ -581,25 +613,25 @@
       <div class="cat-body">
 
         <a href="cnn.html" class="cat-row locked">
-          <span class="cat-day">Day 15</span>
+          <span class="cat-day">Day 16</span>
           <span class="cat-row-title">CNNs from Scratch</span>
-          <span class="cat-row-meta">15 min · Mar 5</span>
+          <span class="cat-row-meta">15 min · Mar 6</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="transfer-learning.html" class="cat-row locked">
-          <span class="cat-day">Day 16</span>
+          <span class="cat-day">Day 17</span>
           <span class="cat-row-title">Transfer Learning &amp; Fine-Tuning</span>
-          <span class="cat-row-meta">14 min · Mar 6</span>
+          <span class="cat-row-meta">14 min · Mar 7</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="object-detection.html" class="cat-row locked">
-          <span class="cat-day">Day 17</span>
+          <span class="cat-day">Day 18</span>
           <span class="cat-row-title">Object Detection, YOLO &amp; Segmentation</span>
-          <span class="cat-row-meta">13 min · Mar 7</span>
+          <span class="cat-row-meta">13 min · Mar 8</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -627,17 +659,17 @@
       <div class="cat-body">
 
         <a href="nlp-fundamentals.html" class="cat-row locked">
-          <span class="cat-day">Day 18</span>
+          <span class="cat-day">Day 19</span>
           <span class="cat-row-title">NLP Fundamentals: Tokenisation, Bag-of-Words &amp; TF-IDF</span>
-          <span class="cat-row-meta">13 min · Mar 8</span>
+          <span class="cat-row-meta">13 min · Mar 9</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="word-embeddings.html" class="cat-row locked">
-          <span class="cat-day">Day 19</span>
+          <span class="cat-day">Day 20</span>
           <span class="cat-row-title">Word Embeddings: Word2Vec, GloVe &amp; Sentence Transformers</span>
-          <span class="cat-row-meta">14 min · Mar 9</span>
+          <span class="cat-row-meta">14 min · Mar 10</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -665,33 +697,33 @@
       <div class="cat-body">
 
         <a href="attention-transformer.html" class="cat-row locked">
-          <span class="cat-day">Day 20</span>
+          <span class="cat-day">Day 21</span>
           <span class="cat-row-title">Attention &amp; the Transformer Architecture</span>
-          <span class="cat-row-meta">16 min · Mar 10</span>
+          <span class="cat-row-meta">16 min · Mar 11</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="positional-encodings.html" class="cat-row locked">
-          <span class="cat-day">Day 21</span>
+          <span class="cat-day">Day 22</span>
           <span class="cat-row-title">Positional Encodings: Sinusoidal, RoPE &amp; ALiBi</span>
-          <span class="cat-row-meta">13 min · Mar 11</span>
+          <span class="cat-row-meta">13 min · Mar 12</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="bert-vs-gpt.html" class="cat-row locked">
-          <span class="cat-day">Day 22</span>
+          <span class="cat-day">Day 23</span>
           <span class="cat-row-title">BERT vs GPT: Encoders, Decoders &amp; What They're For</span>
-          <span class="cat-row-meta">12 min · Mar 12</span>
+          <span class="cat-row-meta">12 min · Mar 13</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="scaling-laws.html" class="cat-row locked">
-          <span class="cat-day">Day 23</span>
+          <span class="cat-day">Day 24</span>
           <span class="cat-row-title">Scaling Laws: How We Know Bigger Models Will Be Smarter</span>
-          <span class="cat-row-meta">11 min · Mar 13</span>
+          <span class="cat-row-meta">11 min · Mar 14</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -719,17 +751,17 @@
       <div class="cat-body">
 
         <a href="lora-qlora.html" class="cat-row locked">
-          <span class="cat-day">Day 24</span>
+          <span class="cat-day">Day 25</span>
           <span class="cat-row-title">LoRA &amp; QLoRA: Parameter-Efficient Fine-Tuning</span>
-          <span class="cat-row-meta">14 min · Mar 14</span>
+          <span class="cat-row-meta">14 min · Mar 15</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="rlhf.html" class="cat-row locked">
-          <span class="cat-day">Day 25</span>
+          <span class="cat-day">Day 26</span>
           <span class="cat-row-title">RLHF: Teaching Models to Follow Instructions</span>
-          <span class="cat-row-meta">13 min · Mar 15</span>
+          <span class="cat-row-meta">13 min · Mar 16</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -757,25 +789,25 @@
       <div class="cat-body">
 
         <a href="rag-part1.html" class="cat-row locked">
-          <span class="cat-day">Day 26</span>
+          <span class="cat-day">Day 27</span>
           <span class="cat-row-title">RAG Part 1: Architecture &amp; Chunking Strategies</span>
-          <span class="cat-row-meta">14 min · Mar 16</span>
+          <span class="cat-row-meta">14 min · Mar 17</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="rag-part2.html" class="cat-row locked">
-          <span class="cat-day">Day 27</span>
+          <span class="cat-day">Day 28</span>
           <span class="cat-row-title">RAG Part 2: Vector Databases &amp; Retrieval</span>
-          <span class="cat-row-meta">13 min · Mar 17</span>
+          <span class="cat-row-meta">13 min · Mar 18</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="rag-part3.html" class="cat-row locked">
-          <span class="cat-day">Day 28</span>
+          <span class="cat-day">Day 29</span>
           <span class="cat-row-title">RAG Part 3: Re-Ranking, Evaluation &amp; Production</span>
-          <span class="cat-row-meta">14 min · Mar 18</span>
+          <span class="cat-row-meta">14 min · Mar 19</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -803,17 +835,17 @@
       <div class="cat-body">
 
         <a href="vlms.html" class="cat-row locked">
-          <span class="cat-day">Day 29</span>
+          <span class="cat-day">Day 30</span>
           <span class="cat-row-title">Vision-Language Models: CLIP, LLaVA &amp; GPT-4V</span>
-          <span class="cat-row-meta">14 min · Mar 19</span>
+          <span class="cat-row-meta">14 min · Mar 20</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
 
         <a href="mlops.html" class="cat-row locked">
-          <span class="cat-day">Day 30</span>
+          <span class="cat-day">Day 31</span>
           <span class="cat-row-title">MLOps: From Notebook to Production</span>
-          <span class="cat-row-meta">13 min · Mar 20</span>
+          <span class="cat-row-meta">13 min · Mar 21</span>
           <span class="cat-row-arrow">→</span>
           <span class="cat-row-lock">🔒</span>
         </a>
@@ -847,7 +879,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy">© 2025 Mohamed Abdalkader. All rights reserved.</p>
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
       <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
     </div>
   </div>
