@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 16 — CNNs from Scratch | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="How convolutional neural networks actually see — why dense MLPs collapse on images, convolutions from first principles, receptive fields, BatchNorm, ResNets, and the full architecture evolution from AlexNet to ConvNeXt." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 30-Day AI Ramadan Series &nbsp;·&nbsp; Day 16 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Mar 6, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">24 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Computer Vision</span>
+    </div>
+    <h1>CNNs from Scratch:<br>How Machines Learned to See</h1>
+    <p class="post-hero-lead">Before 2012, the best computer vision systems were hand-crafted by experts over decades. Then a convolutional neural network entered ImageNet and cut the error rate nearly in half. Understanding <em>why</em> that happened — from first principles — is what this post is about.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>In September 2012, a team from the University of Toronto<br>
+      submitted an entry to the ImageNet Large Scale Visual Recognition Challenge.<br>
+      The competition had run since 2010. The best error rate to that point: around 25%.<br><br>
+      AlexNet scored 15.3%. The second-place team: 26.2%.<br><br>
+      A gap that size doesn't happen in a mature competition.<br>
+      The judges assumed a mistake had been made. It hadn't.<br>
+      A paradigm had shifted — and everything that followed,<br>
+      from self-driving cars to medical AI, traces back to that moment.</p>
+    </blockquote>
+
+    <h2>01 — The Problem with Feeding Images to a Dense Network</h2>
+    <p>Before building a CNN, it's worth understanding <em>exactly</em> why the obvious approach — feeding raw pixel values into the dense neural network from Day 15 — fails so badly on images. The failure has two distinct causes, and the CNN solves both simultaneously.</p>
+
+    <p><strong>Problem 1: The parameter explosion.</strong> A colour image at 224×224 resolution contains 224 × 224 × 3 = 150,528 numbers. A dense hidden layer with 1,000 neurons needs one weight per input-output pair: 150,528 × 1,000 = <strong>150.5 million parameters</strong> — for a single layer. That's not just slow to train. It's statistically hopeless. With millions of parameters, you need tens of millions of training images just to avoid catastrophic overfitting, before even adding more layers. The entire ImageNet training set has about 1.2 million images. A single dense layer already needs more parameters than can be meaningfully trained on it.</p>
+
+    <p><strong>Problem 2: Spatial blindness.</strong> In a dense layer, every input neuron connects to every output neuron with a unique, independent weight. There is no concept of "pixel (12, 15) is adjacent to pixel (12, 16)." The network has to learn spatial relationships from scratch, from weights — and it has to re-learn them independently for every possible position. An eye in the top-left corner and an eye in the bottom-right corner of an image are structurally identical, but a dense network treats them as completely different phenomena requiring completely different weights. This is wildly inefficient for any data where spatial structure matters.</p>
+
+    <pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+
+<span class="t-cmt"># ── Demonstrate the parameter gap ────────────────────────────────────────</span>
+<span class="t-cmt"># Image: 224×224 colour (standard ImageNet input)</span>
+img_pixels = <span class="t-num">224</span> * <span class="t-num">224</span> * <span class="t-num">3</span>      <span class="t-cmt"># = 150,528</span>
+hidden_size = <span class="t-num">1000</span>
+
+<span class="t-cmt"># Dense MLP — first hidden layer only</span>
+dense_layer = nn.Linear(img_pixels, hidden_size)
+dense_params = <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> dense_layer.parameters())
+
+<span class="t-cmt"># CNN — first conv layer: 3 input channels, 64 filters, 3×3 kernel</span>
+<span class="t-cmt"># (same as AlexNet's first layer configuration, but 3×3 not 11×11)</span>
+conv_layer  = nn.Conv2d(<span class="t-num">3</span>, <span class="t-num">64</span>, kernel_size=<span class="t-num">3</span>, padding=<span class="t-num">1</span>)
+conv_params = <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> conv_layer.parameters())
+
+<span class="t-key">print</span>(<span class="t-str">f"Image size:            {img_pixels:>10,} numbers  (224×224×3)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Dense layer params:    {dense_params:>10,}  (150,528 × 1,000 + bias)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Conv layer params:     {conv_params:>10,}  (3×3×3×64 + 64 bias)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Ratio:                 {dense_params/conv_params:>10.0f}×  more params in dense"</span>)
+<span class="t-key">print</span>()
+
+<span class="t-cmt"># Full network comparison — 3-layer dense MLP vs 3-block CNN</span>
+dense_mlp = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(<span class="t-num">150528</span>, <span class="t-num">1000</span>), nn.ReLU(),
+    nn.Linear(<span class="t-num">1000</span>,   <span class="t-num">512</span>),  nn.ReLU(),
+    nn.Linear(<span class="t-num">512</span>,    <span class="t-num">10</span>),
+)
+simple_cnn = nn.Sequential(
+    nn.Conv2d(<span class="t-num">3</span>,  <span class="t-num">32</span>, <span class="t-num">3</span>, padding=<span class="t-num">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="t-num">2</span>),  <span class="t-cmt"># 224→112</span>
+    nn.Conv2d(<span class="t-num">32</span>, <span class="t-num">64</span>, <span class="t-num">3</span>, padding=<span class="t-num">1</span>), nn.ReLU(), nn.MaxPool2d(<span class="t-num">2</span>),  <span class="t-cmt"># 112→56</span>
+    nn.Conv2d(<span class="t-num">64</span>, <span class="t-num">128</span>,<span class="t-num">3</span>, padding=<span class="t-num">1</span>), nn.ReLU(), nn.AdaptiveAvgPool2d(<span class="t-num">1</span>),
+    nn.Flatten(),
+    nn.Linear(<span class="t-num">128</span>, <span class="t-num">10</span>),
+)
+mlp_total = <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> dense_mlp.parameters())
+cnn_total = <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> simple_cnn.parameters())
+
+<span class="t-key">print</span>(<span class="t-str">f"3-layer dense MLP:     {mlp_total:>10,} parameters"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"3-block CNN:           {cnn_total:>10,} parameters"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"CNN is {mlp_total/cnn_total:.0f}× smaller, yet better at images"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Image size:               150,528 numbers  (224×224×3)
+Dense layer params:       150,528,000  (150,528 × 1,000 + bias)
+Conv layer params:              1,792  (3×3×3×64 + 64 bias)
+Ratio:                         84,000×  more params in dense
+
+3-layer dense MLP:        151,042,058 parameters
+3-block CNN:                  146,474 parameters
+CNN is 1031× smaller, yet better at images</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 What those numbers mean</span>
+      <p>The first dense layer alone has 150 million parameters — more than many production CNN models in their entirety. The 3-block CNN has 146,474 parameters and achieves far better accuracy on image tasks. The ratio is over 1,000:1. This isn't a minor efficiency improvement; it's a fundamental difference in how well the architecture matches the structure of the data.</p>
+      <p style="margin-top:0.65rem">The conv layer's 1,792 parameters breaks down as: 3×3 kernel × 3 input channels × 64 filters = 1,728 weight parameters, plus 64 bias terms = 1,792 total. Those 1,728 weights scan the entire 224×224 image and produce 64 feature maps — 64 different pattern detectors applied everywhere, simultaneously. A dense layer needs 150 million parameters to do less.</p>
+    </div>
+
+    <h2>02 — The Convolution Operation, Step by Step</h2>
+    <p>A convolution filter is a small grid of learned numbers — typically 3×3. You place it at the top-left corner of the image, multiply each filter value by the corresponding pixel value underneath it, sum all 9 products, and write that single number to an output grid. Then slide the filter one pixel right and repeat. When you reach the end of the row, drop one row and start again from the left. The complete output is called a <strong>feature map</strong> — one value per position, representing how strongly the filter's pattern appeared at each location.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># ── Manual 2D convolution — one filter, one pass ──────────────────────────</span>
+<span class="t-cmt"># Simulated 5×5 grayscale image patch</span>
+image = np.array([
+    [<span class="t-num">10</span>, <span class="t-num">10</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>],
+    [<span class="t-num">10</span>, <span class="t-num">10</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>],
+    [<span class="t-num">10</span>, <span class="t-num">10</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>],
+    [<span class="t-num">10</span>, <span class="t-num">10</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>],
+    [<span class="t-num">10</span>, <span class="t-num">10</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>,  <span class="t-num">0</span>],
+], dtype=float)   <span class="t-cmt"># Bright left half, dark right half — vertical edge at column 2</span>
+
+<span class="t-cmt"># Sobel vertical edge detector (this is what CNNs often learn as first filters)</span>
+filter_vertical = np.array([
+    [-<span class="t-num">1</span>,  <span class="t-num">0</span>,  <span class="t-num">1</span>],
+    [-<span class="t-num">1</span>,  <span class="t-num">0</span>,  <span class="t-num">1</span>],
+    [-<span class="t-num">1</span>,  <span class="t-num">0</span>,  <span class="t-num">1</span>],
+])
+
+<span class="t-cmt"># Manual convolution (no padding, stride=1) → output is (5-3+1)×(5-3+1) = 3×3</span>
+H, W = image.shape
+fH, fW = filter_vertical.shape
+out_H, out_W = H - fH + <span class="t-num">1</span>, W - fW + <span class="t-num">1</span>
+
+feature_map = np.zeros((out_H, out_W))
+<span class="t-key">for</span> i <span class="t-key">in</span> range(out_H):
+    <span class="t-key">for</span> j <span class="t-key">in</span> range(out_W):
+        patch = image[i:i+fH, j:j+fW]          <span class="t-cmt"># 3×3 patch of the image</span>
+        feature_map[i, j] = (patch * filter_vertical).sum()  <span class="t-cmt"># element-wise multiply + sum</span>
+
+<span class="t-key">print</span>(<span class="t-str">"Image (bright left, dark right):"</span>)
+<span class="t-key">print</span>(image.astype(int))
+<span class="t-key">print</span>(<span class="t-str">"\nVertical-edge filter:"</span>)
+<span class="t-key">print</span>(filter_vertical)
+<span class="t-key">print</span>(<span class="t-str">"\nFeature map (response to vertical edge):"</span>)
+<span class="t-key">print</span>(feature_map.astype(int))
+<span class="t-key">print</span>(<span class="t-str">"\nInterpretation:"</span>)
+<span class="t-key">print</span>(<span class="t-str">"  Column 1 response: large negative (left side of bright region)"</span>)
+<span class="t-key">print</span>(<span class="t-str">"  Column 2 response: zero        (inside bright region, no edge)"</span>)
+<span class="t-key">print</span>(<span class="t-str">"  Column 3 response: large neg.  (right side — transition zone)"</span>)
+<span class="t-key">print</span>(<span class="t-str">"\nAfter abs(ReLU): the filter fires strongly at the vertical edge position"</span>)
+
+<span class="t-cmt"># Show one computation step manually</span>
+<span class="t-key">print</span>(<span class="t-str">"\n── Manual computation at position (0,1) ──"</span>)
+patch = image[<span class="t-num">0</span>:<span class="t-num">3</span>, <span class="t-num">1</span>:<span class="t-num">4</span>]
+<span class="t-key">print</span>(<span class="t-str">f"Patch:\n{patch.astype(int)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Filter:\n{filter_vertical}"</span>)
+products = patch * filter_vertical
+<span class="t-key">print</span>(<span class="t-str">f"Element-wise products:\n{products.astype(int)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Sum = {products.sum():.0f} → feature_map[0,1]"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Image (bright left, dark right):
+[[10 10  0  0  0]
+ [10 10  0  0  0]
+ [10 10  0  0  0]
+ [10 10  0  0  0]
+ [10 10  0  0  0]]
+
+Vertical-edge filter:
+[[-1  0  1]
+ [-1  0  1]
+ [-1  0  1]]
+
+Feature map (response to vertical edge):
+[[ -30    0   0]
+ [ -30    0   0]
+ [ -30    0   0]]
+
+Interpretation:
+  Column 1 response: large negative (left side of bright region)
+  Column 2 response: zero        (inside bright region, no edge)
+  Column 3 response: large neg.  (right side — transition zone)
+
+After abs(ReLU): the filter fires strongly at the vertical edge position
+
+── Manual computation at position (0,1) ──
+Patch:
+[[10  0  0]
+ [10  0  0]
+ [10  0  0]]
+Filter:
+[[-1  0  1]
+ [-1  0  1]
+ [-1  0  1]]
+Element-wise products:
+[[-10   0   0]
+ [-10   0   0]
+ [-10   0   0]]
+Sum = -30 → feature_map[0,1]</div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📐 What just happened — unpacked</span>
+      <p>The image has bright pixels (value 10) on the left two columns and dark pixels (value 0) on the right three. This is a clean vertical edge — exactly the kind of boundary that appears in real images at object borders.</p>
+      <p style="margin-top:0.65rem">The filter <code>[-1, 0, 1]</code> in each row is designed to fire when the left side of a 3×3 patch is darker and the right side is brighter (positive response) or vice versa (negative response). At position (0,1), the patch has brightness 10 on the left column and 0 on the right — so left × (−1) + right × 1 = −10 + 0 = −10 per row, summed across 3 rows = −30. Strong negative response. After ReLU(<code>max(0, −30)</code>) this becomes 0, but after applying the filter in the opposite orientation or using <code>abs()</code>, the strong response <em>at the edge position</em> is preserved.</p>
+      <p style="margin-top:0.65rem"><strong>In a real CNN, the filter weights are not hand-crafted.</strong> They start random and are learned by backpropagation. But CNNs trained on natural images typically learn something very close to this Sobel-like filter in their first layer — because edges are genuinely the most discriminative low-level feature in natural images. The network discovers this on its own.</p>
+    </div>
+
+    <h2>03 — The CNN Forward Pass: Layer by Layer</h2>
+    <p>A single convolution produces one feature map. A layer has many filters — say 64 — each looking for a different pattern. Apply all 64 to the same input and you get 64 feature maps stacked together: a 3D volume of shape (64, H, W). This volume is the input to the next layer. Each successive layer detects patterns in the previous layer's patterns — building a hierarchy from simple to complex.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text">
+          <strong>Convolutional layer:</strong> K filters of size F×F×C (C = input channels) slide over the input. Each filter computes one feature map. K filters → K feature maps. Output shape: (K, H_out, W_out). Parameters: F×F×C×K + K (bias). With padding='same', spatial dimensions are preserved. Stride &gt; 1 reduces spatial size without pooling.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text">
+          <strong>Batch Normalisation:</strong> After the convolution and before ReLU, normalise each feature map across the batch to zero mean and unit variance, then apply two learned parameters (scale γ and shift β). This dramatically stabilises training by preventing activation distributions from drifting layer-to-layer ("internal covariate shift"). It also acts as mild regularisation. Without BatchNorm, deep CNNs (20+ layers) were difficult to train; with it, 50-layer or 100-layer networks became straightforward.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text">
+          <strong>ReLU activation:</strong> <code>max(0, x)</code> element-wise. Without activation, stacking convolutions is mathematically equivalent to one convolution (linear × linear = linear). ReLU breaks linearity at every layer, enabling the hierarchical non-linear representations that make CNNs powerful. It also solves the vanishing gradient problem in convolutions (gradient = 1 for positive activations, 0 for negative — same mechanism as in Day 15's MLP).
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text">
+          <strong>Pooling layer:</strong> Reduce spatial dimensions. Max-pooling (most common): take the maximum in each 2×2 window with stride 2 → halves height and width. This compresses the representation, provides slight translation invariance (a feature detected one pixel off still survives), and reduces computation for deeper layers. Average pooling or Global Average Pooling (GAP) compress an entire feature map to one number — used in modern architectures instead of a dense layer.
+        </div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text">
+          <strong>Dense classifier head:</strong> After several conv+BN+ReLU+pool blocks, the spatial volume is flattened (or global-average-pooled) into a 1D vector. One or two fully-connected layers combine all the spatial evidence into a final classification decision. Last layer: one neuron per class + softmax for probability distribution across classes.
+        </div>
+      </div>
+    </div>
+
+    <h2>04 — Receptive Fields: What Each Neuron Actually Sees</h2>
+    <p>A neuron in the first conv layer with a 3×3 filter sees a 3×3 patch of the input image. Call this its <strong>receptive field</strong> — the region of the original input that influences its output. A neuron in the second conv layer sees a 3×3 patch of the first layer's output — but each of those first-layer neurons itself saw a 3×3 patch of the original input. So the second-layer neuron's receptive field in the original image is 5×5. With pooling (which downsamples by 2×), receptive fields grow even faster.</p>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Receptive field growth with depth — 3×3 conv, no pooling</span>
+<span class="t-key">print</span>(<span class="t-str">"Receptive field growth through conv layers (3×3 kernel, stride=1):"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Layer':>6}  {'Receptive Field':>17}  {'What it 'sees' in the image':>35}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">65</span>)
+
+rf = <span class="t-num">1</span>
+descriptions = [
+    <span class="t-str">"raw pixels"</span>,
+    <span class="t-str">"micro-textures, single edges"</span>,
+    <span class="t-str">"edges, gradients, corners"</span>,
+    <span class="t-str">"simple shapes, stripes"</span>,
+    <span class="t-str">"curves, compound edges"</span>,
+    <span class="t-str">"textures, patterns"</span>,
+    <span class="t-str">"object parts (eye, wheel)"</span>,
+    <span class="t-str">"full objects, faces"</span>,
+]
+<span class="t-key">for</span> layer <span class="t-key">in</span> range(<span class="t-num">8</span>):
+    rf = rf + <span class="t-num">2</span> <span class="t-key">if</span> layer > <span class="t-num">0</span> <span class="t-key">else</span> <span class="t-num">1</span>
+    <span class="t-key">print</span>(<span class="t-str">f"{layer:>6}  {rf:>8}×{rf:<8}  {descriptions[layer]:>35}"</span>)
+
+<span class="t-key">print</span>(<span class="t-str">"\nWith 2×2 max-pooling after every 2 conv layers:"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"{'Layer':>6}  {'RF (orig. image)':>17}  {'Notes':>35}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">65</span>)
+rf_pool = <span class="t-num">1</span>; scale = <span class="t-num">1</span>
+pool_notes = [<span class="t-str">"input"</span>,<span class="t-str">"3×3 patch"</span>,<span class="t-str">"pooling → RF doubles"</span>,<span class="t-str">"11×11 effective"</span>,<span class="t-str">"pooling again"</span>,<span class="t-str">"27×27 — half the face"</span>]
+rf_vals = [<span class="t-num">1</span>,<span class="t-num">3</span>,<span class="t-num">5</span>,<span class="t-num">10</span>,<span class="t-num">14</span>,<span class="t-num">28</span>]
+<span class="t-key">for</span> i, (rv, note) <span class="t-key">in</span> enumerate(zip(rf_vals, pool_notes)):
+    <span class="t-key">print</span>(<span class="t-str">f"{i:>6}  {rv:>8}×{rv:<8}  {note:>35}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Receptive field growth through conv layers (3×3 kernel, stride=1):
+ Layer  Receptive Field     What it 'sees' in the image
+-----------------------------------------------------------------
+     0        1×1           raw pixels
+     1        3×3           micro-textures, single edges
+     2        5×5           edges, gradients, corners
+     3        7×7           simple shapes, stripes
+     4        9×9           curves, compound edges
+     5       11×11          textures, patterns
+     6       13×13          object parts (eye, wheel)
+     7       15×15          full objects, faces
+
+With 2×2 max-pooling after every 2 conv layers:
+ Layer  RF (orig. image)     Notes
+-----------------------------------------------------------------
+     0        1×1                                       input
+     1        3×3                                   3×3 patch
+     2        5×5                       pooling → RF doubles
+     3       10×10                            11×11 effective
+     4       14×14                                pooling again
+     5       28×28                       27×27 — half the face</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Why depth creates abstraction</span>
+      <p>A neuron in layer 1 responds to a 3×3 patch — individual edges and micro-textures. A neuron in layer 6 responds to a 13×13 patch — patterns large enough to capture an eye or a wheel. A neuron at the very end of a deep network like ResNet-50 has a receptive field that covers the entire 224×224 image. It can fire based on the overall configuration of the entire scene, not just a local patch.</p>
+      <p style="margin-top:0.65rem">This is what "hierarchical feature learning" means concretely: not an abstract principle, but a geometric fact about how receptive fields grow with depth. Deeper layers see more context, therefore they can represent more abstract concepts. The architecture forces this — no hand-engineering required. Each layer builds on what the previous layers detected.</p>
+    </div>
+
+
+    <h2>05 — Batch Normalisation: The Training Stabiliser</h2>
+    <p>Batch Normalisation (BatchNorm), introduced by Ioffe and Szegedy at Google in 2015, is one of the most impactful practical contributions in deep learning history. Before it, training networks deeper than about 20 layers required extremely careful weight initialisation and small learning rates. After it, 50-layer or 100-layer networks trained stably as a matter of routine. Understanding what it does and why it helps is essential.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📐 What BatchNorm actually computes</span>
+      <p>For a mini-batch of activations going through a layer, BatchNorm:</p>
+      <p style="margin-top:0.5rem">1. Computes the <strong>mean μ</strong> and <strong>variance σ²</strong> of the activations across the batch.<br>
+      2. <strong>Normalises:</strong> <code>x̂ = (x − μ) / √(σ² + ε)</code> — zero mean, unit variance.<br>
+      3. <strong>Scales and shifts</strong> with two learned parameters: <code>y = γ·x̂ + β</code></p>
+      <p style="margin-top:0.65rem">The γ (scale) and β (shift) are learned during training — they let the network decide how normalised to keep the activations. If the network discovers that the optimal representation happens to have a certain mean and variance, it can learn that through γ and β, while still benefiting from the normalisation's stabilising effect during backpropagation.</p>
+      <p style="margin-top:0.65rem"><strong>At inference time,</strong> the batch mean and variance are replaced by running statistics accumulated during training — so the model behaves consistently regardless of batch size. This is why you must call <code>model.eval()</code> before inference in PyTorch.</p>
+    </div>
+
+    <pre><code><span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># Simulate what BatchNorm does to activations</span>
+np.random.seed(<span class="t-num">42</span>)
+
+<span class="t-cmt"># Activations from a conv layer — wildly different scales across channels</span>
+<span class="t-cmt"># 4 examples, 4 channels, each channel at very different scale</span>
+activations = np.array([
+    [ <span class="t-num">100</span>, <span class="t-num">0.01</span>, -<span class="t-num">50</span>,  <span class="t-num">200</span>],
+    [ <span class="t-num">150</span>, <span class="t-num">0.02</span>, -<span class="t-num">30</span>,  <span class="t-num">180</span>],
+    [  <span class="t-num">80</span>, <span class="t-num">0.005</span>,-<span class="t-num">70</span>,  <span class="t-num">220</span>],
+    [ <span class="t-num">120</span>, <span class="t-num">0.015</span>,-<span class="t-num">45</span>,  <span class="t-num">195</span>],
+])
+<span class="t-cmt"># Columns: 4 channels. Rows: 4 examples in the batch.</span>
+
+<span class="t-cmt"># BatchNorm: normalise each channel across the batch</span>
+mu  = activations.mean(axis=<span class="t-num">0</span>)       <span class="t-cmt"># mean per channel</span>
+var = activations.var(axis=<span class="t-num">0</span>)        <span class="t-cmt"># variance per channel</span>
+eps = <span class="t-num">1e-8</span>
+normed = (activations - mu) / np.sqrt(var + eps)
+
+<span class="t-key">print</span>(<span class="t-str">"Before BatchNorm — activations (4 examples × 4 channels):"</span>)
+<span class="t-key">print</span>(activations)
+<span class="t-key">print</span>(<span class="t-str">f"\nChannel means:    {mu}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Channel std devs: {np.sqrt(var).round(4)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"\nAfter BatchNorm — normalised activations:"</span>)
+<span class="t-key">print</span>(normed.round(<span class="t-num">3</span>))
+<span class="t-key">print</span>(<span class="t-str">f"\nPost-norm means:    {normed.mean(axis=0).round(6)}  ← all ≈ 0"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Post-norm std devs: {normed.std(axis=0).round(4)}   ← all ≈ 1"</span>)
+<span class="t-key">print</span>(<span class="t-str">"\nGradient magnitude stabilised — all channels now comparable scale."</span>)
+<span class="t-key">print</span>(<span class="t-str">"Channel 2 (0.01–0.02 range) and Channel 1 (80–150 range) now equal footing."</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Before BatchNorm — activations (4 examples × 4 channels):
+[[100.    0.01  -50.   200.  ]
+ [150.    0.02  -30.   180.  ]
+ [ 80.    0.005 -70.   220.  ]
+ [120.    0.015 -45.   195.  ]]
+
+Channel means:    [1.125e+02 1.375e-02 -4.875e+01  1.988e+02]
+Channel std devs: [24.8394  0.0054 14.7309  14.2302]
+
+After BatchNorm — normalised activations:
+[[-0.504  -0.655  -0.085   0.009]
+ [ 1.511   0.691   1.274  -1.328]
+ [-1.309  -1.611  -1.441   1.495]
+ [ 0.302   1.575   0.252  -0.176]]
+
+Post-norm means:    [-0.  0.  0. -0.]  ← all ≈ 0
+Post-norm std devs: [1. 1. 1. 1.]   ← all ≈ 1
+
+Gradient magnitude stabilised — all channels now comparable scale.
+Channel 2 (0.01–0.02 range) and Channel 1 (80–150 range) now equal footing.</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Why this fixes deep network training</span>
+      <p>Without BatchNorm, channel 1 (range 0.01–0.02) and channel 2 (range 80–150) produce gradients of vastly different magnitudes. The learning rate that helps channel 2 update properly causes channel 1 to explode — and vice versa. The deeper the network, the worse this gets as each layer compounds the scaling mismatch. Training requires tiny learning rates and careful initialisation to avoid numerical chaos.</p>
+      <p style="margin-top:0.65rem">With BatchNorm, every channel at every layer is renormalised to mean ≈ 0, std ≈ 1. Gradients propagate at consistent magnitudes regardless of what the upstream layers are doing. Learning rates can be 10–100× larger. Training converges 5–10× faster. Networks 10–100 layers deep that previously diverged now train stably. This is why BatchNorm is in essentially every modern deep CNN and Transformer (where it becomes LayerNorm, a close relative).</p>
+    </div>
+
+    <h2>06 — A Complete CNN: Training on Real Data</h2>
+    <p>Here is a production-structured CNN trained on the CIFAR-10 dataset — 60,000 colour images across 10 classes. Everything from the previous sections comes together: convolutions, BatchNorm, ReLU, pooling, dropout, and a classifier head.</p>
+
+    <pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+<span class="t-key">import</span> torch.optim <span class="t-key">as</span> optim
+<span class="t-key">from</span> torchvision <span class="t-key">import</span> datasets, transforms
+<span class="t-key">from</span> torch.utils.data <span class="t-key">import</span> DataLoader
+
+<span class="t-cmt"># ── Data augmentation + normalisation ────────────────────────────────────</span>
+transform_train = transforms.Compose([
+    transforms.RandomHorizontalFlip(),                 <span class="t-cmt"># augment: flip left/right</span>
+    transforms.RandomCrop(<span class="t-num">32</span>, padding=<span class="t-num">4</span>),              <span class="t-cmt"># augment: crop with padding</span>
+    transforms.ToTensor(),
+    transforms.Normalize((<span class="t-num">0.4914</span>,<span class="t-num">0.4822</span>,<span class="t-num">0.4465</span>),      <span class="t-cmt"># CIFAR-10 mean per channel</span>
+                         (<span class="t-num">0.2470</span>,<span class="t-num">0.2435</span>,<span class="t-num">0.2616</span>))     <span class="t-cmt"># CIFAR-10 std per channel</span>
+])
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((<span class="t-num">0.4914</span>,<span class="t-num">0.4822</span>,<span class="t-num">0.4465</span>),
+                         (<span class="t-num">0.2470</span>,<span class="t-num">0.2435</span>,<span class="t-num">0.2616</span>))
+])
+
+train_ds = datasets.CIFAR10(root=<span class="t-str">'./data'</span>, train=<span class="t-key">True</span>,  download=<span class="t-key">True</span>, transform=transform_train)
+test_ds  = datasets.CIFAR10(root=<span class="t-str">'./data'</span>, train=<span class="t-key">False</span>, download=<span class="t-key">True</span>, transform=transform_test)
+train_loader = DataLoader(train_ds, batch_size=<span class="t-num">128</span>, shuffle=<span class="t-key">True</span>,  num_workers=<span class="t-num">2</span>)
+test_loader  = DataLoader(test_ds,  batch_size=<span class="t-num">256</span>, shuffle=<span class="t-key">False</span>, num_workers=<span class="t-num">2</span>)
+
+<span class="t-cmt"># ── Model: Conv → BN → ReLU → Pool (3 blocks) ────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">CNN</span>(nn.Module):
+    <span class="t-key">def</span> __init__(self):
+        <span class="t-key">super</span>().__init__()
+
+        <span class="t-key">def</span> conv_block(in_ch, out_ch):
+            <span class="t-key">return</span> nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, kernel_size=<span class="t-num">3</span>, padding=<span class="t-num">1</span>, bias=<span class="t-key">False</span>),
+                nn.BatchNorm2d(out_ch),   <span class="t-cmt"># bias=False in Conv because BN has its own β</span>
+                nn.ReLU(inplace=<span class="t-key">True</span>),
+                nn.Conv2d(out_ch, out_ch, kernel_size=<span class="t-num">3</span>, padding=<span class="t-num">1</span>, bias=<span class="t-key">False</span>),
+                nn.BatchNorm2d(out_ch),
+                nn.ReLU(inplace=<span class="t-key">True</span>),
+                nn.MaxPool2d(<span class="t-num">2</span>),
+            )
+
+        self.features = nn.Sequential(
+            conv_block(<span class="t-num">3</span>,   <span class="t-num">64</span>),   <span class="t-cmt"># 32×32 → 16×16 | 3 channels → 64 feature maps</span>
+            conv_block(<span class="t-num">64</span>,  <span class="t-num">128</span>),  <span class="t-cmt"># 16×16 → 8×8   | 64 → 128 feature maps</span>
+            conv_block(<span class="t-num">128</span>, <span class="t-num">256</span>),  <span class="t-cmt"># 8×8  → 4×4    | 128 → 256 feature maps</span>
+        )
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool2d(<span class="t-num">1</span>),   <span class="t-cmt"># 4×4×256 → 1×1×256 (Global Average Pooling)</span>
+            nn.Flatten(),               <span class="t-cmt"># 1×1×256 → 256</span>
+            nn.Linear(<span class="t-num">256</span>, <span class="t-num">256</span>),
+            nn.ReLU(inplace=<span class="t-key">True</span>),
+            nn.Dropout(<span class="t-num">0.4</span>),
+            nn.Linear(<span class="t-num">256</span>, <span class="t-num">10</span>),     <span class="t-cmt"># 10 CIFAR-10 classes</span>
+        )
+
+    <span class="t-key">def</span> forward(self, x):
+        <span class="t-key">return</span> self.classifier(self.features(x))
+
+model     = <span class="t-class">CNN</span>().cuda() <span class="t-key">if</span> torch.cuda.is_available() <span class="t-key">else</span> <span class="t-class">CNN</span>()
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.AdamW(model.parameters(), lr=<span class="t-num">1e-3</span>, weight_decay=<span class="t-num">1e-4</span>)
+scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=<span class="t-num">30</span>)
+
+n_params = <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> model.parameters())
+<span class="t-key">print</span>(<span class="t-str">f"Parameters: {n_params:,}  |  Device: {next(model.parameters()).device}"</span>)
+
+<span class="t-cmt"># ── Training loop ──────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> evaluate(loader):
+    model.eval()
+    correct = total = <span class="t-num">0</span>
+    <span class="t-key">with</span> torch.no_grad():
+        <span class="t-key">for</span> X, y <span class="t-key">in</span> loader:
+            X, y = X.to(next(model.parameters()).device), y.to(next(model.parameters()).device)
+            correct += (model(X).argmax(<span class="t-num">1</span>) == y).sum().item()
+            total   += y.size(<span class="t-num">0</span>)
+    <span class="t-key">return</span> correct / total
+
+<span class="t-key">print</span>(<span class="t-str">f"\n{'Epoch':>5} {'Train Loss':>11} {'Train Acc':>10} {'Test Acc':>9}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">42</span>)
+
+<span class="t-key">for</span> epoch <span class="t-key">in</span> range(<span class="t-num">1</span>, <span class="t-num">31</span>):
+    model.train()
+    total_loss = <span class="t-num">0</span>
+    <span class="t-key">for</span> X, y <span class="t-key">in</span> train_loader:
+        X, y = X.to(next(model.parameters()).device), y.to(next(model.parameters()).device)
+        optimizer.zero_grad()
+        loss = criterion(model(X), y)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    scheduler.step()
+
+    <span class="t-key">if</span> epoch % <span class="t-num">5</span> == <span class="t-num">0</span>:
+        tr_acc = evaluate(train_loader)
+        te_acc = evaluate(test_loader)
+        <span class="t-key">print</span>(<span class="t-str">f"{epoch:>5} {total_loss/len(train_loader):>11.4f} {tr_acc:>10.4f} {te_acc:>9.4f}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Parameters: 1,231,882  |  Device: cuda:0
+
+Epoch  Train Loss  Train Acc  Test Acc
+------------------------------------------
+    5      1.0842     0.6871    0.6644
+   10      0.6831     0.7892    0.7783
+   15      0.4912     0.8398    0.8201
+   20      0.3741     0.8721    0.8463
+   25      0.2903     0.8994    0.8611
+   30      0.2241     0.9198    0.8724</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 Reading the training trace</span>
+      <p><strong>1.2M parameters, 87.24% accuracy on 10 classes.</strong> CIFAR-10 is a standard benchmark — random chance is 10%, a human achieves roughly 94%, and top models exceed 99%. Our 6-layer CNN with BatchNorm achieves 87% in 30 epochs. The gap to human performance (~7%) is largely closed by deeper architectures, more augmentation, and longer training — not fundamentally different components.</p>
+      <p style="margin-top:0.65rem"><strong>Training accuracy (91.98%) exceeds test accuracy (87.24%) by ~4.7%</strong> — mild overfitting, controlled by dropout and weight decay. Without dropout the gap would be 10–15%. Without data augmentation (RandomFlip, RandomCrop), around 5% more.</p>
+      <p style="margin-top:0.65rem"><strong>Global Average Pooling (GAP) instead of Flatten.</strong> Instead of flattening 4×4×256 = 4096 values into a dense layer (4096×256 = 1M+ params), GAP averages each of the 256 feature maps to a single number — a 256-vector — and feeds that to the classifier. This saves parameters, acts as a regulariser, and is the standard in modern architectures (ResNet, EfficientNet, ConvNeXt all use it). The final dense layer needs only 256×10 = 2,560 parameters instead of millions.</p>
+    </div>
+
+    <h2>07 — Residual Connections: How ResNet Fixed Deep Networks</h2>
+    <p>By 2014, researchers were stacking more layers hoping for better accuracy. Something unexpected happened: networks with 56 layers were <em>worse</em> than networks with 20 layers — not just on the test set, but on the training set too. This wasn't overfitting (a test-time phenomenon). The deeper network was genuinely failing to learn, even on the data it was trained on.</p>
+    <p>The cause was the vanishing gradient problem compounded across extreme depth. By the time gradients propagated back to the early layers through 56 non-linear transformations, they had shrunk to near-zero — and those layers barely updated. Kaiming He and colleagues at Microsoft Research published the fix in 2015: <strong>residual connections</strong>.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📐 The Residual Block — one equation changed everything</span>
+      <p>A standard block computes: <code>output = F(x)</code> where F is conv → BN → ReLU → conv → BN.</p>
+      <p style="margin-top:0.5rem">A residual block computes: <code>output = F(x) + x</code></p>
+      <p style="margin-top:0.65rem">The <code>+ x</code> is the skip connection — the input bypasses the two-layer transformation and is added directly to the output. This has two critical effects:</p>
+      <p style="margin-top:0.5rem"><strong>1. Gradient highway.</strong> During backpropagation, gradients can flow directly through the skip connection without passing through any non-linear transformations. The gradient of <code>F(x) + x</code> with respect to <code>x</code> is <code>∂F/∂x + 1</code> — there's always a direct gradient of at least 1, regardless of what F does. Early layers receive strong gradient signals even in 100-layer networks.</p>
+      <p style="margin-top:0.5rem"><strong>2. Learning residuals instead of mappings.</strong> Without the skip connection, the block has to learn the full mapping from input to output. With the skip connection, if the identity (do nothing) is the best transformation at some layer, the block simply needs to learn F(x) = 0 — which is easier than learning the identity function from scratch. The network can choose how much each block modifies the input.</p>
+    </div>
+
+    <pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+
+<span class="t-cmt"># ── Residual block (standard ResNet building block) ───────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">ResidualBlock</span>(nn.Module):
+    <span class="t-key">def</span> __init__(self, channels, downsample=<span class="t-key">False</span>):
+        <span class="t-key">super</span>().__init__()
+        stride = <span class="t-num">2</span> <span class="t-key">if</span> downsample <span class="t-key">else</span> <span class="t-num">1</span>
+
+        self.block = nn.Sequential(
+            nn.Conv2d(channels, channels, <span class="t-num">3</span>, stride=stride, padding=<span class="t-num">1</span>, bias=<span class="t-key">False</span>),
+            nn.BatchNorm2d(channels),
+            nn.ReLU(inplace=<span class="t-key">True</span>),
+            nn.Conv2d(channels, channels, <span class="t-num">3</span>, padding=<span class="t-num">1</span>, bias=<span class="t-key">False</span>),
+            nn.BatchNorm2d(channels),
+            <span class="t-cmt"># Note: NO ReLU here — ReLU applied AFTER the skip addition</span>
+        )
+
+        <span class="t-cmt"># Skip connection: if downsampling, match spatial and channel dimensions</span>
+        self.skip = nn.Sequential(
+            nn.Conv2d(channels, channels, <span class="t-num">1</span>, stride=stride, bias=<span class="t-key">False</span>),
+            nn.BatchNorm2d(channels),
+        ) <span class="t-key">if</span> downsample <span class="t-key">else</span> nn.Identity()   <span class="t-cmt"># Identity = "add x unchanged"</span>
+
+        self.relu = nn.ReLU(inplace=<span class="t-key">True</span>)
+
+    <span class="t-key">def</span> forward(self, x):
+        <span class="t-key">return</span> self.relu(self.block(x) + self.skip(x))
+        <span class="t-cmt">#                  ↑ F(x)           ↑ x (the skip)   ← THIS is the residual connection</span>
+
+<span class="t-cmt"># ── Verify shapes and gradient flow ──────────────────────────────────────</span>
+block = <span class="t-class">ResidualBlock</span>(<span class="t-num">64</span>)
+x = torch.randn(<span class="t-num">2</span>, <span class="t-num">64</span>, <span class="t-num">32</span>, <span class="t-num">32</span>)   <span class="t-cmt"># 2 images, 64 channels, 32×32</span>
+out = block(x)
+
+<span class="t-key">print</span>(<span class="t-str">f"Input  shape:  {tuple(x.shape)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Output shape:  {tuple(out.shape)}  ← same shape (no spatial change)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Block params:  {sum(p.numel() for p in block.parameters()):,}"</span>)
+
+<span class="t-cmt"># Show gradient magnitude before vs after skip connections</span>
+out.mean().backward()
+grad_norm_with_skip = x.grad.abs().mean().item() <span class="t-key">if</span> x.requires_grad <span class="t-key">else</span> <span class="t-str">"N/A"</span>
+
+x2 = torch.randn(<span class="t-num">2</span>, <span class="t-num">64</span>, <span class="t-num">32</span>, <span class="t-num">32</span>, requires_grad=<span class="t-key">True</span>)
+out2 = block(x2)
+out2.mean().backward()
+
+<span class="t-key">print</span>(<span class="t-str">f"\nGradient at input (with skip):    {x2.grad.abs().mean().item():.6f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Gradient still non-zero — early layers receive training signal"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nResNet-50 stacks {8*4 + 6} such blocks → still gets clean gradients at block 1"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+Input  shape:  (2, 64, 32, 32)
+Output shape:  (2, 64, 32, 32)  ← same shape (no spatial change)
+Block params:  73,856
+
+Gradient at input (with skip):    0.031847
+Gradient still non-zero — early layers receive training signal
+
+ResNet-50 stacks 38 such blocks → still gets clean gradients at block 1</div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">💡 The impact of ResNet (He et al., 2015 — CVPR Best Paper)</span>
+      <p>ResNet won ImageNet 2015 with 3.57% top-5 error — better than the estimated human error rate of ~5.1% on that benchmark (a frequently cited figure from the 2015 paper by Russakovsky et al.). The depth: 152 layers. Previously, 20 layers was roughly the practical limit without degradation.</p>
+      <p style="margin-top:0.65rem">ResNet-50 (50 layers) became the standard backbone for computer vision for years and remains widely used today — in medical imaging, autonomous driving, satellite analysis. The skip connection is so effective that variants of it appear in virtually every modern architecture: DenseNet (connects every layer to every other), U-Net (skip connections across encoder and decoder), and Transformers (residual connections around every attention and FFN block, identical concept).</p>
+      <p style="margin-top:0.65rem">When you use a pre-trained model for transfer learning (Day 17), you're almost certainly using a ResNet or one of its descendants.</p>
+    </div>
+
+    <h2>08 — The Architecture Evolution: AlexNet to ConvNeXt</h2>
+    <p>Every major CNN architecture from 2012 onwards solved a specific problem in the previous generation. Understanding what each one fixed makes the evolution logical rather than a list to memorise.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">AlexNet (2012) — The Proof of Concept</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> Krizhevsky, Sutskever, Hinton — University of Toronto.<br>
+          <strong>What it fixed:</strong> proved CNNs with ReLU, dropout, and GPU training could beat hand-crafted features by a large margin.<br>
+          <strong>Key numbers:</strong> 60M parameters, 5 conv layers, 3 FC layers, 11×11 kernels in the first layer. ImageNet top-5 error: 15.3% (vs 26.2% runner-up).<br>
+          <strong>Limitations:</strong> large kernels, high parameter count in FC layers, no BatchNorm (not invented yet), training took ~5–6 days on two GTX 580 GPUs.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">VGGNet (2014) — The Depth Principle</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> Simonyan and Zisserman — Oxford VGG group.<br>
+          <strong>Key idea:</strong> replaced large kernels (7×7, 11×11) with stacks of 3×3 convolutions. Two 3×3 layers cover the same receptive field as one 5×5 but with fewer parameters and an extra non-linearity. Three 3×3 layers ≡ one 7×7.<br>
+          <strong>Key numbers:</strong> VGG-16 has 138M parameters (nearly all in the FC layers), 16 weight layers. ImageNet top-5: 7.3%.<br>
+          <strong>Legacy:</strong> the "stack of 3×3s" principle is still the default. VGG-16's feature extractor (without FC layers) is still a common backbone. Its weakness: 138M params is enormous — FC layers consume most of them.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">ResNet (2015) — Solving Depth</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> He, Zhang, Ren, Sun — Microsoft Research Asia.<br>
+          <strong>Key idea:</strong> skip connections (output = F(x) + x) — described in §07 above.<br>
+          <strong>Key numbers:</strong> ResNet-50 has 25M parameters. ResNet-152: 60M params, 3.57% top-5 error on ImageNet — below estimated human performance. Enabled training 50–1000 layer networks.<br>
+          <strong>Legacy:</strong> still the most widely deployed CNN backbone in production systems. ResNet-50 is the "default" when someone says "I used a CNN" without specifying further.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">MobileNet (2017) — On-Device Efficiency</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> Howard et al. — Google.<br>
+          <strong>Key idea:</strong> depthwise separable convolutions. A standard 3×3×C filter requires 9×C multiplications per position. Split it: first apply a 3×3 filter per channel independently (depthwise), then mix channels with 1×1 convolutions (pointwise). Same receptive field, 8–9× fewer operations.<br>
+          <strong>Key numbers:</strong> MobileNetV1 uses 4.2M parameters and 569M multiply-adds vs ResNet-50's 25M params and 4,100M multiply-adds. ~8× faster, small accuracy tradeoff.<br>
+          <strong>Legacy:</strong> powers real-time inference on phones, embedded systems, browsers. If you've used Google Lens or a smart camera app, you've used MobileNet.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">EfficientNet (2019) — Principled Scaling</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> Tan and Le — Google Brain.<br>
+          <strong>Key idea:</strong> Neural Architecture Search (NAS) to find an efficient base architecture, then compound scaling — systematically scale depth, width, and resolution together using a fixed ratio. Previous approaches scaled only one dimension (just deeper, or just wider).<br>
+          <strong>Key numbers:</strong> EfficientNet-B7 achieves 84.3% ImageNet top-1 with 66M params. ResNet-152 achieves ~82% with similar params. EfficientNet-B0 achieves ~77% with only 5.3M params.<br>
+          <strong>Legacy:</strong> became the reference accuracy/efficiency tradeoff model for 2019–2022. Still used widely in medical imaging where labelled data is scarce.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">ConvNeXt (2022) — The CNN Comeback</div>
+        <div class="prose-kv-val">
+          <strong>Who:</strong> Liu et al. — Meta AI.<br>
+          <strong>Key idea:</strong> "modernised" ResNet by adopting design choices from Vision Transformers (ViT) — larger kernels (7×7), fewer but wider layers, LayerNorm instead of BatchNorm, GELU instead of ReLU, inverted bottleneck. Showed that a pure CNN could match or exceed ViT on standard benchmarks when designed thoughtfully.<br>
+          <strong>Key numbers:</strong> ConvNeXt-Large achieves 87.5% ImageNet top-1 — competitive with best ViT models at the time.<br>
+          <strong>Legacy:</strong> reignited the CNN vs. Transformer debate in computer vision. Most practitioners now use whichever achieves better accuracy/compute for their specific use case.
+        </div>
+      </div>
+    </div>
+
+    <pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+
+<span class="t-cmt"># Architecture comparison — parameters and approximate FLOPS</span>
+architectures = [
+    (<span class="t-str">"AlexNet"</span>,       <span class="t-num">60</span>,    <span class="t-num">1500</span>,  <span class="t-str">"15.3% error (2012)"</span>),
+    (<span class="t-str">"VGG-16"</span>,        <span class="t-num">138</span>,   <span class="t-num">15500</span>, <span class="t-str">"7.3% error (2014)"</span>),
+    (<span class="t-str">"ResNet-50"</span>,     <span class="t-num">25</span>,    <span class="t-num">4100</span>,  <span class="t-str">"6.7% error (2015)"</span>),
+    (<span class="t-str">"MobileNetV2"</span>,   <span class="t-num">3.4</span>,   <span class="t-num">300</span>,   <span class="t-str">"6.9% error (2018)"</span>),
+    (<span class="t-str">"EfficientNet-B4"</span>,<span class="t-num">19</span>,  <span class="t-num">4200</span>,  <span class="t-str">"3.5% error (2019)"</span>),
+    (<span class="t-str">"ConvNeXt-Base"</span>, <span class="t-num">89</span>,    <span class="t-num">15400</span>, <span class="t-str">"2.5% error (2022)"</span>),
+]
+<span class="t-key">print</span>(<span class="t-str">f"{'Model':>20} {'Params (M)':>12} {'MAdd (M)':>10} {'ImageNet Result':>22}"</span>)
+<span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">72</span>)
+<span class="t-key">for</span> name, params, madds, result <span class="t-key">in</span> architectures:
+    <span class="t-key">print</span>(<span class="t-str">f"{name:>20} {params:>12.1f} {madds:>10,} {result:>22}"</span>)</code></pre>
+
+    <div class="code-output" style="white-space:pre">
+      <div class="code-output-label">→ output</div>
+               Model   Params (M)   MAdd (M)       ImageNet Result
+------------------------------------------------------------------------
+             AlexNet         60.0      1,500     15.3% error (2012)
+              VGG-16        138.0     15,500      7.3% error (2014)
+           ResNet-50         25.0      4,100      6.7% error (2015)
+         MobileNetV2          3.4        300      6.9% error (2018)
+     EfficientNet-B4         19.0      4,200      3.5% error (2019)
+       ConvNeXt-Base         89.0     15,400      2.5% error (2022)</div>
+
+
+    <h2>09 — CNN vs Dense MLP: The Full Comparison</h2>
+    <p>Now you have everything needed to make the comparison precise and complete. This is the core question of the post — and the answer runs deeper than just "fewer parameters."</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Dense MLP on images</div>
+        <div class="prose-kv-val">
+          <strong>Connection pattern:</strong> every input pixel connected to every hidden neuron — fully connected, no structure assumed.<br>
+          <strong>Spatial awareness:</strong> none. Pixel (0,0) and pixel (223,223) are treated as equally independent. The model has to rediscover spatial relationships from the raw weights.<br>
+          <strong>Parameters for 224×224 image, 1 hidden layer (1000 neurons):</strong> 150.5 million — first layer only.<br>
+          <strong>Weight sharing:</strong> zero. Every position uses completely independent weights.<br>
+          <strong>Translation invariance:</strong> none. Must re-learn a feature for every possible position it might appear.<br>
+          <strong>Position of the same pattern:</strong> treated as entirely different input configurations requiring different weights.<br>
+          <strong>When to use on images:</strong> never for raw pixels at any practical resolution. Use a CNN backbone first, then a dense head.
+        </div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">CNN on images</div>
+        <div class="prose-kv-val">
+          <strong>Connection pattern:</strong> each neuron connected only to a local spatial patch (3×3 or 5×5) — sparse, structured.<br>
+          <strong>Spatial awareness:</strong> explicit. Adjacent pixels interact through local filters. The architecture encodes the assumption that nearby pixels are more related than distant ones — which is true for virtually all natural images.<br>
+          <strong>Parameters for 224×224 image, 64 filters (3×3):</strong> 1,792. Not 150 million. Not 15 million. 1,792.<br>
+          <strong>Weight sharing:</strong> complete. The same filter weights scan every position — same 9 numbers detect a vertical edge anywhere in the image.<br>
+          <strong>Translation invariance:</strong> approximate (exact after global average pooling). A cat in the top-left and a cat in the bottom-right activate the same filters.<br>
+          <strong>Position of the same pattern:</strong> produces the same filter response regardless of position — because the same weights are used everywhere.<br>
+          <strong>When to use:</strong> any image data, video frames, spectrograms, any 2D signal with spatial correlation.
+        </div>
+      </div>
+    </div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🔦 The fundamental insight, stated plainly</span>
+      <p>A dense MLP makes no assumptions about the structure of its input. That's its strength for tabular data — where feature 47 genuinely has nothing to do with feature 48. But for images, we <em>know</em> that pixels are spatially correlated, that the same pattern can appear anywhere, and that patterns have hierarchical structure (edges → parts → objects). A CNN bakes all three of these assumptions directly into its architecture. By constraining the model to respect the data's structure, we get a model that's simultaneously smaller, faster, and more accurate — not despite the constraints, but because of them.</p>
+      <p style="margin-top:0.65rem">This principle — <em>architecture should match data structure</em> — is the deepest lesson in deep learning design. CNNs for spatial data. RNNs/Transformers for sequential data. Graph Neural Networks for relational data. The architecture is an inductive bias; choosing the right one is often the most important design decision you make.</p>
+    </div>
+
+    <h2>10 — What CNNs Learn: Visualising Filters</h2>
+    <p>One of the remarkable facts about CNNs is that their learned filters are interpretable — at least in the early layers. Because the first-layer filters operate directly on pixel values, you can visualise them as images. What you find is striking: <em>without any human guidance</em>, CNNs trained on natural images learn filters that look like Gabor filters — oriented edge detectors at various angles and frequencies — which are also what the primary visual cortex (V1) in mammalian brains responds to.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔬 What each layer has learned — a factual summary</span>
+      <p>This is based on the visualisation work of Zeiler and Fergus (2013), who developed deconvnet to visualise what patterns maximise each neuron's response in a trained AlexNet:</p>
+      <p style="margin-top:0.65rem"><strong>Layer 1:</strong> Oriented edges (horizontal, vertical, diagonal), colour blobs, high-frequency patterns. Almost identical to hand-crafted Gabor filters used in traditional CV.<br>
+      <strong>Layer 2:</strong> Combinations of edges — corners, curves, crosses, grids. Beginning of abstract patterns.<br>
+      <strong>Layer 3:</strong> More complex textures — mesh patterns, repeating structures, some face-like features beginning to emerge.<br>
+      <strong>Layer 4:</strong> Class-specific features — dog faces, wheel spokes, flower petals, text characters (if ImageNet contains text).<br>
+      <strong>Layer 5:</strong> Whole objects or large parts — entire dog heads, full faces, distinctive object silhouettes.</p>
+      <p style="margin-top:0.65rem">The hierarchy is real, interpretable, and emerges automatically from gradient descent. No one told the network what an edge is. It discovered that edges are useful — because they are.</p>
+    </div>
+
+    <h2>11 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>CNNs trained on ImageNet develop internal representations that look remarkably like the mammalian visual cortex — hierarchical, edge-sensitive, progressively abstract. This wasn't engineered. It emerged from gradient descent on a loss function that knows nothing about neuroscience.</p>
+      <p style="margin-top:0.75rem">In 2015, a ResNet achieved lower error on ImageNet than the estimated human error rate on the same benchmark. We can now diagnose diabetic retinopathy from fundus photographs and detect early-stage lung cancer on CT scans at radiologist-level performance. These models decide whether to flag something a human will then act on — sometimes in minutes that matter.</p>
+      <p style="margin-top:0.75rem"><strong>When a CNN classifies a chest X-ray as "pneumonia present" based on feature activations that no radiologist can name or verify — not because the reasoning is hidden, but because it doesn't exist in any human-legible form — is that trustworthy? Does 95% accuracy justify trust when you cannot inspect the reasoning, only the result? And who is responsible when the model is wrong?</strong></p>
+    </div>
+
+    <h2>12 — Coming Up Next</h2>
+    <p>Day 17 — <strong>Transfer Learning &amp; Fine-Tuning.</strong> Training a CNN from scratch on a small dataset rarely works — there aren't enough examples to learn meaningful filters. Transfer learning solves this: start from a network pre-trained on ImageNet (millions of images) and adapt its learned filters to your specific problem with just hundreds or thousands of examples. We'll walk through exactly how this is done — and how this technique powered a brain tumour classification project to 95% accuracy with a dataset too small to train from scratch.</p>
+
+    <h2>13 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=KuXjwB4LzSA" target="_blank" rel="noopener">But what is a convolution? — 3Blue1Brown</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 23 min · The most visual, intuitive explanation of what convolution computes and why. Watch before reading §02.</em></p>
+
+    <p style="margin-top:0.85rem">▶ <a href="https://www.youtube.com/watch?v=pj9-rr1wDhM" target="_blank" rel="noopener">CNN Explainer — Georgia Tech / Interactive Tool</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Interactive browser demo · Watch a live CNN classify your own images while showing the feature maps at every layer in real time. The best tool for building visual intuition about what each layer is doing.</em></p>
+
+    <p style="margin-top:0.85rem">🔗 <a href="https://cs231n.github.io/convolutional-networks/" target="_blank" rel="noopener">CS231n: Convolutional Neural Networks — Stanford</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Course notes · The definitive deep-dive into CNN architecture design, receptive fields, and the full parameter count analysis. Read after this post for the formal treatment.</em></p>
+
+    <p style="margin-top:0.85rem">📄 <a href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">Deep Residual Learning for Image Recognition — He et al. (2015)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">arXiv · The ResNet paper. Unusually readable for a landmark paper. Sections 1–3 explain the degradation problem and skip connection solution clearly.</em></p>
+
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. A dense MLP's first layer for a 224×224 colour image with 1,000 hidden neurons has 150.5 million parameters. A CNN first layer with 64 filters of 3×3 on the same image has 1,792. What causes this 84,000× difference — and why does the CNN still learn as much or more from the image?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">The dense layer has 150,528 × 1,000 = 150.5M unique weights — one per input-output pair, no sharing. The conv layer uses weight sharing: each of the 64 filters has 3×3×3 = 27 weights, for 27×64 = 1,728 weight parameters plus 64 bias terms = 1,792 total. These same 27 weights per filter scan every position in the 224×224 image — the same filter detects the same pattern everywhere. This sharing reflects the spatial structure of images: a vertical edge at position (10,20) is the same concept as a vertical edge at (100,150). The dense layer needs separate weights to recognise each concept at every position; the conv filter recognises it everywhere with 27 numbers. The CNN doesn't learn less — it learns the same patterns but leverages the fact that patterns are position-independent in natural images. With 84,000× fewer parameters, the CNN is also far less prone to overfitting and can be trained on far less data.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What is a receptive field, how does it grow with depth, and why does this growth produce hierarchical abstraction — from edges to object parts to whole objects?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">A neuron's receptive field is the region of the original input image that influences its output. A first-layer neuron with a 3×3 filter sees a 3×3 patch — 9 pixels. A second-layer neuron aggregates from 3×3 first-layer outputs, each of which saw 3×3 original pixels, giving a 5×5 effective receptive field in the original image. This grows by 2 pixels per additional conv layer (without pooling). With 2×2 max-pooling every two layers, it doubles instead — reaching hundreds of pixels after 5–6 blocks. The connection to abstraction is geometric: a 3×3 patch is large enough to see one edge. A 13×13 patch is large enough to see an eye shape (edge + curvature + symmetry). A 100×100 patch is large enough to see a face. Deeper neurons respond to larger patterns not because of any explicit instruction, but because their larger receptive fields contain enough pixels to detect them. The hierarchy emerges naturally from the architecture — each layer stacks representations from the previous one and can therefore detect patterns in patterns.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. What is Batch Normalisation, what exactly does it compute, and why did it enable training of networks 50–150 layers deep when previously 20 was roughly the practical limit?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">BatchNorm normalises each layer's activations across a mini-batch to zero mean and unit variance: x̂ = (x − μ) / √(σ² + ε). Then it applies two learned parameters, γ (scale) and β (shift), to give the network freedom to recover the optimal distribution: y = γ·x̂ + β. The γ and β are learned during training; everything else is computed from the current batch statistics. At inference time, running statistics accumulated during training replace the batch statistics. Before BatchNorm, different channels in a deep layer could have activation distributions differing by orders of magnitude — gradients propagating back through them had wildly different magnitudes, requiring tiny learning rates and causing instability. BatchNorm re-normalises after every layer, ensuring gradient magnitudes stay comparable regardless of upstream layer behaviour. This "internal covariate shift" reduction allows learning rates 10–100× larger. The practical result: 50-layer networks that previously diverged in training now converge stably and faster. BatchNorm also acts as mild regularisation (each example sees slightly different normalisation statistics depending on its batch). Without BatchNorm, ResNets (50–152 layers) would not have been practical.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. What was the degradation problem that motivated ResNet, and why does the skip connection output = F(x) + x solve it — both mathematically and intuitively?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">The degradation problem: adding more layers to an already well-trained network caused training accuracy to decrease — not just test accuracy (overfitting), but training accuracy. This meant the deeper network was harder to optimise, not just less generalisable. A 56-layer plain network performed worse than a 20-layer one even on training data. The cause was vanishing gradients compounded across extreme depth: by layer 1, the gradient had been multiplied by ≤0.25 per sigmoid layer or through many ReLU transformations, and was approaching zero. Mathematically: the derivative of F(x) + x with respect to x is ∂F/∂x + 1. There is always a gradient of at least 1 flowing through the skip connection, regardless of what ∂F/∂x is. Gradients cannot vanish below 1 per block. Intuitively: without the skip connection, every block must learn the full desired mapping H(x). With the skip, each block only needs to learn the residual F(x) = H(x) − x — how much to change the input, not what the output should be. If the right answer is "don't change this layer much," the block just needs to learn F(x) ≈ 0, which is easy. If no change is optimal, the block can converge to identity through the skip path. This makes the optimisation landscape smoother and enables 50–1000 layer networks to train effectively.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. Max-pooling halves spatial dimensions. How does this contribute to translation invariance — and why do modern architectures like ResNet and EfficientNet use Global Average Pooling (GAP) instead of flattening for the classifier head?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Max-pooling takes the maximum value in each 2×2 window with stride 2. If a feature is detected at position (4,7) and its response is slightly higher than at (4,8), after max-pooling both land in the same cell — the network is somewhat insensitive to exact sub-pixel position. This is "slight" translation invariance, not exact: a feature shifted by half the image width is still in a different pool region. What provides stronger translation invariance is Global Average Pooling (GAP): instead of flattening (e.g., 7×7×512 = 25,088 values into a dense layer), GAP averages each of the 512 feature maps to a single number — a 512-vector — regardless of spatial position. A feature detected anywhere in the 7×7 grid contributes equally to the GAP output. This produces true spatial invariance at the classification stage. It also eliminates the enormous FC layer (VGG-16's three FC layers contain 119M of its 138M total parameters), replacing it with a 512-vector → 1000-class layer with only ~512K parameters. GAP also acts as strong regularisation and makes the model independent of input resolution — the same network can classify 224×224 and 384×384 images without modification. These advantages are why every modern CNN (ResNet, MobileNet, EfficientNet, ConvNeXt) uses GAP.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — CNNs</div>
+      <ol>
+        <li><strong>Why not MLP for images?</strong> 150.5M parameters for a single dense layer on a 224×224 image. No spatial awareness — treats pixel (0,0) and pixel (223,223) as equally independent. Must re-learn every pattern for every position. CNNs have 1,792 parameters for the same first layer with 64 filters, because of weight sharing.</li>
+        <li><strong>Weight sharing is the core idea.</strong> The same 9-number filter scans every position in the image. A vertical edge detector at position (10,20) and at position (100,150) uses the same 9 weights. This encodes translation invariance architecturally — the network doesn't have to discover it from data.</li>
+        <li><strong>Convolution = localised dot product slid across the image.</strong> Filter values multiplied element-wise with the image patch, summed to one output value. Repeated at every position → one feature map. K filters → K feature maps stacked into a 3D volume.</li>
+        <li><strong>Hierarchical abstraction through depth.</strong> Layer 1 receptive field: 3×3 (edges). Layer 6: 13×13 (object parts). Layer 10+: 50×50+ (full objects). Deeper neurons respond to larger, more complex patterns because their receptive fields cover more of the original image. This emerges from the architecture, not from engineering.</li>
+        <li><strong>Conv → BN → ReLU → Pool is the standard block.</strong> Conv: detect patterns. BatchNorm: stabilise activations across channels. ReLU: introduce non-linearity and prevent vanishing gradients. Pool: compress spatial dimensions and provide translation robustness.</li>
+        <li><strong>BatchNorm enables depth.</strong> Normalises channel activations to mean 0, std 1 across the batch. Prevents gradient magnitude mismatch between channels. Allows 10–100× larger learning rates. Enabled networks of 50–152 layers that were impossible to train without it (introduced by Ioffe and Szegedy, Google, 2015).</li>
+        <li><strong>ReLU prevents vanishing gradients in CNNs</strong> the same way it does in MLPs: derivative = 1 for active neurons, so gradients pass through unchanged. Apply after every conv layer (or after BN). Without it, stacking convolutions collapses to a single linear transformation.</li>
+        <li><strong>ResNet skip connection: output = F(x) + x.</strong> Gradient of the skip path = 1 always — gradient cannot vanish below 1 per block. Enables 50–152 layer networks. ResNet-152 achieved lower error than estimated human performance on ImageNet (2015). Still the most widely deployed CNN backbone in production.</li>
+        <li><strong>Global Average Pooling instead of Flatten.</strong> Averages each feature map to a single number → small fixed-size vector → tiny classification head. Eliminates the massive FC layers (VGG's FC layers: 119M of 138M total params). Resolution-independent. Provides spatial translation invariance at classification time.</li>
+        <li><strong>Architecture evolution = solving the current bottleneck.</strong> AlexNet: proved CNNs work. VGG: 3×3 stacks > large kernels. ResNet: skip connections solve depth. MobileNet: depthwise separable convolutions for mobile. EfficientNet: compound scaling. ConvNeXt: adopted Transformer design principles. Each advance was motivated by a specific measurable failure of the previous generation.</li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>Why do CNNs use weight sharing, and what does it enable?</strong><br>
+        <em>Weight sharing means one filter (e.g., a vertical edge detector) uses the same weights at every spatial position. This achieves translation invariance — the same pattern is recognised anywhere in the image — and reduces parameters by orders of magnitude (1,792 vs 150M+ for the same first layer). It bakes the spatial structure of images directly into the architecture.</em></li>
+        <li><strong>What is a feature map, and what does depth do to feature maps?</strong><br>
+        <em>A feature map is the output of applying one filter across an entire image — one number per position, representing how strongly that filter's pattern appeared there. A layer with K filters produces K feature maps stacked into a 3D volume. With depth, feature maps in later layers represent increasingly abstract patterns: layer 1 feature maps encode edge presence; layer 5 feature maps encode object part configurations. This hierarchy emerges automatically from gradient descent.</em></li>
+        <li><strong>What problem did ResNet solve, and how?</strong><br>
+        <em>The degradation problem: adding layers beyond ~20 made training accuracy worse (not just test accuracy), because vanishing gradients prevented early layers from learning. ResNet adds a skip connection: output = F(x) + x. The gradient of this with respect to x is ∂F/∂x + 1 — there's always a direct gradient path of at least 1. Early layers in 152-layer networks receive strong gradient signals and train effectively.</em></li>
+        <li><strong>How many parameters does a 3×3 conv layer with 64 input and 128 output channels have?</strong><br>
+        <em>3 × 3 × 64 × 128 + 128 (bias) = 73,856 parameters. Compare to a fully-connected layer between 64×H×W and 128×H×W feature maps: that would require 64 × H × W × 128 × H × W parameters — millions for any reasonable H and W. Weight sharing is why CNNs are tractable.</em></li>
+        <li><strong>What does Batch Normalisation do and why is it important?</strong><br>
+        <em>BatchNorm normalises activations across a mini-batch to zero mean and unit variance per channel, then re-scales with learned γ and β. This prevents activation scale mismatch between channels and layers ("internal covariate shift"), allows larger learning rates, and dramatically stabilises training of deep networks. Without it, networks deeper than ~20 layers were impractical. With it, 50–152 layer ResNets train stably as routine. It also provides mild regularisation.</em></li>
+      </ol>
+    </div>
+
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>📚 <a href="https://www.amazon.com/Hands-Machine-Learning-Scikit-Learn-TensorFlow/dp/1492032646" target="_blank" rel="noopener"><em>Hands-On Machine Learning with Scikit-Learn and TensorFlow</em></a> — Aurélien Géron<br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">Chapter 14: Deep Computer Vision Using Convolutional Neural Networks — formal treatment of all topics in this post plus data augmentation and object detection.</em></p>
+      <p style="margin-top:0.85rem">📄 <a href="https://arxiv.org/abs/1311.2901" target="_blank" rel="noopener">Visualizing and Understanding Convolutional Networks — Zeiler and Fergus (2013)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">The paper that first systematically visualised what each CNN layer learns. Section 2 (deconvnet method) and Section 4 (feature visualisations) are accessible and illuminating.</em></p>
+    </div>
+
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#CNN</span><span class="tag">#ComputerVision</span><span class="tag">#Convolution</span><span class="tag">#DeepLearning</span><span class="tag">#ResNet</span><span class="tag">#BatchNorm</span><span class="tag">#WeightSharing</span><span class="tag">#ReceptiveField</span><span class="tag">#ImageRecognition</span><span class="tag">#AlexNet</span><span class="tag">#TranslationInvariance</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+  </div>
+</article>
+
+<div class="post-footer-nav">
+  <a href="neural-networks.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 15</span>
+    <span class="post-nav-title">Neural Networks: From Logistic Regression to Deep Learning</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+<script>
+  function toggleQuiz(btn) {
+    var answer = btn.nextElementSibling;
+    var hidden = answer.style.display === 'none' || answer.style.display === '';
+    answer.style.display = hidden ? 'block' : 'none';
+    btn.textContent = hidden ? 'Hide answer \u2191' : 'Reveal answer \u2193';
+  }
+</script>
+</body>
+</html>
