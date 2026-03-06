@@ -762,9 +762,10 @@ function copyPostLink(btn) {
     'regularization.html',         // Day 10 - Feb 28
     'random-forest.html',          // Day 11 - Mar 1
     'boosting.html',               // Day 12 - Mar 2
-    'xgboost.html',                // Day 13 - Mar 3
+    'xgboost-lightgbm.html',       // Day 13 - Mar 3
     'feature-engineering.html',    // Day 14 - Mar 4
-    'cnn.html',                    // Day 15 - Mar 5
+    'neural-networks.html',        // Day 15 - Mar 5
+    'cnn.html',                    // Day 16 - Mar 6
   ];
 
   const TOTAL_POSTS = 30;
