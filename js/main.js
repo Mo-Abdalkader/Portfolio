@@ -766,6 +766,7 @@ function copyPostLink(btn) {
     'feature-engineering.html',    // Day 14 - Mar 4
     'neural-networks.html',        // Day 15 - Mar 5
     'cnn.html',                    // Day 16 - Mar 6
+    'transfer-learning.html',      // Day 17 - Mar 7
   ];
 
   const TOTAL_POSTS = 30;

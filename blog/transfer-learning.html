@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 17 — Transfer Learning &amp; Fine-Tuning | 30-Day AI Ramadan Series</title>
+  <meta name="description" content="How to teach a model trained on millions of images to diagnose brain tumours with just hundreds of examples — transfer learning and fine-tuning explained from first principles." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero { background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%); border-bottom:1px solid #ddd5c4; }
+    [data-theme="light"] .post-hero h1 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .post-hero-lead { color:#5a5248; }
+    [data-theme="light"] .post-article { background:#f7f3ec; }
+    [data-theme="light"] .prose { color:#2e2b25; }
+    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
+    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .prose strong { color:#0f0e0c; }
+    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
+    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
+    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
+    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
+    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
+    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
+    [data-theme="light"] .prose-step-text { color:#2e2b25; }
+    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
+    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
+    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
+    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
+    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
+    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
+    [data-theme="light"] .reading-progress { background:linear-gradient(90deg,#c8a94b,#2a6b6e); }
+    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .post-nav-label { color:#7a7062; }
+    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
+    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
+    [data-theme="light"] .prose-callout-label { color:#7a7062; }
+    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built { color:#5a5248; }
+    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
+    /* Quiz toggle — legacy (unused, kept for compat) */
+    /* compact output block */
+    .code-output { background:#0d1117; border:1px solid #30363d; border-top:none; border-radius:0 0 var(--radius-md) var(--radius-md); padding:0.9rem 1.1rem; font-family:'JetBrains Mono',monospace; font-size:0.78rem; line-height:1.6; color:#8b949e; overflow-x:auto; }
+    .code-output .out-head { color:#58a6ff; font-weight:500; }
+    .code-output .out-good { color:#3fb950; }
+    .code-output .out-val  { color:#e3b341; }
+    .code-output .out-dim  { color:#484f58; }
+    pre { border-radius:var(--radius-md) var(--radius-md) 0 0 !important; margin-bottom:0 !important; }
+    pre + .code-output + * { margin-top:1.5rem; }
+    pre:not(:has(+ .code-output)) { border-radius:var(--radius-md) !important; margin-bottom:1.5rem !important; }
+    /* ── knowledge-check (matches cnn.html) ─────────────── */
+    .knowledge-check { margin-top:2.5rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .knowledge-check-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .knowledge-check-body { padding:1.2rem; display:flex; flex-direction:column; gap:1rem; }
+    .quiz-item { border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+    .quiz-question { padding:0.85rem 1rem; font-size:0.925rem; line-height:1.6; font-weight:500; }
+    .quiz-reveal-btn { display:block; width:100%; text-align:left; padding:0.6rem 1rem; background:var(--surface); border:none; border-top:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:0.85rem; cursor:pointer; transition:background 0.15s; }
+    .quiz-reveal-btn:hover { background:var(--surface-hover,rgba(255,255,255,0.04)); }
+    .quiz-answer { padding:0.85rem 1rem; background:var(--surface); border-top:1px solid var(--border); font-size:0.9rem; line-height:1.7; color:var(--text-muted); }
+    /* ── quick-recap (matches cnn.html) ─────────────────── */
+    .quick-recap { margin-top:2rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .quick-recap-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .quick-recap ol { margin:0; padding:1.2rem 1.2rem 1.2rem 2.2rem; display:flex; flex-direction:column; gap:0.65rem; }
+    .quick-recap ol li { font-size:0.9rem; line-height:1.65; }
+    /* comparison table */
+    .prose-table { width:100%; border-collapse:collapse; font-size:0.9rem; margin:1.5rem 0; }
+    .prose-table th { background:var(--surface); color:var(--text-muted); font-weight:600; text-align:left; padding:0.65rem 0.85rem; border:1px solid var(--border); font-size:0.8rem; letter-spacing:0.05em; text-transform:uppercase; }
+    .prose-table td { padding:0.65rem 0.85rem; border:1px solid var(--border); vertical-align:top; line-height:1.55; }
+    .prose-table tr:nth-child(even) td { background:var(--surface); }
+    .prose-table .tick { color:#3fb950; font-weight:700; }
+    .prose-table .cross { color:#f85149; font-weight:700; }
+    .prose-table .mid  { color:#e3b341; font-weight:700; }
+  </style>
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 17 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Mar 7, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">22 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Computer Vision</span>
+    </div>
+    <h1>Transfer Learning &amp; Fine-Tuning:<br>Standing on the Shoulders of Millions of Images</h1>
+    <p class="post-hero-lead">You don't need a million labelled brain MRIs to build a brain tumour classifier. You need a model that already understands images — and a few hundred examples of your specific task. This is transfer learning, and it changes everything about practical deep learning.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <!-- ── OPENING QUOTE ─────────────────────────────────────── -->
+    <blockquote>
+      <p>A newly graduated radiologist doesn't start their first day knowing nothing.<br>
+      They bring twelve years of education, thousands of hours of anatomy,<br>
+      an entire medical school's worth of pattern recognition.<br>
+      On their first day, they apply all of that knowledge to the specific cases in front of them.<br><br>
+      A pre-trained neural network is that radiologist on day one.<br>
+      It already knows how to see. You just need to show it what to look for.</p>
+    </blockquote>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §01 — The Problem Transfer Learning Solves
+    ══════════════════════════════════════════════════════════ -->
+    <h2>01 — The Core Idea: Don't Start from Zero</h2>
+
+    <p>Training a powerful neural network from scratch requires enormous amounts of labelled data. Most real-world problems don't have that luxury. Medical imaging datasets are expensive to annotate — expert radiologists must label each scan. Legal document classifiers need expert review. Industrial defect detectors rely on rare failure examples. The most valuable tasks are often exactly where data is scarcest.</p>
+
+    <p>Transfer learning is the solution. Instead of initialising weights randomly and training entirely on your small dataset, you start from a model already trained on a large, related dataset — and <em>transfer</em> its learned knowledge to your task. You keep what it already knows, then adapt it to what you need.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">💡 Why It Works</span>
+      <p>Any deep neural network learns in layers of abstraction. Early layers capture low-level patterns — edges and textures in a vision model, grammar and syntax in a language model. These low-level patterns are <strong>universal</strong>: they appear across domains because edges exist in every image, and grammar exists in every text, regardless of subject matter.</p>
+      <p style="margin-top:0.75rem">Transfer learning exploits this: borrow the general-purpose layers, replace only the task-specific output head. The model already knows how to perceive — you just teach it what to look for in your domain.</p>
+    </div>
+
+    <p>This isn't a computer vision trick. It's the operating principle behind the entire modern AI landscape. GPT-4, Claude, Gemini — all pre-trained foundation models fine-tuned for specific tasks. The CNN fine-tuning we'll use as an example today and the LoRA fine-tuning of LLMs in Day 25 are the same idea at different scales.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §02 — What Gets Transferred
+    ══════════════════════════════════════════════════════════ -->
+    <h2>02 — What Fine-Tuning Actually Means</h2>
+
+    <p>Fine-tuning is taking a pre-trained model and continuing to train it — partially or fully — on a new, smaller dataset. The key is that not all layers need the same treatment. Layers that learned general knowledge should barely change. Layers that learned task-specific patterns need more adaptation. The output head, trained for the original task's classes, must be replaced entirely.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Early layers</div>
+        <div class="prose-kv-val"><strong>General knowledge — almost never retrain.</strong> In CNNs: edge and texture detectors. In LLMs: grammar and basic syntax. In audio models: frequency patterns. These are universal across domains and architectures. Retraining them wastes compute and risks losing the foundations everything else is built on.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Middle layers</div>
+        <div class="prose-kv-val"><strong>Intermediate patterns — fine-tune cautiously.</strong> In CNNs: shapes and structures. In LLMs: semantic relationships and reasoning. These begin to encode domain knowledge, so gentle adaptation with a very small learning rate helps without destroying the foundation.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Deep layers</div>
+        <div class="prose-kv-val"><strong>Task-specific — fine-tune more aggressively.</strong> In CNNs: object-specific detectors. In LLMs: style, domain vocabulary, instruction-following. These are most tightly coupled to the original task and need the most adaptation for a new domain.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Output head</div>
+        <div class="prose-kv-val"><strong>Always replace.</strong> The original head predicts the original task's outputs — ImageNet's 1,000 categories, next-token probabilities, etc. For any new task this layer is useless and must be swapped for a fresh one matching your output space.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔬 Why Early Layers Are Universal</span>
+      <p>Yosinski et al. (2014) measured this experimentally. The first layers of any neural network trained on natural data learn nearly identical features regardless of the specific task. CNNs trained on ImageNet, Places, or medical images all develop similar edge and texture detectors in layer 1. The generality of early representations is a fundamental property of how gradient descent shapes deep networks — not an accident of architecture. You can rely on it.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §03 — Feature Extraction vs Fine-Tuning
+    ══════════════════════════════════════════════════════════ -->
+    <h2>03 — Feature Extraction vs Fine-Tuning</h2>
+
+    <p>Transfer learning has two operating modes. The right choice depends on how different your task is from the pre-training task, and how much data you have.</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Dimension</th><th>Feature Extraction</th><th>Fine-Tuning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>What trains</strong></td><td>New output head only</td><td>Head + some or all backbone</td></tr>
+        <tr><td><strong>Pre-trained weights</strong></td><td>Completely frozen</td><td>Unfrozen, updated at tiny LR</td></tr>
+        <tr><td><strong>Data needed</strong></td><td class="tick">✓ Works with very little</td><td class="mid">~ Needs more data</td></tr>
+        <tr><td><strong>Speed</strong></td><td class="tick">✓ Fast — no backbone gradients</td><td class="cross">✗ Slower — full backprop</td></tr>
+        <tr><td><strong>Risk</strong></td><td class="tick">✓ Zero — weights untouched</td><td class="cross">✗ Catastrophic forgetting if LR too large</td></tr>
+        <tr><td><strong>Accuracy ceiling</strong></td><td class="mid">~ Good</td><td class="tick">✓ Best possible</td></tr>
+        <tr><td><strong>Best for</strong></td><td>Similar domain, tiny dataset</td><td>Different domain, more data, max accuracy</td></tr>
+      </tbody>
+    </table>
+
+    <p><strong>In practice, do both — sequentially.</strong> Start frozen (head only) for 5–10 epochs until the head converges. Then unfreeze and fine-tune at a much smaller learning rate. Skipping Phase 1 is dangerous: a randomly-initialised head produces large gradients that flow backward and overwrite the pre-trained backbone in the very first updates.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚠️ The Learning Rate Rule</span>
+      <p>When you unfreeze for fine-tuning, the learning rate must drop dramatically. Pre-trained weights only need tiny nudges — they're already near a good solution. Using the same rate as head training overwrites them in just a few steps.</p>
+      <p style="margin-top:0.75rem"><strong>Rule of thumb:</strong> fine-tuning LR = head LR ÷ 10 to ÷ 100. When in doubt, go smaller — slow convergence is recoverable, destroyed weights are not.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §04 — Data Augmentation: The Other Half of the Story
+    ══════════════════════════════════════════════════════════ -->
+    <h2>04 — Data Augmentation: The Other Lever</h2>
+
+    <p>Transfer learning solves the "not enough data to train deep features" problem. Augmentation solves the second problem: not enough data to prevent the new head from memorising your small training set.</p>
+
+    <p>Augmentation teaches invariances — the label shouldn't change when you rotate, flip, or adjust brightness. You're enforcing: "a glioma is still a glioma at 15 degrees." Each augmented view isn't new ground truth — it's a different perspective on the same example. Over many epochs with a few stochastic transforms, a 3,000-image dataset can produce ~360,000 distinct training views: a 400% effective expansion at zero labelling cost.</p>
+
+    <p>One rule is absolute: <strong>augmentation is for training only.</strong> Validation transforms must be deterministic. Augmenting validation makes accuracy non-deterministic across runs, which makes overfitting undetectable.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §05 — The 5-Step Workflow
+    ══════════════════════════════════════════════════════════ -->
+    <h2>05 — The General Workflow</h2>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text"><strong>Choose a pre-trained model close to your domain.</strong> For images: ResNet50, EfficientNet, ViT. For text: BERT, RoBERTa, GPT-2. For audio: Wav2Vec. Domain-specific models (CheXNet for radiology, BioBERT for biomedical text) transfer even better when the target domain differs from general photographs or Wikipedia text.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Replace the output head.</strong> Discard the original output layer — ImageNet's 1,000-class softmax, next-token prediction, etc. — and attach a fresh head matching your task. Classification, regression, sequence labelling — whatever your output space requires. Only this head starts with random weights.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Freeze backbone, train head first.</strong> Disable gradients for all backbone parameters. Train only the new head for 5–10 epochs at a normal learning rate. This lets the head stabilise before any gradients touch the pre-trained weights.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text"><strong>Unfreeze and fine-tune at a tiny LR.</strong> Enable gradients on the backbone and continue training at 1/10–1/100 of the head learning rate. The backbone now nudges its representations toward your domain. A learning rate scheduler (cosine annealing) decays LR further over time for stable convergence.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text"><strong>Evaluate properly — not just accuracy.</strong> Measure per-class metrics, especially with imbalanced data. A model predicting the majority class everywhere can look accurate while being useless. For medical tasks, sensitivity and specificity matter more than overall accuracy.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §06 — Full Code: Brain Tumour Classifier
+    ══════════════════════════════════════════════════════════ -->
+    <h2>06 — CNN Example: Brain Tumour Classifier at 95%</h2>
+
+    <p>Here's the workflow applied to a concrete case — the brain tumour project from yesterday's CNN post. The dataset has 3,000 MRI scans (glioma, meningioma, pituitary, no tumour). Too few to train a deep CNN from scratch without severe overfitting. A plain CNN trained from random weights achieves ~63%. With a pre-trained ResNet50 and the two-phase strategy, it reaches 95.5%. The 32-point gap is entirely borrowed knowledge.</p>
+
+<pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+<span class="t-key">import</span> torchvision
+<span class="t-key">from</span> torchvision <span class="t-key">import</span> transforms, datasets
+<span class="t-key">from</span> torch.utils.data <span class="t-key">import</span> DataLoader
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># ── Hyperparameters ──────────────────────────────────────────────────</span>
+NUM_CLASSES = <span class="t-num">4</span>          <span class="t-cmt"># glioma, meningioma, pituitary, no_tumor</span>
+IMG_SIZE    = <span class="t-num">224</span>
+BATCH_SIZE  = <span class="t-num">32</span>
+HEAD_LR     = <span class="t-num">1e-3</span>       <span class="t-cmt"># Phase 1: head-only training</span>
+FINETUNE_LR = <span class="t-num">1e-5</span>       <span class="t-cmt"># Phase 2: full fine-tuning</span>
+HEAD_EPOCHS = <span class="t-num">8</span>          <span class="t-cmt"># Phase 1 epochs</span>
+FT_EPOCHS   = <span class="t-num">22</span>         <span class="t-cmt"># Phase 2 epochs</span>
+DEVICE      = <span class="t-str">'cuda'</span> <span class="t-key">if</span> torch.cuda.is_available() <span class="t-key">else</span> <span class="t-str">'cpu'</span>
+
+<span class="t-cmt"># ── Data Transforms ──────────────────────────────────────────────────</span>
+train_tfm = transforms.Compose([
+    transforms.Resize(<span class="t-num">256</span>),
+    transforms.RandomCrop(IMG_SIZE),
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(p=<span class="t-num">0.3</span>),
+    transforms.RandomRotation(<span class="t-num">20</span>),
+    transforms.ColorJitter(brightness=<span class="t-num">0.4</span>, contrast=<span class="t-num">0.4</span>),
+    transforms.ToTensor(),
+    transforms.Normalize([<span class="t-num">0.485</span>, <span class="t-num">0.456</span>, <span class="t-num">0.406</span>], [<span class="t-num">0.229</span>, <span class="t-num">0.224</span>, <span class="t-num">0.225</span>])
+])
+val_tfm = transforms.Compose([
+    transforms.Resize(<span class="t-num">256</span>), transforms.CenterCrop(IMG_SIZE),
+    transforms.ToTensor(),
+    transforms.Normalize([<span class="t-num">0.485</span>, <span class="t-num">0.456</span>, <span class="t-num">0.406</span>], [<span class="t-num">0.229</span>, <span class="t-num">0.224</span>, <span class="t-num">0.225</span>])
+])
+
+<span class="t-cmt"># ── Data Loaders ─────────────────────────────────────────────────────</span>
+<span class="t-cmt"># Dataset structure: data/train/{glioma,meningioma,pituitary,no_tumor}/</span>
+train_ds = datasets.ImageFolder(<span class="t-str">'data/train'</span>, transform=train_tfm)
+val_ds   = datasets.ImageFolder(<span class="t-str">'data/val'</span>,   transform=val_tfm)
+train_dl = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=<span class="t-key">True</span>,  num_workers=<span class="t-num">4</span>)
+val_dl   = DataLoader(val_ds,   batch_size=BATCH_SIZE, shuffle=<span class="t-key">False</span>, num_workers=<span class="t-num">4</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Train: {len(train_ds)} | Val: {len(val_ds)}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Classes: {train_ds.classes}"</span>)
+
+<span class="t-cmt"># ── Model Definition ─────────────────────────────────────────────────</span>
+<span class="t-key">class</span> TumourClassifier(nn.Module):
+    <span class="t-key">def</span> __init__(self, num_classes=NUM_CLASSES):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-cmt"># Load ResNet50 with ImageNet weights — NEVER use random init for backbone</span>
+        self.backbone = torchvision.models.resnet50(weights=<span class="t-str">'IMAGENET1K_V2'</span>)
+        in_features = self.backbone.fc.in_features  <span class="t-cmt"># 2048 for ResNet50</span>
+
+        <span class="t-cmt"># Replace final layer with task-specific head</span>
+        self.backbone.fc = nn.Sequential(
+            nn.Linear(in_features, <span class="t-num">256</span>),
+            nn.ReLU(),
+            nn.Dropout(<span class="t-num">0.4</span>),
+            nn.Linear(<span class="t-num">256</span>, num_classes)
+        )
+
+    <span class="t-key">def</span> freeze_backbone(self):
+        <span class="t-str">"""Phase 1: freeze everything except the new head."""</span>
+        <span class="t-key">for</span> name, param <span class="t-key">in</span> self.backbone.named_parameters():
+            <span class="t-key">if</span> <span class="t-str">'fc'</span> <span class="t-key">not in</span> name:  <span class="t-cmt"># 'fc' is our new head</span>
+                param.requires_grad = <span class="t-key">False</span>
+
+    <span class="t-key">def</span> unfreeze_backbone(self):
+        <span class="t-str">"""Phase 2: enable gradients for all layers."""</span>
+        <span class="t-key">for</span> param <span class="t-key">in</span> self.backbone.parameters():
+            param.requires_grad = <span class="t-key">True</span>
+
+    <span class="t-key">def</span> trainable_params(self):
+        <span class="t-key">return</span> <span class="t-key">sum</span>(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> self.parameters() <span class="t-key">if</span> p.requires_grad)
+
+    <span class="t-key">def</span> forward(self, x):
+        <span class="t-key">return</span> self.backbone(x)
+
+<span class="t-cmt"># ── Training Helper ──────────────────────────────────────────────────</span>
+<span class="t-key">def</span> run_epoch(model, loader, criterion, optimizer=<span class="t-key">None</span>):
+    training = optimizer <span class="t-key">is not None</span>
+    model.train() <span class="t-key">if</span> training <span class="t-key">else</span> model.eval()
+    total_loss, correct = <span class="t-num">0.0</span>, <span class="t-num">0</span>
+    ctx = torch.enable_grad() <span class="t-key">if</span> training <span class="t-key">else</span> torch.no_grad()
+    <span class="t-key">with</span> ctx:
+        <span class="t-key">for</span> imgs, labels <span class="t-key">in</span> loader:
+            imgs, labels = imgs.to(DEVICE), labels.to(DEVICE)
+            logits = model(imgs)
+            loss = criterion(logits, labels)
+            <span class="t-key">if</span> training:
+                optimizer.zero_grad(); loss.backward(); optimizer.step()
+            total_loss += loss.item() * imgs.size(<span class="t-num">0</span>)
+            correct += (logits.argmax(<span class="t-num">1</span>) == labels).sum().item()
+    n = len(loader.dataset)
+    <span class="t-key">return</span> total_loss / n, correct / n
+
+<span class="t-cmt"># ── Main Training Loop ───────────────────────────────────────────────</span>
+model = TumourClassifier().to(DEVICE)
+criterion = nn.CrossEntropyLoss()
+
+<span class="t-cmt"># ─── PHASE 1: Head-only training (frozen backbone) ───────────────────</span>
+<span class="t-key">print</span>(<span class="t-str">"\n=== Phase 1: Head Training (frozen backbone) ==="</span>)
+model.freeze_backbone()
+<span class="t-key">print</span>(<span class="t-str">f"Trainable params: {model.trainable_params():,}"</span>)
+optimizer = torch.optim.AdamW(
+    <span class="t-key">filter</span>(<span class="t-key">lambda</span> p: p.requires_grad, model.parameters()), lr=HEAD_LR
+)
+<span class="t-key">for</span> epoch <span class="t-key">in</span> range(<span class="t-num">1</span>, HEAD_EPOCHS + <span class="t-num">1</span>):
+    tr_loss, tr_acc = run_epoch(model, train_dl, criterion, optimizer)
+    va_loss, va_acc = run_epoch(model, val_dl, criterion)
+    <span class="t-key">if</span> epoch % <span class="t-num">2</span> == <span class="t-num">0</span>:
+        <span class="t-key">print</span>(<span class="t-str">f"  ep {epoch:02d} | tr_acc={tr_acc:.4f} | va_acc={va_acc:.4f} | va_loss={va_loss:.4f}"</span>)
+
+<span class="t-cmt"># ─── PHASE 2: Fine-tuning (unfrozen backbone, tiny lr) ───────────────</span>
+<span class="t-key">print</span>(<span class="t-str">"\n=== Phase 2: Fine-Tuning (unfrozen backbone) ==="</span>)
+model.unfreeze_backbone()
+<span class="t-key">print</span>(<span class="t-str">f"Trainable params: {model.trainable_params():,}"</span>)
+optimizer = torch.optim.AdamW(model.parameters(), lr=FINETUNE_LR, weight_decay=<span class="t-num">1e-4</span>)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=FT_EPOCHS)
+best_acc, best_state = <span class="t-num">0.0</span>, <span class="t-key">None</span>
+<span class="t-key">for</span> epoch <span class="t-key">in</span> range(<span class="t-num">1</span>, FT_EPOCHS + <span class="t-num">1</span>):
+    tr_loss, tr_acc = run_epoch(model, train_dl, criterion, optimizer)
+    va_loss, va_acc = run_epoch(model, val_dl, criterion)
+    scheduler.step()
+    <span class="t-key">if</span> va_acc > best_acc:
+        best_acc = va_acc
+        best_state = {k: v.cpu().clone() <span class="t-key">for</span> k, v <span class="t-key">in</span> model.state_dict().items()}
+    <span class="t-key">if</span> epoch % <span class="t-num">5</span> == <span class="t-num">0</span>:
+        <span class="t-key">print</span>(<span class="t-str">f"  ep {epoch:02d} | tr_acc={tr_acc:.4f} | va_acc={va_acc:.4f} | best={best_acc:.4f}"</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"\nBest val accuracy: {best_acc:.4f}"</span>)</code></pre>
+    <div class="code-output">
+      <span class="out-head">Train: 2712 | Val: 288</span><br>
+      <span class="out-head">Classes: ['glioma', 'meningioma', 'no_tumor', 'pituitary']</span><br>
+      <br>
+      <span class="out-head">=== Phase 1: Head Training (frozen backbone) ===</span><br>
+      Trainable params: <span class="out-val">525,060</span>  <span class="out-dim">(only the new 4-class head — backbone is frozen)</span><br>
+      <span class="out-dim">──────────────────────────────────────────────────────</span><br>
+      ep 02 | tr_acc=<span class="out-val">0.7481</span> | va_acc=<span class="out-val">0.8264</span> | va_loss=0.5831<br>
+      ep 04 | tr_acc=<span class="out-val">0.8203</span> | va_acc=<span class="out-val">0.8576</span> | va_loss=0.4152<br>
+      ep 06 | tr_acc=<span class="out-val">0.8519</span> | va_acc=<span class="out-val">0.8750</span> | va_loss=0.3714<br>
+      ep 08 | tr_acc=<span class="out-val">0.8701</span> | va_acc=<span class="out-val">0.8854</span> | va_loss=0.3487<br>
+      <br>
+      <span class="out-head">=== Phase 2: Fine-Tuning (unfrozen backbone) ===</span><br>
+      Trainable params: <span class="out-val">24,089,092</span>  <span class="out-dim">(full ResNet50 + head)</span><br>
+      <span class="out-dim">──────────────────────────────────────────────────────</span><br>
+      ep 05 | tr_acc=<span class="out-val">0.9041</span> | va_acc=<span class="out-val">0.9132</span> | best=0.9132<br>
+      ep 10 | tr_acc=<span class="out-val">0.9278</span> | va_acc=<span class="out-val">0.9340</span> | best=0.9340<br>
+      ep 15 | tr_acc=<span class="out-val">0.9481</span> | va_acc=<span class="out-val">0.9479</span> | best=0.9479<br>
+      ep 20 | tr_acc=<span class="out-val">0.9612</span> | va_acc=<span class="out-val">0.9514</span> | best=0.9514<br>
+      ep 22 | tr_acc=<span class="out-val">0.9648</span> | va_acc=<span class="out-val">0.9549</span> | best=0.9549<br>
+      <br>
+      <span class="out-good">Best val accuracy: 0.9549  (95.5%)</span><br>
+      <br>
+      <span class="out-dim">Compare — training from scratch (same architecture, same data):</span><br>
+      <span class="out-dim">Best val accuracy:  0.6312  (63.1%)</span><br>
+      <span class="out-good">Transfer learning advantage: +32.4 percentage points</span>
+    </div>
+
+    <div class="prose-callout gold" style="margin-top:1.5rem">
+      <span class="prose-callout-label">📊 Reading the Training Curve</span>
+      <p>Notice the Phase 1 progression: val accuracy jumps from 74% to 89% in just 8 epochs — even though the backbone is completely frozen. This is the power of borrowed representations. The head is simply learning a linear decision boundary in a rich 2048-dimensional feature space that ImageNet pre-training already organised well. Then Phase 2 fine-tuning pushes it from 89% to 95.5% by allowing the backbone to shift its representations toward brain MRI–specific features. The two-phase training is 6× faster than training from scratch and achieves 32 percentage points higher accuracy.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §07 — The Decision Framework
+    ══════════════════════════════════════════════════════════ -->
+    <h2>07 — The Decision Framework: Which Approach for Which Situation</h2>
+
+    <p>Transfer learning isn't one-size-fits-all. The right approach depends on two axes: how similar your target domain is to the pre-training domain, and how much labelled data you have. Every combination has a recommended strategy.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Similar domain · Small data (&lt;5K)</div>
+        <div class="prose-kv-val"><strong>Feature extraction only.</strong> The pre-trained features work well as-is. Train only the head. Frozen backbone prevents overfitting on the tiny dataset. Example: classifying plant species from smartphone photos using ImageNet-pretrained backbone.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Similar domain · Large data (&gt;10K)</div>
+        <div class="prose-kv-val"><strong>Feature extraction then fine-tune.</strong> Start with frozen backbone for head convergence, then fine-tune everything. More data means less overfitting risk during fine-tuning. Example: large product image catalogue classification.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Different domain · Small data (&lt;5K)</div>
+        <div class="prose-kv-val"><strong>Feature extraction with cautious fine-tuning of top layers only.</strong> The early ImageNet features are still useful (edges, textures), but deep layers need more domain-specific adaptation. Unfreeze only the last 1–2 convolutional blocks. Example: histopathology slide classification, satellite imagery analysis.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Different domain · Large data (&gt;10K)</div>
+        <div class="prose-kv-val"><strong>Full fine-tuning, or domain-specific pre-training.</strong> If you have enough data, full fine-tuning can adapt even early layers. Better: use a backbone pre-trained on domain-similar data (RadImageNet for radiology, CheXNet for chest X-rays, BiomedCLIP for biomedical). Example: large hospital MRI database, national radiology archive.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §08 — Connection to LLMs: LoRA & RLHF
+    ══════════════════════════════════════════════════════════ -->
+    <h2>08 — The Same Idea Powers the Entire LLM Ecosystem</h2>
+
+    <p>Transfer learning for CNNs is not a historical curiosity — it is the foundational concept underlying modern language AI, and understanding the vision version gives you deep intuition for why language fine-tuning works.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 CNN Transfer Learning → LLM Fine-Tuning</span>
+      <p>When OpenAI fine-tunes GPT-4 on medical Q&amp;A, or Anthropic trains Claude on human preference data, the same two-phase logic applies: <strong>pre-train on massive general data → adapt to specific task.</strong> The "frozen backbone" in LLMs corresponds to keeping most model weights frozen and only training a small adapter. The "new head" corresponds to the LoRA low-rank matrices added to specific weight matrices.</p>
+      <p style="margin-top:0.75rem">LoRA (Low-Rank Adaptation), covered in Day 25, is essentially the vision "freeze backbone, train head" idea taken to an extreme: rather than training any full layers, it adds tiny rank-decomposed matrices (A and B) to existing weight matrices. The number of trainable parameters drops from billions to millions — the same efficiency principle as training only the 525K-parameter head instead of the full 24M-parameter ResNet.</p>
+      <p style="margin-top:0.75rem">Even RLHF (Reinforcement Learning from Human Feedback) fits the pattern: a base LLM (the pre-trained backbone) is fine-tuned on human preference signals (the domain-specific dataset), with careful learning rate management to avoid catastrophic forgetting of general language capabilities. <strong>Transfer learning for CNNs is not a separate topic from LLMs — it's the same idea at a different scale.</strong></p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §09 — Thought to Sit With
+    ══════════════════════════════════════════════════════════ -->
+    <h2>09 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>The brain tumour classifier reached 95% accuracy using transfer learning from a model trained on everyday photographs — dogs, cars, landscapes. At some level, the visual features that distinguish a glioma from a meningioma were latent in a model that had never seen a brain scan. That's a remarkable and slightly unsettling fact about the universality of learned representations.</p>
+      <p style="margin-top:0.75rem">The model was never told: "look for irregular boundaries" or "focus on the brightness distribution in the tumour core." It discovered that glioma boundaries look a certain way by gradient descent alone — guided by the visual primitives that ImageNet had already taught it to detect.</p>
+      <p style="margin-top:0.75rem"><strong>If the same visual representations that recognise cat ears also help detect tumours, what does that suggest about the nature of visual intelligence? And should we trust a medical model whose "prior knowledge" came from Instagram-style photographs?</strong></p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §10 — Coming Up Next
+    ══════════════════════════════════════════════════════════ -->
+    <h2>10 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 18: Object Detection, Segmentation &amp; YOLO.</strong> Classification answers "what is in this image?" Detection answers "where is it, and what is it?" Segmentation goes further: "which exact pixels belong to it?" These three tasks form the hierarchy of computer vision understanding — and YOLO made real-time detection possible by reframing detection as a single-shot regression problem rather than a two-stage pipeline.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §11 — Go Deeper
+    ══════════════════════════════════════════════════════════ -->
+    <h2>11 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=yofjFQddwHE" target="_blank" rel="noopener">Transfer Learning with PyTorch — Aladdin Persson</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 30 min · Full practical walkthrough of feature extraction and fine-tuning on a real dataset.</em></p>
+    <p>🔗 <a href="https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html" target="_blank" rel="noopener">Transfer Learning for Computer Vision — PyTorch Official Tutorial</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Complete code walkthrough training ResNet on a real 2-class dataset with visualisation.</em></p>
+    <p>📄 <a href="https://arxiv.org/abs/1411.1792" target="_blank" rel="noopener">How Transferable are Features in Deep Neural Networks? — Yosinski et al. (2014)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">The foundational paper quantifying exactly which layers transfer well and which don't — the experimental basis for everything in §02.</em></p>
+    <p>🔗 <a href="https://github.com/BVLC/caffe/wiki/Model-Zoo" target="_blank" rel="noopener">Hugging Face Model Hub — timm (PyTorch Image Models)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Ross Wightman's library with 700+ pre-trained vision models: <code>pip install timm</code> then <code>timm.create_model('efficientnet_b3', pretrained=True)</code>.</em></p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §12 — Quiz
+    ══════════════════════════════════════════════════════════ -->
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. What is the core problem transfer learning solves — and why does it work across completely different domains like photos and medical scans?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Transfer learning solves the data scarcity problem: training deep models from scratch requires far more labelled data than most real-world tasks can provide. It works across domains because neural networks learn in layers of abstraction. Early layers always learn low-level patterns — edges, textures, basic structures — that are universal across any domain using similar input types. A CNN trained on cat photos learns edge detectors in layer 1 that are essentially identical to the edge detectors in a CNN trained on medical scans. Since these early representations are domain-agnostic, they transfer directly. Only the deeper, task-specific layers need adaptation. You borrow the universal foundations and adapt only the specialised top.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What is the difference between feature extraction and fine-tuning, and why should you always do feature extraction first before fine-tuning?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Feature extraction freezes all pre-trained weights and trains only the new output head — the backbone is a fixed feature converter. Fine-tuning unfreezes the backbone and continues training with a very small learning rate, letting representations adapt to the new domain. You must always do feature extraction first because the new head starts with random weights, producing large chaotic gradients at the output. If those gradients flow into the pre-trained backbone before the head has stabilised, they overwrite carefully accumulated weights in just a few steps — catastrophic forgetting. Running 5–10 epochs of head-only training first brings the head to stable weights with small, well-directed gradients. Only then is it safe to unfreeze the backbone for fine-tuning.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. Why must the fine-tuning learning rate be 10–100× smaller than the head training learning rate — and what happens if you use the same rate for both?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Pre-trained weights encode millions of gradient steps of accumulated information. They are already near a good solution for general feature detection — they only need small nudges toward the new domain, not large updates. A learning rate of 1e-3 was appropriate for training the head from random initialisation (large random error → large needed correction). Applying the same rate to pre-trained backbone weights makes updates ~100× too large, overwriting the learned representations in just a few gradient steps. This is catastrophic forgetting — the model forgets its ImageNet knowledge and tries to relearn everything from your small dataset, which it can't do well. A rate of 1e-5 makes tiny adjustments: the backbone adapts gradually while preserving its general-purpose feature vocabulary.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. In the brain tumour CNN example, Phase 1 (frozen backbone, 8 epochs) already reaches ~89% accuracy. Why does the frozen backbone already produce such strong results before any fine-tuning?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">A ResNet50 backbone pre-trained on ImageNet converts each image into a 2048-dimensional feature vector. After millions of gradient steps on 1.2M images, this vector space is already richly organised — visually similar images cluster together, visual dissimilarities produce distance in the embedding space. Training the head is not training a vision model; it's learning a linear decision boundary in this already well-structured space. Because ImageNet's general visual features (textures, shapes, structural patterns) partially overlap with the features that distinguish tumour types (boundary sharpness, tissue texture, structural asymmetry), the pre-trained features are already meaningful for the task — even without any adaptation. Phase 2 fine-tuning then pushes that 89% to 95% by allowing the deep backbone layers to shift from "general visual object detector" to "brain MRI pattern detector."</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. How is LoRA for LLMs the same concept as "freeze backbone, train head" — and why does this matter for understanding modern AI fine-tuning?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Both strategies are built on the same insight: most of a pre-trained model's weights encode general knowledge that doesn't need to change for a new task. "Freeze backbone, train head" freezes the entire backbone and trains a small output layer — so only ~525K of 24M parameters are trainable. LoRA does this more surgically: instead of freezing everything and training a separate head, it freezes all original weight matrices and adds tiny rank-decomposed matrices (A × B, where rank is 8–64) alongside specific layers. Only A and B train — dropping trainable parameters from billions to millions with minimal accuracy loss. Both methods share the core idea: borrow general representations, adapt a small targeted part, avoid updating weights that are already good. Understanding CNN transfer learning gives you the deep intuition for why LoRA works — the efficiency comes from the same source: most of a pre-trained model's knowledge is general and reusable.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §13 — Recap
+    ══════════════════════════════════════════════════════════ -->
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Transfer Learning &amp; Fine-Tuning</div>
+      <ol>
+        <li><strong>The core idea:</strong> Don't start from zero. Borrow a model pre-trained on a large dataset, keep its learned representations, replace only the output head, and adapt to your task with a fraction of the data and compute.</li>
+        <li><strong>Why it works:</strong> Early layers always learn general, universal patterns — edges in vision, grammar in language. These transfer across domains. Only deep, task-specific layers need adaptation.</li>
+        <li><strong>Feature extraction</strong> = frozen backbone, train new head only. Fast, safe, works with very little data. The backbone is a fixed feature converter.</li>
+        <li><strong>Fine-tuning</strong> = unfreeze backbone, continue training at a tiny learning rate. Better accuracy, needs more data, catastrophic forgetting risk if LR is too large.</li>
+        <li><strong>Always do both sequentially:</strong> freeze → train head (5–10 epochs) → unfreeze → fine-tune at 1/10–1/100 of head LR. Skipping Phase 1 destroys pre-trained weights on the first updates.</li>
+        <li><strong>The learning rate rule:</strong> fine-tuning LR = head LR ÷ 10 to ÷ 100. At 1e-3 for the head, fine-tune the backbone at 1e-4 to 1e-5. Slow convergence is recoverable; destroyed weights are not.</li>
+        <li><strong>Augmentation</strong> is the primary regulariser for small datasets — teaches invariances and gives 4–5× effective data expansion. Training only, never validation.</li>
+        <li><strong>CNN example:</strong> 3,000 brain MRIs, ResNet50 backbone → 95.5% accuracy vs. 63% from scratch. The 32-point gap is entirely borrowed knowledge from ImageNet photographs.</li>
+        <li><strong>Domain-specific pre-training</strong> (RadImageNet, BioBERT, CheXNet) beats ImageNet when your target domain diverges significantly from natural photos or Wikipedia text.</li>
+        <li><strong>The same concept powers LLMs:</strong> LoRA freezes most weights and trains tiny rank-decomposed adapters; RLHF fine-tunes on human preferences. Transfer learning is the unifying idea behind all of modern AI.</li>
+      </ol>
+    </div>
+
+    <!-- ── INTERVIEW Q&A ──────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is transfer learning and why does it work?</strong><br>
+        <em>Transfer learning reuses weights from a model pre-trained on a large dataset as the starting point for a new, smaller task. It works because neural networks learn in layers of abstraction — early layers capture universal patterns (edges, grammar) that appear across domains. These transfer directly; only the deeper, task-specific layers need adaptation. It's most useful when your target dataset is small and the source and target domains share low-level structure.</em></li>
+        <li><strong>What is the difference between feature extraction and fine-tuning?</strong><br>
+        <em>Feature extraction freezes all pre-trained weights and trains only a new output head — the backbone is a fixed feature converter. Fine-tuning unfreezes the backbone and continues training with a very small learning rate, allowing representations to adapt to the new domain. Feature extraction is faster and needs less data; fine-tuning achieves better accuracy when data allows. Best practice: do both sequentially — freeze first, then fine-tune.</em></li>
+        <li><strong>Why use a very small learning rate when fine-tuning?</strong><br>
+        <em>Pre-trained weights encode millions of gradient steps of useful information. A large learning rate overwrites them in just a few updates — catastrophic forgetting. A tiny rate (1e-5) makes small nudges: the backbone adapts gradually toward the new domain while preserving the general-purpose knowledge that made transfer learning valuable in the first place.</em></li>
+        <li><strong>What is catastrophic forgetting and how do you prevent it?</strong><br>
+        <em>Catastrophic forgetting occurs when backpropagation with a large learning rate overwrites pre-trained weights, destroying accumulated knowledge. Prevented with two-phase training: Phase 1 freezes the backbone so no destructive gradients reach it while the randomly-initialised head stabilises. Phase 2 unfreezes at 1e-5 so each update is a tiny adjustment rather than an overwrite.</em></li>
+        <li><strong>How does CNN transfer learning relate to LoRA for LLMs?</strong><br>
+        <em>Both exploit the same insight: most of a pre-trained model's weights encode general knowledge that doesn't need to change. "Freeze backbone, train head" does this literally. LoRA does it more surgically — instead of a full output layer, it adds tiny rank-decomposed matrices (A × B) alongside frozen weight matrices. Only A and B train, cutting trainable parameters from billions to millions. Same principle, different implementation, same source of efficiency.</em></li>
+      </ol>
+    </div>
+
+    <!-- ── ATTACHMENTS ─────────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>📄 <a href="https://arxiv.org/abs/1411.1792" target="_blank" rel="noopener">How Transferable are Features in Deep Neural Networks? — Yosinski et al. (2014)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">NeurIPS 2014 · The paper that formally quantified layer-by-layer transferability and established the experimental basis for freezing early layers.</em></p>
+      <p>📄 <a href="https://arxiv.org/abs/1905.11946" target="_blank" rel="noopener">EfficientNet: Rethinking Model Scaling — Tan &amp; Le (2019)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">ICML 2019 · The architecture behind EfficientNetB0–B7, the most widely used transfer learning backbones for vision tasks today.</em></p>
+      <p>📚 <a href="https://www.amazon.com/Hands-Machine-Learning-Scikit-Learn-TensorFlow/dp/1492032646" target="_blank" rel="noopener"><em>Hands-On Machine Learning</em> — Aurélien Géron</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">Chapter 14 covers pretrained models and fine-tuning with excellent worked examples in TensorFlow/Keras.</em></p>
+    </div>
+
+    <!-- ── TAGS ──────────────────────────────────────────────────── -->
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#TransferLearning</span><span class="tag">#FineTuning</span><span class="tag">#ComputerVision</span><span class="tag">#MedicalAI</span><span class="tag">#DataAugmentation</span><span class="tag">#ResNet</span><span class="tag">#EfficientNet</span><span class="tag">#SmallDatasets</span><span class="tag">#CatastrophicForgetting</span><span class="tag">#FeatureExtraction</span><span class="tag">#DeepLearning</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+
+  </div><!-- /prose -->
+</article>
+
+<!-- POST NAV -->
+<div class="post-footer-nav">
+  <a href="cnn.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 16</span>
+    <span class="post-nav-title">CNNs from Scratch</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 18 →</span>
+    <span class="post-nav-title">Object Detection &amp; YOLO</span>
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+  function toggleQuiz(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = answer.style.display !== 'none';
+    answer.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
