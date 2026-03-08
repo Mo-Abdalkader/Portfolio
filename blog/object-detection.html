@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 18 — Object Detection, YOLO &amp; Segmentation | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="From classification to localisation to pixel-level understanding — object detection, YOLO, and segmentation explained from first principles, with full working code and the architecture ideas powering self-driving cars, medical imaging, and generative AI." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero { background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%); border-bottom:1px solid #ddd5c4; }
+    [data-theme="light"] .post-hero h1 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .post-hero-lead { color:#5a5248; }
+    [data-theme="light"] .post-article { background:#f7f3ec; }
+    [data-theme="light"] .prose { color:#2e2b25; }
+    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
+    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .prose strong { color:#0f0e0c; }
+    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
+    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
+    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
+    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
+    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
+    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
+    [data-theme="light"] .prose-step-text { color:#2e2b25; }
+    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
+    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
+    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
+    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
+    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
+    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
+    [data-theme="light"] .reading-progress { background:linear-gradient(90deg,#c8a94b,#2a6b6e); }
+    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .post-nav-label { color:#7a7062; }
+    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
+    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
+    [data-theme="light"] .prose-callout-label { color:#7a7062; }
+    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built { color:#5a5248; }
+    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
+    /* compact output block */
+    .code-output { background:#0d1117; border:1px solid #30363d; border-top:none; border-radius:0 0 var(--radius-md) var(--radius-md); padding:0.9rem 1.1rem; font-family:'JetBrains Mono',monospace; font-size:0.78rem; line-height:1.6; color:#8b949e; overflow-x:auto; }
+    .code-output .out-head { color:#58a6ff; font-weight:500; }
+    .code-output .out-good { color:#3fb950; }
+    .code-output .out-val  { color:#e3b341; }
+    .code-output .out-dim  { color:#484f58; }
+    pre { border-radius:var(--radius-md) var(--radius-md) 0 0 !important; margin-bottom:0 !important; }
+    pre + .code-output + * { margin-top:1.5rem; }
+    pre:not(:has(+ .code-output)) { border-radius:var(--radius-md) !important; margin-bottom:1.5rem !important; }
+    /* ── knowledge-check ────────────────────────────────── */
+    .knowledge-check { margin-top:2.5rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .knowledge-check-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .knowledge-check-body { padding:1.2rem; display:flex; flex-direction:column; gap:1rem; }
+    .quiz-item { border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+    .quiz-question { padding:0.85rem 1rem; font-size:0.925rem; line-height:1.6; font-weight:500; }
+    .quiz-reveal-btn { display:block; width:100%; text-align:left; padding:0.6rem 1rem; background:var(--surface); border:none; border-top:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:0.85rem; cursor:pointer; transition:background 0.15s; }
+    .quiz-reveal-btn:hover { background:var(--surface-hover,rgba(255,255,255,0.04)); }
+    .quiz-answer { padding:0.85rem 1rem; background:var(--surface); border-top:1px solid var(--border); font-size:0.9rem; line-height:1.7; color:var(--text-muted); }
+    /* ── quick-recap ─────────────────────────────────────── */
+    .quick-recap { margin-top:2rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .quick-recap-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .quick-recap ol { margin:0; padding:1.2rem 1.2rem 1.2rem 2.2rem; display:flex; flex-direction:column; gap:0.65rem; }
+    .quick-recap ol li { font-size:0.9rem; line-height:1.65; }
+    /* comparison table */
+    .prose-table { width:100%; border-collapse:collapse; font-size:0.9rem; margin:1.5rem 0; }
+    .prose-table th { background:var(--surface); color:var(--text-muted); font-weight:600; text-align:left; padding:0.65rem 0.85rem; border:1px solid var(--border); font-size:0.8rem; letter-spacing:0.05em; text-transform:uppercase; }
+    .prose-table td { padding:0.65rem 0.85rem; border:1px solid var(--border); vertical-align:top; line-height:1.55; }
+    .prose-table tr:nth-child(even) td { background:var(--surface); }
+    .prose-table .tick { color:#3fb950; font-weight:700; }
+    .prose-table .cross { color:#f85149; font-weight:700; }
+    .prose-table .mid  { color:#e3b341; font-weight:700; }
+    /* ── architecture timeline ───────────────────────────── */
+    .arch-timeline { margin:2rem 0; display:flex; flex-direction:column; gap:1.5rem; }
+    .arch-track { border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .arch-track-header { display:flex; align-items:center; gap:0.6rem; padding:0.75rem 1rem; background:var(--surface); border-bottom:1px solid var(--border); font-size:0.8rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-muted); }
+    .arch-track-header.lbl-backbone { border-left:4px solid #58a6ff; }
+    .arch-track-header.lbl-detection { border-left:4px solid #3fb950; }
+    .arch-track-header.lbl-segment  { border-left:4px solid #e3b341; }
+    .arch-track-header span.sub { font-size:0.72rem; font-weight:400; letter-spacing:0; text-transform:none; opacity:0.7; }
+    .arch-entries { display:flex; flex-direction:column; }
+    .arch-entry { display:grid; grid-template-columns:72px 1fr; border-bottom:1px solid var(--border); }
+    .arch-entry:last-child { border-bottom:none; }
+    .arch-year { background:var(--surface); padding:0.7rem 0.5rem; font-size:0.72rem; font-weight:700; color:var(--text-muted); display:flex; align-items:flex-start; justify-content:center; padding-top:0.85rem; border-right:1px solid var(--border); font-family:'JetBrains Mono',monospace; }
+    .arch-body { padding:0.75rem 1rem; }
+    .arch-name { font-size:0.9rem; font-weight:700; color:var(--text); margin-bottom:0.25rem; }
+    .arch-name .arch-tag { display:inline-block; font-size:0.68rem; font-weight:600; padding:0.1rem 0.45rem; border-radius:3px; margin-left:0.4rem; vertical-align:middle; }
+    .arch-tag.leap   { background:rgba(88,166,255,0.15); color:#58a6ff; border:1px solid rgba(88,166,255,0.3); }
+    .arch-tag.solid  { background:rgba(63,185,80,0.12); color:#3fb950; border:1px solid rgba(63,185,80,0.3); }
+    .arch-tag.niche  { background:rgba(227,179,65,0.12); color:#e3b341; border:1px solid rgba(227,179,65,0.3); }
+    .arch-desc { font-size:0.85rem; line-height:1.6; color:var(--text-muted); }
+    .arch-desc strong { color:var(--text); }
+    /* ── backbone usage table ────────────────────────────── */
+    .backbone-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:1rem; margin:1.5rem 0; }
+    .backbone-card { border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+    .backbone-card-head { background:var(--surface); padding:0.6rem 0.9rem; font-size:0.8rem; font-weight:700; letter-spacing:0.04em; display:flex; align-items:center; gap:0.5rem; border-bottom:1px solid var(--border); }
+    .backbone-card-body { padding:0.75rem 0.9rem; font-size:0.85rem; line-height:1.65; color:var(--text-muted); }
+    .backbone-card-body strong { color:var(--text); }
+    .bc-cls  { border-top:3px solid #58a6ff; }
+    .bc-det  { border-top:3px solid #3fb950; }
+    .bc-seg  { border-top:3px solid #e3b341; }
+    .bc-all  { border-top:3px solid #a371f7; }
+  </style>
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 18 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Mar 8, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">28 min read</span>
+      <span class="meta-sep">·</span>
+      <span>Computer Vision</span>
+    </div>
+    <h1>Object Detection, YOLO &amp; Segmentation:<br>Where Is It, and What Exactly Is It?</h1>
+    <p class="post-hero-lead">Classification says "there's a person in this image." Detection says "there's a person at coordinates (x, y, w, h)." Segmentation says "these exact pixels are a person." Three questions, three levels of spatial understanding — and YOLO made the hardest real-time problem solvable in a single forward pass.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <!-- ── OPENING QUOTE ─────────────────────────────────────── -->
+    <blockquote>
+      <p>A surgeon performing robotic-assisted surgery needs to know<br>
+      not just that an artery is present in the image —<br>
+      but exactly where it is, pixel by pixel,<br>
+      so the robotic arm doesn't nick it.<br><br>
+      A self-driving car's computer needs to know not just<br>
+      that a pedestrian is in the scene —<br>
+      but their precise bounding box, updated 30 times per second.<br>
+      Classification was the beginning. Localisation is the requirement.</p>
+    </blockquote>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §01 — Three Tasks
+    ══════════════════════════════════════════════════════════ -->
+    <h2>01 — Three Tasks, Three Levels of Spatial Understanding</h2>
+
+    <p>Computer vision has three fundamental output types. Each requires a different output format, a different loss function, and a different amount of annotation effort to train. Understanding the hierarchy makes the whole field make sense.</p>
+
+    <p><strong>Image classification</strong> (Days 15–17) produces a single label for the entire image. Input: 224×224 pixels. Output: "cat" (probability 0.97). The spatial location of the cat is irrelevant — the label is global. One forward pass, one vector, one argmax.</p>
+
+    <p><strong>Object detection</strong> produces a label <em>and a bounding box</em> for each object present. Output: <code>[("person", x=120, y=80, w=60, h=140, conf=0.91), ("car", x=340, y=200, w=180, h=90, conf=0.87)]</code>. The model must simultaneously classify and localise — two tasks in one network, with a loss function that penalises both wrong labels and imprecise boxes.</p>
+
+    <p><strong>Segmentation</strong> assigns a class label to <em>every single pixel</em>. Semantic segmentation gives each pixel a class ("road," "sky," "person") without distinguishing between individuals. Instance segmentation goes further: it distinguishes the pedestrian on the left from the pedestrian on the right, giving each a separate per-pixel mask. Panoptic segmentation combines both.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🗺️ Analogy: Three Ways to Describe a City</span>
+      <p>Classification is like answering "what country is this city in?" Detection is like drawing labelled rectangles around every building on a map. Semantic segmentation is like colour-coding every square metre — residential red, commercial blue, park green — without naming individual buildings. Instance segmentation is that same colour-coded map but also numbering each individual building separately so you can refer to "Building 47."</p>
+      <p style="margin-top:0.75rem">Each level requires more annotation effort, more compute, and unlocks different downstream applications. A tumour detector needs bounding boxes; a surgical robot needs pixel masks.</p>
+    </div>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Task</th><th>Output</th><th>Loss</th><th>Annotation cost</th><th>Typical use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Classification</strong></td>
+          <td>Class label + probability</td>
+          <td>Cross-entropy</td>
+          <td class="tick">✓ Low — one label/image</td>
+          <td>Spam filter, disease screening</td>
+        </tr>
+        <tr>
+          <td><strong>Detection</strong></td>
+          <td>Boxes + labels + confidence</td>
+          <td>Loc + obj + cls loss</td>
+          <td class="mid">~ Medium — boxes per object</td>
+          <td>Autonomous vehicles, surveillance</td>
+        </tr>
+        <tr>
+          <td><strong>Segmentation</strong></td>
+          <td>Per-pixel class mask</td>
+          <td>Pixel-wise cross-entropy / Dice</td>
+          <td class="cross">✗ High — every pixel labelled</td>
+          <td>Medical imaging, robotics</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §02 — Architecture Timeline
+    ══════════════════════════════════════════════════════════ -->
+    <h2>02 — The Architecture Timeline: How We Got Here</h2>
+
+    <p>Computer vision didn't leap from "no CNN" to "YOLOv8 detects 80 classes at 160 FPS." It evolved through a chain of papers, each fixing a specific bottleneck in the previous one. Understanding the lineage tells you <em>why</em> each architecture looks the way it does — and which problems are still open.</p>
+
+    <p>Three parallel tracks evolved simultaneously: the <strong>backbone CNNs</strong> that extract features (shared across all tasks), the <strong>detection</strong> architectures built on top of them, and the <strong>segmentation</strong> architectures that repurposed the same backbones for pixel-level output.</p>
+
+    <!-- ── TRACK 1: BACKBONE CNNs ────────────────────────── -->
+    <div class="arch-timeline">
+      <div class="arch-track">
+        <div class="arch-track-header lbl-backbone">🧱 Backbone CNNs &nbsp;<span class="sub">— Feature extractors shared across all tasks</span></div>
+        <div class="arch-entries">
+
+          <div class="arch-entry">
+            <div class="arch-year">2012</div>
+            <div class="arch-body">
+              <div class="arch-name">AlexNet <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>The ignition point.</strong> First deep CNN to win ImageNet by a large margin (top-5 error: 15.3% vs 26.2% for the runner-up). Introduced ReLU activations (replacing sigmoid → much faster training), dropout regularisation, and GPU-parallel training. Proved deep networks work at scale. Every architecture since is a direct descendant.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2014</div>
+            <div class="arch-body">
+              <div class="arch-name">VGG-16 / VGG-19 <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>Depth over width.</strong> Replaced large filters (11×11, 5×5) with stacked 3×3 convolutions — two 3×3 layers have the same receptive field as one 5×5 but fewer parameters and more non-linearity. Showed that depth (16–19 layers) matters more than filter size. Still used as a backbone for transfer learning because its features are clean and predictable. Weakness: 138M parameters, memory-heavy.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2015</div>
+            <div class="arch-body">
+              <div class="arch-name">ResNet-50/101/152 <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Residual connections solved the vanishing gradient problem.</strong> Before ResNet, training networks deeper than ~20 layers made accuracy <em>worse</em> — gradients decayed to near-zero before reaching early layers. ResNet's fix: add a shortcut connection that adds the input directly to the output (<code>F(x) + x</code>). Gradients now have a direct highway back. ResNet-50 (25M params) achieves lower error than VGG-19 (138M params). ResNet backbones are the default starting point for detection and segmentation today.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2017</div>
+            <div class="arch-body">
+              <div class="arch-name">DenseNet <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>Every layer connects to every subsequent layer.</strong> Where ResNet adds input to output (x + F(x)), DenseNet concatenates all previous feature maps: each layer receives the outputs of all preceding layers. This maximises feature reuse and enables very deep networks with fewer parameters. Particularly strong in medical imaging segmentation (dense feature reuse helps recover spatial detail). Less common in detection — the concatenation overhead is high at scale.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2019</div>
+            <div class="arch-body">
+              <div class="arch-name">EfficientNet-B0…B7 <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Compound scaling: simultaneously scale depth, width, and resolution.</strong> Previous architectures scaled one dimension at a time (make it deeper, or wider, or use bigger images). EfficientNet used Neural Architecture Search to find the optimal base model, then defined a principled scaling rule: scale all three dimensions together with a fixed ratio. EfficientNet-B4 matches ResNet-152 accuracy at 5.3× fewer parameters. The B-suffix variants are the standard backbone for transfer learning on limited data — your brain tumour classifier (Day 17's fast food model) used EfficientNet.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2022</div>
+            <div class="arch-body">
+              <div class="arch-name">ConvNeXt <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>A pure CNN that matches Vision Transformers.</strong> Built by systematically applying ViT design choices (larger kernels, depthwise convolutions, fewer activation functions, LayerNorm instead of BatchNorm) to a ResNet base. ConvNeXt-L matches Swin Transformer on ImageNet without any attention mechanism. Relevant because it demonstrated that CNNs hadn't hit a ceiling — the architectural improvements came from design choices, not the attention mechanism itself.</div>
+            </div>
+          </div>
+
+        </div><!-- /arch-entries -->
+      </div><!-- /backbone track -->
+
+      <!-- ── TRACK 2: DETECTION ────────────────────────────── -->
+      <div class="arch-track">
+        <div class="arch-track-header lbl-detection">🟩 Object Detection &nbsp;<span class="sub">— Two-stage then one-stage</span></div>
+        <div class="arch-entries">
+
+          <div class="arch-entry">
+            <div class="arch-year">2014</div>
+            <div class="arch-body">
+              <div class="arch-name">R-CNN <span class="arch-tag solid">Pioneering</span></div>
+              <div class="arch-desc"><strong>First CNN-based detector.</strong> Pipeline: (1) Selective Search proposes ~2,000 candidate regions, (2) each region is warped to 227×227 and passed through AlexNet independently, (3) SVM classifies. Achieved 53.3% mAP on PASCAL VOC — huge improvement over pre-deep methods. Fatal flaw: 2,000 CNN forward passes per image = 47 seconds/image. Not deployable.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2015</div>
+            <div class="arch-body">
+              <div class="arch-name">Fast R-CNN <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>Fixed the duplicate CNN passes.</strong> Key insight: run the backbone CNN <em>once</em> on the whole image to produce a feature map, then project each proposed region onto that shared feature map using RoI Pooling. Now there's 1 forward pass for the backbone, not 2,000. Classification and box regression are unified into one network (no separate SVM). Speed: 0.3 seconds/image. Still limited by Selective Search taking 2 seconds per image — a non-deep bottleneck.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2015</div>
+            <div class="arch-body">
+              <div class="arch-name">Faster R-CNN <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Replaced Selective Search with a learned Region Proposal Network (RPN).</strong> The RPN shares convolutional features with the detection head — the backbone runs once, proposals and detection both use the same feature map. End-to-end trainable for the first time. Speed: ~200ms (5 FPS). This is still the standard two-stage architecture. Accuracy ceiling: ~47 mAP on COCO. Used as Mask R-CNN's backbone in 2017 for instance segmentation.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2015</div>
+            <div class="arch-body">
+              <div class="arch-name">YOLO v1 <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Reframed detection as regression, not classification.</strong> Divide image into 7×7 grid; each cell predicts 2 boxes + class probabilities directly. One forward pass, all predictions simultaneously. Speed: 45 FPS real-time. Accuracy: 63.4% mAP on PASCAL VOC — competitive with two-stage methods at 10× the speed. Weakness: struggles with small objects and clustered objects (each cell could only predict one class).</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2016</div>
+            <div class="arch-body">
+              <div class="arch-name">SSD <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>Multi-scale one-stage detection.</strong> Unlike YOLO v1's single grid, SSD predicts at multiple feature map resolutions simultaneously — large feature maps for small objects, small feature maps for large objects. Uses predefined anchor boxes at each scale. Faster and more accurate on small objects than YOLO v1. SSD's multi-scale prediction idea was absorbed into all subsequent YOLO versions via the Feature Pyramid Network.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2016–18</div>
+            <div class="arch-body">
+              <div class="arch-name">YOLO v2 → v3 <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>v2:</strong> Added anchor boxes (borrowed from Faster R-CNN), batch normalisation, higher resolution training. mAP: 78.6% VOC. <strong>v3:</strong> Added multi-scale prediction at 3 resolutions (like SSD), darknet-53 backbone (residual connections), binary cross-entropy per class (enabling multi-label). mAP: 57.9% COCO at 51 FPS. v3 remained the production standard for years due to its balance of speed and accuracy.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2020</div>
+            <div class="arch-body">
+              <div class="arch-name">YOLO v4 / v5 <span class="arch-tag solid">Solid</span></div>
+              <div class="arch-desc"><strong>Engineering excellence.</strong> v4 introduced CSPNet (Cross Stage Partial Networks) backbone, PANet neck for better multi-scale feature fusion, mosaic augmentation (4 images combined), and CIoU loss. v5 (Ultralytics) added auto-anchor computation, auto-learning of augmentation parameters, and streamlined PyTorch implementation. Both pushed accuracy above 50 mAP@[.5:.95] COCO while maintaining real-time speed.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2022</div>
+            <div class="arch-body">
+              <div class="arch-name">YOLO v6 / v7 / YOLOX <span class="arch-tag niche">Refinements</span></div>
+              <div class="arch-desc">Multiple competing implementations improved anchor-free heads, dynamic label assignment (replacing fixed anchor matching), and re-parameterisation for faster inference. YOLOX introduced fully anchor-free YOLO for the first time. These refinements fed directly into v8.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2023</div>
+            <div class="arch-body">
+              <div class="arch-name">YOLO v8 <span class="arch-tag leap">Current Standard</span></div>
+              <div class="arch-desc"><strong>Anchor-free, unified, production-grade.</strong> Dropped all anchor boxes — predicts box centre + size directly. Unified API for detection, segmentation, pose estimation, and classification in one library. C2f backbone (CSP with 2 bottlenecks). Distribution Focal Loss for more accurate box regression. YOLOv8n: 3.2M params, 160+ FPS. YOLOv8x: 68M params, ~53 mAP COCO. The current industry default.</div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /detection track -->
+
+      <!-- ── TRACK 3: SEGMENTATION ──────────────────────────── -->
+      <div class="arch-track">
+        <div class="arch-track-header lbl-segment">🟨 Segmentation &nbsp;<span class="sub">— Pixel-level understanding</span></div>
+        <div class="arch-entries">
+
+          <div class="arch-entry">
+            <div class="arch-year">2014</div>
+            <div class="arch-body">
+              <div class="arch-name">FCN — Fully Convolutional Network <span class="arch-tag solid">Pioneering</span></div>
+              <div class="arch-desc"><strong>First end-to-end CNN trained for dense pixel prediction.</strong> Replaced the fully connected layers at the end of classification CNNs (AlexNet, VGG) with convolutional layers, allowing arbitrary input sizes and producing spatial output maps. Used transposed convolutions (learnable upsampling) to restore resolution. Weakness: upsampling is coarse — boundaries are blurry because spatial detail from the encoder is discarded.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2015</div>
+            <div class="arch-body">
+              <div class="arch-name">U-Net <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Skip connections fixed FCN's blurry boundaries.</strong> The encoder-decoder with skip connections at every resolution level — high-resolution encoder features bypass the bottleneck and concatenate with decoder features at the matching scale. Designed for biomedical images with very limited training data; introduced the data augmentation strategy (elastic deformations) that became standard for medical imaging. Still the default architecture for medical segmentation after 10 years.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2016–18</div>
+            <div class="arch-body">
+              <div class="arch-name">DeepLab v1–v3+ <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Atrous (dilated) convolutions for large receptive fields without losing resolution.</strong> Standard convolutions with stride 2 downsample the feature map. Atrous convolutions expand the receptive field by inserting gaps between kernel weights — seeing a wider context without reducing spatial resolution. DeepLab v3+ added the ASPP (Atrous Spatial Pyramid Pooling) module which applies multiple dilation rates simultaneously, capturing objects at multiple scales. Standard for outdoor scene segmentation (Cityscapes, ADE20K).</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2017</div>
+            <div class="arch-body">
+              <div class="arch-name">Mask R-CNN <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>Added a mask branch to Faster R-CNN for instance segmentation.</strong> For each proposed region, a lightweight FCN head predicts a 28×28 binary mask in parallel with the existing classification and box regression heads. The key fix over naive RoI Pooling: RoIAlign (bilinear interpolation instead of integer quantisation) preserves sub-pixel spatial precision needed for accurate masks. The reference implementation for instance segmentation — all subsequent instance segmentation models compare to it.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2020</div>
+            <div class="arch-body">
+              <div class="arch-name">nnU-Net <span class="arch-tag leap">Leap</span></div>
+              <div class="arch-desc"><strong>"No-new-Net" — automatic self-configuring U-Net.</strong> The key insight: for medical segmentation, the U-Net architecture is already nearly optimal. What varies is the configuration — patch size, batch size, normalization, augmentation strength — based on dataset properties (image spacing, class distribution, size). nnU-Net automatically configures all hyperparameters from dataset statistics. Outperformed all task-specific methods on 23 out of 23 medical segmentation benchmarks without task-specific tuning. The production standard for medical image segmentation.</div>
+            </div>
+          </div>
+
+          <div class="arch-entry">
+            <div class="arch-year">2023</div>
+            <div class="arch-body">
+              <div class="arch-name">SAM — Segment Anything <span class="arch-tag leap">Foundation Model</span></div>
+              <div class="arch-desc"><strong>Segmentation as a foundation model.</strong> Trained on 1 billion masks (semi-automatically generated). Accepts a point, box, or text prompt and segments any object zero-shot. Vision Transformer encoder + prompt encoder + lightweight mask decoder. SAM2 extends to video with a memory bank that propagates masks across frames. The shift from "train a segmentation model per task" to "prompt a universal segmentation model" mirrors the shift from task-specific classifiers to GPT.</div>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /segmentation track -->
+    </div><!-- /arch-timeline -->
+
+    <!-- ── THE BACKBONE QUESTION ─────────────────────────── -->
+    <h3>Do Detection and Segmentation Use the Same Backbone CNNs?</h3>
+
+    <p>This is a crucial practical question. The short answer: <strong>yes, the backbone is almost always shared — but the head is task-specific.</strong> The backbone's job is feature extraction, which is the same regardless of what the features are used for. Only the output head (what you do with those features) changes per task.</p>
+
+    <div class="backbone-grid">
+      <div class="backbone-card bc-all">
+        <div class="backbone-card-head">🟣 Universal Backbones — All Three Tasks</div>
+        <div class="backbone-card-body"><strong>ResNet-50/101</strong> and <strong>EfficientNet-B0…B7</strong> are used as the backbone for classification, detection, and segmentation. When you load <code>yolov8s.pt</code>, its backbone is a modified CSP-ResNet. When you load a U-Net for medical imaging, you typically replace its encoder with a pretrained ResNet-50. The same weights that classify ImageNet dogs also extract edge and texture features useful for detecting pedestrians and segmenting tumours.</div>
+      </div>
+      <div class="backbone-card bc-det">
+        <div class="backbone-card-head">🟩 Detection-Specific Heads</div>
+        <div class="backbone-card-body">After the shared backbone, detection adds a <strong>neck</strong> (Feature Pyramid Network — multi-scale feature fusion) and a <strong>head</strong> (predicts boxes + classes). The RPN in Faster R-CNN and the grid-based prediction head in YOLO are detection-specific. The backbone (ResNet, DarkNet, C2f) is interchangeable. Swapping backbone: <code>YOLO('yolov8s.pt')</code> → replace backbone with ConvNeXt → same head, different features.</div>
+      </div>
+      <div class="backbone-card bc-seg">
+        <div class="backbone-card-head">🟨 Segmentation-Specific Heads</div>
+        <div class="backbone-card-body">After the shared backbone encoder, segmentation adds a <strong>decoder</strong> (gradually upsamples back to full resolution). U-Net's decoder with skip connections, DeepLab's ASPP module, Mask R-CNN's mask branch — all are segmentation-specific. The encoder (ResNet-50 pretrained on ImageNet) is identical. A ResNet-50 backbone can simultaneously power a YOLO detector and a U-Net segmentor — you'd just connect different heads.</div>
+      </div>
+      <div class="backbone-card bc-cls">
+        <div class="backbone-card-head">🔵 Where Backbones Diverge</div>
+        <div class="backbone-card-body">Some backbones are optimised for specific tasks: <strong>DarkNet</strong> (YOLO's custom backbone) is optimised for detection speed. <strong>U-Net's original encoder</strong> was a simple VGG-style encoder without pretrained weights (2015 medical data was scarce). For production medical segmentation today, you always replace it with a pretrained ResNet-50 or EfficientNet — the shared backbone principle wins over task-specific design.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📋 Practical Decision Guide: Which Architecture for Your Task?</span>
+      <table class="prose-table" style="margin:0.75rem 0 0">
+        <thead>
+          <tr><th>Situation</th><th>Recommended architecture</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Real-time detection (&gt;30 FPS)</td><td>YOLOv8n / YOLOv8s</td><td>Single-pass, anchor-free, GPU-optimised</td></tr>
+          <tr><td>Highest accuracy detection (offline)</td><td>DINO / Faster R-CNN + ResNet-101</td><td>Two-stage precision on small/dense objects</td></tr>
+          <tr><td>Medical image segmentation</td><td>nnU-Net (auto-configured)</td><td>Best-in-class on 23/23 benchmarks, no tuning</td></tr>
+          <tr><td>Natural scene segmentation</td><td>DeepLabv3+ or Mask R-CNN</td><td>ASPP captures multi-scale context</td></tr>
+          <tr><td>Zero-shot / prompt-based</td><td>SAM2</td><td>Universal, no fine-tuning needed</td></tr>
+          <tr><td>Limited data (&lt;1,000 images)</td><td>EfficientNet-B3 backbone + transfer</td><td>Compound scaling, best accuracy/param ratio</td></tr>
+          <tr><td>Mobile / edge deployment</td><td>YOLOv8n or MobileNetV3 + SSD</td><td>Sub-5ms inference on embedded hardware</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §03 — How Detection Works
+    ══════════════════════════════════════════════════════════ -->
+    <h2>03 — How Object Detection Works: From R-CNN to YOLO</h2>
+
+    <p>The fundamental challenge in detection: you don't know in advance how many objects are in an image, where they are, or how large they are. You need a network that outputs a variable-length list of (box, class, confidence) tuples from a fixed-size input.</p>
+
+    <p>The classic two-stage approach — the <strong>R-CNN family</strong> — solved this in two steps. First, a region proposal network identifies ~2,000 candidate patches that might contain objects. Second, a CNN classifies each patch. R-CNN (2014) was accurate but processed one image in 47 seconds. Fast R-CNN got this to seconds by sharing convolutional features. Faster R-CNN got to ~200ms by making the region proposal network part of the same network. But "two stages, two passes" had a ceiling on speed that no engineering could overcome.</p>
+
+    <p><strong>YOLO (You Only Look Once, 2015)</strong> took a fundamentally different approach: frame detection as a single regression problem. Divide the image into a grid. Have each grid cell directly predict boxes and class labels simultaneously. One network, one pass, all detections at once. The original YOLO ran at 45 FPS — real-time detection for the first time. YOLOv8 (2023) exceeds 160 FPS on modern hardware.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">⚡ The Speed–Accuracy Tradeoff</span>
+      <p>Two-stage detectors (Faster R-CNN, Mask R-CNN) remain more accurate on small objects and dense scenes because their region proposals are more precise. YOLO-family one-stage detectors are faster because they skip the proposal step entirely. For real-time applications (autonomous driving, live video), YOLO wins. For offline analysis of medical images where every pixel matters, two-stage or segmentation models win. Modern benchmarks on COCO: YOLOv8x reaches ~53 mAP; DINO (transformer-based two-stage) reaches ~63 mAP, at ~10× the inference cost.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §04 — Inside YOLO
+    ══════════════════════════════════════════════════════════ -->
+    <h2>04 — Inside YOLO: How One Forward Pass Detects Everything</h2>
+
+    <p>YOLO's architecture has three main components: a backbone (feature extraction), a neck (multi-scale feature fusion), and a head (final predictions). Here's how each works:</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text"><strong>Grid division.</strong> The input image (e.g., 640×640) is divided into an S×S grid. In YOLOv8, three different grid sizes are used simultaneously: 80×80 (for small objects), 40×40 (medium), 20×20 (large). Each grid cell is responsible for detecting objects whose centre falls within that cell. This is why YOLO misses nothing — every spatial location is covered by some cell.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Anchor-free prediction (YOLOv8).</strong> Earlier YOLO versions used predefined anchor boxes — fixed aspect-ratio templates (tall-thin for people, wide-short for cars) from which the network predicted offsets. YOLOv8 dropped anchors entirely. Each cell directly predicts the box centre (cx, cy), width and height (w, h) as fractions of the grid cell, plus class probabilities. Simpler, more general, better on unusual aspect ratios.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Multi-scale detection (FPN neck).</strong> A Feature Pyramid Network fuses features from multiple backbone layers at different resolutions. The 80×80 grid sees fine spatial detail — good for small objects. The 20×20 grid sees large receptive fields and semantic content — good for large objects. All three scales are processed simultaneously and their predictions merged, which is what lets YOLO handle cars 100m away (tiny in image) and trucks 5m away (giant in image) in the same pass.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text"><strong>Confidence thresholding.</strong> Each prediction has an objectness score and per-class probabilities. The final confidence = objectness × class_probability. Predictions below a confidence threshold (typically 0.25–0.4) are discarded immediately. This is fast — a simple multiplication and comparison, applied to thousands of candidate boxes in parallel on GPU.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text"><strong>Non-Maximum Suppression (NMS).</strong> After thresholding, many overlapping boxes remain for each object — the network found the person at (x=120, conf=0.92) and also at (x=122, conf=0.87) and (x=119, conf=0.81). NMS keeps only the highest-confidence box and suppresses all others with IoU above a threshold (typically 0.45). Without NMS, every detected object would be reported 10–20 times.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📐 IoU: The Core Detection Metric</span>
+      <p><strong>Intersection over Union (IoU)</strong> = area of overlap between predicted box and ground-truth box ÷ area of their union. A perfect prediction has IoU = 1.0. Complete miss has IoU = 0. IoU > 0.5 is the conventional threshold for a "correct" detection in standard benchmarks. IoU appears in three places in YOLO: the loss function (penalise imprecise boxes), confidence thresholding (is there actually an object here?), and NMS (are these two boxes covering the same object?).</p>
+      <p style="margin-top:0.75rem">The COCO benchmark evaluates mAP at IoU thresholds from 0.5 to 0.95 in 0.05 steps and averages them — written as AP@[.5:.95]. This is much harder than the older PASCAL VOC metric (<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="27667767170912">[email&#160;protected]</a> only), which is why COCO scores look lower.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §04 — Loss Function
+    ══════════════════════════════════════════════════════════ -->
+    <h2>05 — The Detection Loss Function</h2>
+
+    <p>Object detection training minimises a composite loss with three independent components, each penalising a different type of error:</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Localisation loss</div>
+        <div class="prose-kv-val">Penalises inaccurate bounding box predictions. YOLOv8 uses CIoU loss — a variant that simultaneously penalises overlap area, centre distance, and aspect ratio difference. <em>Why not just MSE?</em> Two boxes with the same MSE error can have wildly different IoU. A box that's slightly off-centre but correctly sized is far better than one that's correctly centred but wrong size — CIoU captures this properly.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Objectness loss</div>
+        <div class="prose-kv-val">Penalises errors in predicting whether a grid cell contains an object at all. Binary cross-entropy: 1 if an object's centre falls in this cell, 0 otherwise. In a typical scene, &gt;95% of grid cells contain no object — this class imbalance is why objectness loss is weighted lower than classification loss during training.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Classification loss</div>
+        <div class="prose-kv-val">Penalises wrong class predictions for cells that do contain an object. Binary cross-entropy per class (not softmax), which allows multi-label predictions — a bounding box can simultaneously be "person" and "athlete" without forcing the model to choose one. YOLOv8 uses distribution focal loss to focus training on hard examples.</div>
+      </div>
+    </div>
+
+    <p>The three losses are summed with weights: <code>total_loss = λ_box × L_box + λ_obj × L_obj + λ_cls × L_cls</code>. In YOLOv8, default weights are approximately box=7.5, obj=0.5, cls=0.5. These ratios reflect that box regression is the hardest sub-task and deserves the most training signal. Getting these weights wrong (e.g., obj loss too high) causes the model to predict "something is here" confidently but fail to classify or localise it correctly.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §06 — Code: YOLOv8
+    ══════════════════════════════════════════════════════════ -->
+    <h2>06 — Code: Running and Fine-Tuning YOLOv8</h2>
+
+    <p>The Ultralytics library makes YOLOv8 inference and fine-tuning remarkably concise. Below is a complete pipeline from off-the-shelf inference to fine-tuning on a custom dataset, with all the details that matter in practice.</p>
+
+<pre><code><span class="t-cmt"># pip install ultralytics</span>
+<span class="t-key">from</span> ultralytics <span class="t-key">import</span> YOLO
+<span class="t-key">import</span> cv2, torch
+
+<span class="t-cmt"># ── Model variants ────────────────────────────────────────────────────────
+# yolov8n: nano  — 3.2M params,  ~160 FPS  (embedded/mobile)
+# yolov8s: small — 11M params,   ~120 FPS
+# yolov8m: med   — 25M params,   ~80 FPS
+# yolov8l: large — 43M params,   ~50 FPS
+# yolov8x: xlarge— 68M params,   ~30 FPS, best accuracy</span>
+model = YOLO(<span class="t-str">'yolov8n.pt'</span>)   <span class="t-cmt"># downloads pretrained weights automatically</span>
+
+<span class="t-cmt"># ── Inference on a single image ──────────────────────────────────────────</span>
+results = model(<span class="t-str">'street.jpg'</span>, conf=<span class="t-num">0.4</span>, iou=<span class="t-num">0.45</span>)
+
+<span class="t-key">for</span> r <span class="t-key">in</span> results:
+    <span class="t-key">for</span> box <span class="t-key">in</span> r.boxes:
+        cls_name = model.names[<span class="t-key">int</span>(box.cls)]
+        conf     = box.conf.item()
+        x1, y1, x2, y2 = box.xyxy[<span class="t-num">0</span>].tolist()
+        <span class="t-key">print</span>(<span class="t-str">f"{cls_name:12s} {conf:.2f}  [{x1:.0f},{y1:.0f} → {x2:.0f},{y2:.0f}]"</span>)
+
+    <span class="t-cmt"># Draw boxes and save</span>
+    annotated = r.plot()
+    cv2.imwrite(<span class="t-str">'output.jpg'</span>, annotated)
+
+<span class="t-cmt"># ── Fine-tune on a custom dataset ─────────────────────────────────────────
+# dataset.yaml must define:
+#   path: /data/my_dataset
+#   train: images/train    # folder with images + labels/*.txt (YOLO format)
+#   val:   images/val
+#   nc:    3               # number of classes
+#   names: ['car', 'person', 'cyclist']</span>
+
+model = YOLO(<span class="t-str">'yolov8s.pt'</span>)   <span class="t-cmt"># start from pretrained (transfer learning)</span>
+results = model.train(
+    data    = <span class="t-str">'dataset.yaml'</span>,
+    epochs  = <span class="t-num">50</span>,
+    imgsz   = <span class="t-num">640</span>,
+    batch   = <span class="t-num">16</span>,
+    lr0     = <span class="t-num">0.01</span>,       <span class="t-cmt"># initial LR — decays via cosine schedule</span>
+    patience= <span class="t-num">10</span>,       <span class="t-cmt"># early stopping: stop if no improvement for 10 epochs</span>
+    device  = <span class="t-num">0</span>,          <span class="t-cmt"># GPU 0; use 'cpu' if no GPU</span>
+    augment = <span class="t-key">True</span>,       <span class="t-cmt"># mosaic, mixup, hsv jitter, flips — all on by default</span>
+    name    = <span class="t-str">'my_detector'</span>
+)
+
+<span class="t-cmt"># ── Evaluate on test set ─────────────────────────────────────────────────</span>
+metrics = model.val(data=<span class="t-str">'dataset.yaml'</span>, split=<span class="t-str">'test'</span>)
+<span class="t-key">print</span>(<span class="t-str">f"mAP50:    {metrics.box.map50:.3f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"mAP50-95: {metrics.box.map:.3f}"</span>)</code></pre>
+    <div class="code-output">
+      <span class="out-head">── Inference output (street.jpg) ──────────────────────────────────</span><br>
+      person       <span class="out-val">0.91</span>  [120,80 → 180,220]<br>
+      person       <span class="out-val">0.87</span>  [340,75 → 395,210]<br>
+      car          <span class="out-val">0.84</span>  [50,180 → 290,280]<br>
+      bicycle      <span class="out-val">0.76</span>  [430,160 → 530,260]<br>
+      traffic light <span class="out-val">0.69</span>  [280,20 → 310,90]<br>
+      <span class="out-dim">── Fine-tuning (50 epochs on custom 3-class dataset) ──────────────</span><br>
+      epoch 10/50  box_loss=<span class="out-val">1.842</span>  cls_loss=<span class="out-val">1.204</span>  mAP50=<span class="out-good">0.621</span><br>
+      epoch 25/50  box_loss=<span class="out-val">1.341</span>  cls_loss=<span class="out-val">0.891</span>  mAP50=<span class="out-good">0.754</span><br>
+      epoch 50/50  box_loss=<span class="out-val">1.102</span>  cls_loss=<span class="out-val">0.743</span>  mAP50=<span class="out-good">0.812</span><br>
+      <span class="out-dim">── Test evaluation ────────────────────────────────────────────────</span><br>
+      mAP50:    <span class="out-good">0.812</span><br>
+      mAP50-95: <span class="out-good">0.547</span>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §07 — Segmentation
+    ══════════════════════════════════════════════════════════ -->
+    <h2>07 — Segmentation: Pixel-Level Understanding</h2>
+
+    <p>Segmentation networks must output a prediction for every pixel — so the output must match the input's spatial dimensions. The standard architecture is an <strong>encoder-decoder</strong>: the encoder (a CNN or transformer backbone) compresses the image into a compact high-level representation, and the decoder gradually upsamples it back to full resolution, predicting a class label at each pixel along the way.</p>
+
+    <p>The problem with naive upsampling: the encoder's compression destroys spatial detail. Knowing "there is a tumour somewhere" doesn't tell you exactly where each boundary pixel falls. This is the problem <strong>U-Net</strong> (Ronneberger et al., 2015) solved.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 U-Net: The Architecture That Defined Medical Segmentation</span>
+      <p>U-Net introduced <strong>skip connections</strong> between matching encoder and decoder layers. At each resolution level, the decoder receives two inputs: the upsampled features from the level below (semantic understanding — what the object is) and the high-resolution features from the corresponding encoder layer (spatial precision — exactly where each pixel boundary falls). By concatenating these, the decoder can produce sharp boundaries that neither pure downsampling nor pure upsampling could achieve alone.</p>
+      <p style="margin-top:0.75rem">The "U" in U-Net refers to the architecture's shape: encoder contracts left-to-right (down the left side of the U), skip connections cross horizontally, decoder expands right-to-left (down the right side). U-Net and its descendants (nnU-Net, Swin-UNet, MedSAM) remain the backbone of clinical medical image analysis worldwide.</p>
+    </div>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Semantic segmentation</div>
+        <div class="prose-kv-val">Every pixel gets a class label. Two pedestrians walking side by side are both labelled "person" — no distinction between individuals. U-Net, DeepLab, SegNet. Use case: road scene understanding, satellite land-cover mapping.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Instance segmentation</div>
+        <div class="prose-kv-val">Each object instance gets its own unique pixel mask. The pedestrian on the left is "person #1," the one on the right is "person #2." Mask R-CNN (2017) added a mask prediction branch to Faster R-CNN. Use case: cell counting in microscopy, surgical tool tracking.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Panoptic segmentation</div>
+        <div class="prose-kv-val">Combines semantic + instance: "stuff" classes (sky, road) get global semantic labels; "thing" classes (people, cars) get individual instance masks. Provides a complete scene description. Used in autonomous driving scene understanding pipelines.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">YOLOv8-seg</div>
+        <div class="prose-kv-val">YOLOv8 supports instance segmentation natively via a mask prediction head alongside the detection head. Uses the same single-pass architecture: detection boxes + lightweight prototype masks, merged at inference. <code>YOLO('yolov8n-seg.pt')</code> — add <code>-seg</code> suffix.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §08 — Metrics
+    ══════════════════════════════════════════════════════════ -->
+    <h2>08 — Metrics: How You Know If It's Working</h2>
+
+    <p>Detection and segmentation use different metrics because their outputs differ. Detection boxes are continuous (you can be "close" to the right box); segmentation masks are binary per-pixel (you either got the pixel right or you didn't). The metrics reflect this.</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Metric</th><th>Formula</th><th>Used for</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>IoU / Jaccard</strong></td>
+          <td>|A ∩ B| / |A ∪ B|</td>
+          <td>Detection &amp; segmentation</td>
+          <td>0 = no overlap, 1 = perfect. Threshold 0.5 standard for detection "hit"</td>
+        </tr>
+        <tr>
+          <td><strong>Dice / F1</strong></td>
+          <td>2|A ∩ B| / (|A| + |B|)</td>
+          <td>Segmentation (esp. medical)</td>
+          <td>More sensitive to small regions than IoU. Preferred for small lesions, thin structures</td>
+        </tr>
+        <tr>
+          <td><strong>AP@50</strong></td>
+          <td>Area under PR curve at IoU=0.5</td>
+          <td>Detection (PASCAL VOC style)</td>
+          <td>Older, easier benchmark. 80%+ on VOC is competitive</td>
+        </tr>
+        <tr>
+          <td><strong>mAP@[.5:.95]</strong></td>
+          <td>Mean AP over IoU 0.5→0.95</td>
+          <td>Detection (COCO style)</td>
+          <td>Harder, more comprehensive. 50+ is competitive on COCO 80-class</td>
+        </tr>
+        <tr>
+          <td><strong>FPS</strong></td>
+          <td>Frames per second</td>
+          <td>Real-time applications</td>
+          <td>&gt;30 FPS for real-time. 5–10 FPS for offline/batch analysis is acceptable</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">⚠️ Why Dice Beats IoU for Medical Segmentation</span>
+      <p>Consider a 512×512 MRI slice where a small lesion occupies 200 pixels out of 262,144 total. A model that predicts "no lesion anywhere" gets: IoU = 0/200 = 0 (correct — no overlap), but pixel accuracy = 262,144−200/262,144 = 99.9% (misleadingly perfect). Dice explicitly penalises missing small regions: if you miss 200 lesion pixels, Dice = 0. For medical imaging where small structures are clinically critical, Dice is the right metric. Never report pixel accuracy alone on imbalanced segmentation tasks.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §09 — Why It Matters
+    ══════════════════════════════════════════════════════════ -->
+    <h2>09 — Why These Architectures Still Matter</h2>
+
+    <p>These aren't dated techniques from a previous era of deep learning. They're canonical patterns that appear inside the systems you interact with daily.</p>
+
+    <p><strong>Autonomous vehicles cannot function without real-time detection.</strong> A car doing 100 km/h needs to detect and localise pedestrians, cyclists, and vehicles in under 33 milliseconds per frame. YOLO's single-pass architecture makes this possible on embedded hardware. Tesla's Autopilot, Waymo's driver, and every production AV system runs detection networks in this family.</p>
+
+    <p><strong>Medical imaging depends on segmentation.</strong> Tumour volume measurement, organ boundary delineation, lesion tracking over time — all require pixel-level masks, not bounding boxes. U-Net and its descendants (nnU-Net, Swin-UNet, MedSAM) are the backbone of clinical analysis pipelines in radiology and pathology worldwide. The diabetic retinopathy project from Day 17 uses segmentation as part of its grading pipeline.</p>
+
+    <p><strong>The U-Net architecture lives inside generative AI.</strong> Stable Diffusion's denoising network is literally a U-Net. The encoder-decoder structure with skip connections that Ronneberger designed for medical image segmentation in 2015 is the same architecture diffusing latent representations in every image-generation model. When you generate an image with Midjourney or DALL-E, the diffusion step runs a U-Net.</p>
+
+    <p><strong>Instance segmentation powers generative AI evaluation.</strong> When diffusion models generate images, quality evaluation uses segmentation models to check whether generated objects have physically plausible boundaries and spatial relationships. Detection and segmentation are embedded in the evaluation pipelines of the models you use daily.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔗 SAM: When Segmentation Became a Foundation Model</span>
+      <p>The Segment Anything Model (SAM, Meta 2023) generalised segmentation into a foundation model: trained on 1 billion masks, it can segment any object in any image given a point, a box, or a text prompt — zero-shot, no fine-tuning. SAM2 extended this to video with a memory mechanism that propagates masks across frames. This is the vision equivalent of GPT: a single large model replacing many specialised segmentation models. SAM's architecture (Vision Transformer encoder + prompt encoder + mask decoder) uses the same attention mechanism you'll meet in Day 20 — vision and language have largely converged on the same fundamental building block.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §10 — Thought to Sit With
+    ══════════════════════════════════════════════════════════ -->
+    <h2>10 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Object detection models can identify and track individuals in video at 30+ FPS — their face, their gait, their location, in real time. This exact capability is simultaneously the core of medical diagnostic tools that detect cancer early and save lives, and the core of mass surveillance systems that have been used to track political dissidents, religious minorities, and protesters at scale.</p>
+      <p style="margin-top:0.75rem">The same YOLOv8 weights. The same IoU calculations. The same NMS algorithm.</p>
+      <p style="margin-top:0.75rem"><strong>Can a technology be ethically neutral if its capabilities are identical regardless of application? When a dual-use tool is misused, who bears responsibility — the researchers who published the paper, the companies who built the library, the governments who deployed it, or all three?</strong></p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §11 — Coming Up Next
+    ══════════════════════════════════════════════════════════ -->
+    <h2>11 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 19: NLP Foundations.</strong> We leave images behind and enter the world of text. How do you turn words into numbers a model can reason over? Tokenisation, bag-of-words, TF-IDF, and the surprising power of simple text representations — the foundations that every modern language model, from BERT to GPT-4, is built on top of.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §12 — Go Deeper
+    ══════════════════════════════════════════════════════════ -->
+    <h2>12 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=ag3DLKsl2vk" target="_blank" rel="noopener">YOLO Object Detection — Computerphile</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 15 min · Clear visual explanation of grid-based detection, anchors, and NMS.</em></p>
+    <p>🔗 <a href="https://docs.ultralytics.com/" target="_blank" rel="noopener">Ultralytics YOLOv8 Docs</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">The definitive reference for training, evaluating, and deploying YOLO models. Includes detection, segmentation, pose, and classification tasks.</em></p>
+    <p>📄 <a href="https://arxiv.org/abs/1505.04597" target="_blank" rel="noopener">U-Net: Convolutional Networks for Biomedical Image Segmentation — Ronneberger et al. (2015)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">MICCAI 2015 · One of the most-cited papers in medical AI. Sections 2–3 explain the skip connection insight clearly. Essential reading.</em></p>
+    <p>📄 <a href="https://arxiv.org/abs/2304.02643" target="_blank" rel="noopener">Segment Anything — Kirillov et al. (2023)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Meta AI · The SAM paper. Section 3 explains the data engine (how 1B masks were generated semi-automatically) — a masterclass in scaling data collection.</em></p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §12 — Quiz
+    ══════════════════════════════════════════════════════════ -->
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. What is the fundamental architectural difference between two-stage detectors (Faster R-CNN) and one-stage detectors (YOLO) — and what does each trade off?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Two-stage detectors first run a Region Proposal Network to generate ~2,000 candidate object regions, then classify and refine each region separately — two forward passes, two stages. This gives them high accuracy because the proposal stage focuses the classifier on likely object locations, producing precise boxes even for small or densely-packed objects. One-stage detectors like YOLO skip region proposals entirely: a single network directly predicts all bounding boxes and classes for all grid cells in one forward pass. This is 10–30× faster but historically less accurate on small or overlapping objects. The tradeoff: two-stage for maximum accuracy in offline analysis, one-stage for real-time applications where speed is non-negotiable.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. Explain Non-Maximum Suppression step by step. What problem does it solve, and what goes wrong if you set the IoU threshold too high or too low?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">The problem: YOLO predicts a box for every grid cell, producing many overlapping detections for each object. NMS step by step: (1) sort all predictions by confidence score, descending; (2) take the highest-confidence box — this is a keeper; (3) compute IoU between this keeper and every remaining box of the same class; (4) suppress (remove) all boxes with IoU above the threshold — they're covering the same object; (5) repeat with the next highest-confidence remaining box. Too low threshold (e.g., 0.3): aggressively removes boxes — you suppress legitimate detections of nearby objects of the same class. A crowd of people gets collapsed to one box. Too high threshold (e.g., 0.8): barely suppresses anything — the same person gets detected 15 times with slightly different boxes. Typical good value: 0.4–0.5.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. Why does U-Net use skip connections, and why can't the encoder-decoder without them achieve the same segmentation quality?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Encoder downsampling progressively destroys spatial detail in favour of semantic abstraction. By the bottleneck, a 512×512 image might be represented as a 16×16 feature map — semantically rich but spatially vague. The decoder must reconstruct full-resolution output, but upsampling from 16×16 to 512×512 produces blurry, imprecise boundaries because the spatial information was discarded. Skip connections solve this by carrying high-resolution feature maps directly from the encoder to the corresponding decoder level — bypassing the bottleneck compression. At each decoder resolution level, the decoder concatenates the upsampled coarse features (what the object is) with the skip-connected fine features (exactly where each pixel boundary falls). Without skip connections, the decoder has no access to the precise spatial locations that were encoded before downsampling, so boundary predictions are blurry. With them, the decoder reconstructs sharp, accurate segmentation masks.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. Why is Dice score preferred over pixel accuracy for medical image segmentation tasks involving small structures?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Pixel accuracy is misleading when classes are heavily imbalanced — which is almost always the case in medical imaging. A 512×512 MRI slice where a lesion occupies 200 pixels out of 262,144 total: a model predicting "background everywhere" achieves 99.9% pixel accuracy while completely missing the lesion. Dice = 2|A∩B| / (|A|+|B|) explicitly measures overlap between predicted and ground-truth masks. If you predict nothing, Dice = 0/200 = 0, correctly flagging complete failure. Dice is also symmetric (it treats false positives and false negatives equally), more sensitive to small regions than IoU (since it uses |A|+|B| in the denominator rather than |A∪B|, which is dominated by the large background class). For any task where the clinically important object is small relative to the image — lesions, polyps, microaneurysms — Dice is the right metric.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. The U-Net architecture appears inside Stable Diffusion. What is the connection — and why does the same encoder-decoder-with-skip-connections design work for both segmentation and image generation?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Stable Diffusion's core operation is iterative denoising: given a noisy latent image at timestep t, predict the noise that was added so it can be subtracted. This requires the network to understand both high-level semantic content (what object is at what location — needs a large receptive field, encoded by the encoder) and fine spatial detail (exactly what texture and boundary to render — needs high-resolution features). This is the same dual requirement that U-Net was designed for in segmentation: semantic understanding from the bottleneck + spatial precision from skip connections. The encoder-decoder-with-skip structure is the canonical solution to "I need both global semantic context and local spatial precision simultaneously" — which turns out to be a requirement of both segmentation and diffusion denoising. The architecture generalises because the underlying problem structure is the same, even though the tasks superficially look completely different.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §13 — Recap
+    ══════════════════════════════════════════════════════════ -->
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — Object Detection &amp; Segmentation</div>
+      <ol>
+        <li><strong>Three levels of spatial understanding:</strong> classification (global label) → detection (label + bounding box) → segmentation (label per pixel). Each requires more annotation effort and produces richer spatial output.</li>
+        <li><strong>Two-stage detectors</strong> (Faster R-CNN) propose regions first, then classify — accurate but slow. <strong>One-stage detectors</strong> (YOLO) predict everything in one pass — fast enough for real-time.</li>
+        <li><strong>YOLO's key insight:</strong> frame detection as regression. Divide image into a grid; each cell directly predicts boxes and class labels. No region proposals. One forward pass, all detections simultaneously.</li>
+        <li><strong>Multi-scale detection</strong> (FPN neck) lets YOLO detect small objects in fine grids (80×80) and large objects in coarse grids (20×20) in the same pass. This is what handles far-away and close-up objects together.</li>
+        <li><strong>Non-Maximum Suppression (NMS)</strong> removes duplicate detections: keep the highest-confidence box, suppress all overlapping boxes (IoU above threshold) for the same class. Without NMS, every object would be reported 10–20 times.</li>
+        <li><strong>IoU</strong> = intersection area / union area. Used in loss, confidence thresholding, NMS, and evaluation means a detection is "correct" if IoU with ground truth &gt; 0.5).</li>
+        <li><strong>U-Net's innovation</strong> = skip connections between encoder and decoder layers. Semantic understanding from the bottleneck + spatial precision from skip connections = sharp segmentation boundaries. Original 2015, still state of art in medical imaging.</li>
+        <li><strong>Dice score</strong> is the right metric for medical segmentation — it's not fooled by background dominance. Pixel accuracy can reach 99.9% by predicting only background. Dice = 0 in the same case.</li>
+        <li><strong>U-Net is literally inside Stable Diffusion.</strong> The denoising network is a U-Net. The same encoder-decoder-with-skip design works for both segmentation and image generation because both need global semantics + local spatial detail simultaneously.</li>
+        <li><strong>SAM (2023)</strong> generalised segmentation into a foundation model: segment any object from a point, box, or text prompt — zero-shot. The vision equivalent of GPT, bridging the gap between computer vision and language models.</li>
+      </ol>
+    </div>
+
+    <!-- ── INTERVIEW Q&A ──────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is the difference between semantic and instance segmentation?</strong><br>
+        <em>Semantic segmentation labels every pixel with a class but treats all instances identically — two people are both "person." Instance segmentation assigns a unique mask to each individual object — person #1 on the left, person #2 on the right. Instance segmentation is harder (requires knowing how many objects there are and their individual boundaries) and produces more useful output for tasks like cell counting, surgical tool tracking, or crowd analysis.</em></li>
+        <li><strong>What is IoU and why does it appear in so many places in detection pipelines?</strong><br>
+        <em>IoU (Intersection over Union) = area of overlap / area of union between two regions. It appears in: (1) the training loss — CIoU penalises imprecise predicted boxes; (2) confidence thresholding — does a predicted box sufficiently overlap a real object?; (3) Non-Maximum Suppression — are two boxes covering the same object (high IoU) or different ones?; (4) evaluation — a detection is "correct" if IoU with ground truth exceeds 0.5. It's the universal measure of spatial overlap quality, which is exactly what detection accuracy depends on.</em></li>
+        <li><strong>Why is YOLO called "You Only Look Once," and what does that mean architecturally?</strong><br>
+        <em>Unlike two-stage detectors that process the image twice (once for region proposals, once for classification), YOLO processes the image in a single forward pass and outputs all bounding boxes and class labels simultaneously. "One look" = one inference = all detections at once. This single-pass design is why YOLO achieves real-time speeds — 45 FPS for the original YOLO in 2015, 160+ FPS for YOLOv8n today — that two-stage detectors cannot match.</em></li>
+        <li><strong>Why does U-Net use skip connections between encoder and decoder?</strong><br>
+        <em>Encoder downsampling progressively loses spatial detail. The decoder reconstructing full-resolution predictions needs both the semantic understanding from the deep bottleneck (what the object is) and the precise spatial information from earlier encoder layers (where each boundary pixel falls). Skip connections carry high-resolution encoder feature maps directly to matching decoder levels, enabling sharp segmentation boundaries that upsampling alone cannot produce.</em></li>
+        <li><strong>When would you use Dice score instead of accuracy for segmentation evaluation?</strong><br>
+        <em>Whenever the class distribution is heavily imbalanced — which is almost always the case in medical imaging. A model predicting "background" for every pixel achieves 99.9% accuracy when the lesion covers &lt;0.1% of the image. Dice = 2|A∩B|/(|A|+|B|) is 0 in this case, correctly identifying complete failure. Use Dice (or IoU) whenever the clinically or semantically important region is small relative to the total image area.</em></li>
+      </ol>
+    </div>
+
+    <!-- ── ATTACHMENTS ──────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>📄 <a href="https://arxiv.org/abs/1505.04597" target="_blank" rel="noopener">U-Net: Convolutional Networks for Biomedical Image Segmentation — Ronneberger et al. (2015)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">MICCAI 2015 · The U-Net paper. Sections 2–3 explain the architecture and skip connection rationale clearly. One of the most-cited papers in medical AI and a prerequisite for understanding diffusion models.</em></p>
+      <p>📄 <a href="https://arxiv.org/abs/2304.02643" target="_blank" rel="noopener">Segment Anything — Kirillov et al., Meta AI (2023)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">arXiv 2023 · The SAM paper. Section 3 (data engine) is particularly instructive on how to scale annotation collection semi-automatically — a broadly applicable technique beyond segmentation.</em></p>
+      <p>📄 <a href="https://arxiv.org/abs/1506.02640" target="_blank" rel="noopener">You Only Look Once: Unified, Real-Time Object Detection — Redmon et al. (2015)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">CVPR 2015 · The original YOLO paper. Unusually readable. Section 2 explains the grid-based regression reformulation that changed real-time detection forever.</em></p>
+    </div>
+
+    <!-- ── TAGS ──────────────────────────────────────────────── -->
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#ObjectDetection</span><span class="tag">#YOLO</span><span class="tag">#Segmentation</span><span class="tag">#ComputerVision</span><span class="tag">#UNet</span><span class="tag">#BoundingBox</span><span class="tag">#IoU</span><span class="tag">#NMS</span><span class="tag">#RealTime</span><span class="tag">#MedicalAI</span><span class="tag">#DeepLearning</span><span class="tag">#SAM</span><span class="tag">#ResNet</span><span class="tag">#ArchitectureTimeline</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+
+  </div><!-- /prose -->
+</article>
+
+<!-- POST NAV -->
+<div class="post-footer-nav">
+  <a href="transfer-learning.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 17</span>
+    <span class="post-nav-title">Transfer Learning &amp; Fine-Tuning</span>
+  </a>
+  <a href="nlp-foundations.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 19 →</span>
+    <span class="post-nav-title">NLP Foundations</span>
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+  function toggleQuiz(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = answer.style.display !== 'none';
+    answer.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
