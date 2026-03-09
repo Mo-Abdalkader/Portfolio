@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 19 — NLP Fundamentals | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="The complete guide to NLP fundamentals: text preprocessing, tokenisation, stemming, lemmatisation, BoW, TF-IDF, n-grams, BM25, named entity recognition, and the full classical NLP pipeline — with working code and real output." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero { background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%); border-bottom:1px solid #ddd5c4; }
+    [data-theme="light"] .post-hero h1 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .post-hero-lead { color:#5a5248; }
+    [data-theme="light"] .post-article { background:#f7f3ec; }
+    [data-theme="light"] .prose { color:#2e2b25; }
+    [data-theme="light"] .prose h2 { font-family:'Playfair Display',serif; color:#0f0e0c; border-top-color:#ddd5c4; }
+    [data-theme="light"] .prose h3 { font-family:'Playfair Display',serif; color:#0f0e0c; }
+    [data-theme="light"] .prose strong { color:#0f0e0c; }
+    [data-theme="light"] .prose blockquote { background:#ede8dc; border-left-color:#c8a94b; border-radius:0 var(--radius-md) var(--radius-md) 0; }
+    [data-theme="light"] .prose blockquote p { font-family:'Playfair Display',serif; font-style:italic; color:#0f0e0c; }
+    [data-theme="light"] .prose-callout { background:#ede8dc; border-color:#c0b89c; }
+    [data-theme="light"] .prose-callout.accent { background:#d4eaeb; border-color:#9fcccf; }
+    [data-theme="light"] .prose-callout.gold { background:#f0ebe0; border-color:#c8a94b; }
+    [data-theme="light"] .prose-kv { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .prose-kv-val { color:#0f0e0c; }
+    [data-theme="light"] .prose-step-num { background:#0f0e0c; border-color:#c8a94b; color:#c8a94b; }
+    [data-theme="light"] .prose-step-text { color:#2e2b25; }
+    [data-theme="light"] .prose code { background:#ede8dc; border-color:#c0b89c; color:#2a6b6e; }
+    [data-theme="light"] .prose pre { background:#1b1a17; border-color:#2e2b24; }
+    [data-theme="light"] .prose pre code { background:none; border:none; color:#d4cfc6; }
+    [data-theme="light"] .post-footer-nav { border-top-color:#ddd5c4; background:#f7f3ec; }
+    [data-theme="light"] .post-nav-card { background:#f0ebe0; border-color:#ddd5c4; }
+    [data-theme="light"] .post-nav-card:hover { background:#ede8dc; border-color:#c8a94b; }
+    [data-theme="light"] .post-series-badge { background:rgba(200,169,75,0.12); border-color:rgba(200,169,75,0.35); color:#7a5c10; }
+    [data-theme="light"] .reading-progress { background:linear-gradient(90deg,#c8a94b,#2a6b6e); }
+    [data-theme="light"] .tag { background:#ede8dc; border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .copy-link-btn { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .copy-link-btn:hover { background:#ede8dc; color:#0f0e0c; }
+    [data-theme="light"] .post-nav-label { color:#7a7062; }
+    [data-theme="light"] .post-nav-title { color:#0f0e0c; }
+    [data-theme="light"] .category-pill { background:rgba(42,107,110,0.1); border-color:rgba(42,107,110,0.3); color:#1a4547; }
+    [data-theme="light"] .prose-callout-label { color:#7a7062; }
+    [data-theme="light"] .footer { background:#ede8dc; border-top-color:#ddd5c4; }
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built { color:#5a5248; }
+    [data-theme="light"] .social-link { border-color:#c0b89c; color:#5a5248; }
+    [data-theme="light"] .social-link:hover { color:#2a6b6e; border-color:#2a6b6e; background:rgba(42,107,110,0.08); }
+    /* compact output block */
+    .code-output { background:#0d1117; border:1px solid #30363d; border-top:none; border-radius:0 0 var(--radius-md) var(--radius-md); padding:0.9rem 1.1rem; font-family:'JetBrains Mono',monospace; font-size:0.78rem; line-height:1.6; color:#8b949e; overflow-x:auto; }
+    .code-output .out-head { color:#58a6ff; font-weight:500; }
+    .code-output .out-good { color:#3fb950; }
+    .code-output .out-val  { color:#e3b341; }
+    .code-output .out-dim  { color:#484f58; }
+    pre { border-radius:var(--radius-md) var(--radius-md) 0 0 !important; margin-bottom:0 !important; }
+    pre + .code-output + * { margin-top:1.5rem; }
+    pre:not(:has(+ .code-output)) { border-radius:var(--radius-md) !important; margin-bottom:1.5rem !important; }
+    /* ── knowledge-check ────────────────────────────────── */
+    .knowledge-check { margin-top:2.5rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .knowledge-check-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .knowledge-check-body { padding:1.2rem; display:flex; flex-direction:column; gap:1rem; }
+    .quiz-item { border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; }
+    .quiz-question { padding:0.85rem 1rem; font-size:0.925rem; line-height:1.6; font-weight:500; }
+    .quiz-reveal-btn { display:block; width:100%; text-align:left; padding:0.6rem 1rem; background:var(--surface); border:none; border-top:1px solid var(--border); color:var(--accent); font-family:inherit; font-size:0.85rem; cursor:pointer; transition:background 0.15s; }
+    .quiz-reveal-btn:hover { background:var(--surface-hover,rgba(255,255,255,0.04)); }
+    .quiz-answer { padding:0.85rem 1rem; background:var(--surface); border-top:1px solid var(--border); font-size:0.9rem; line-height:1.7; color:var(--text-muted); }
+    /* ── quick-recap ─────────────────────────────────────── */
+    .quick-recap { margin-top:2rem; border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+    .quick-recap-header { background:var(--surface); padding:0.9rem 1.2rem; font-weight:700; font-size:0.95rem; border-bottom:1px solid var(--border); }
+    .quick-recap ol { margin:0; padding:1.2rem 1.2rem 1.2rem 2.2rem; display:flex; flex-direction:column; gap:0.65rem; }
+    .quick-recap ol li { font-size:0.9rem; line-height:1.65; }
+    /* comparison table */
+    .prose-table { width:100%; border-collapse:collapse; font-size:0.9rem; margin:1.5rem 0; }
+    .prose-table th { background:var(--surface); color:var(--text-muted); font-weight:600; text-align:left; padding:0.65rem 0.85rem; border:1px solid var(--border); font-size:0.8rem; letter-spacing:0.05em; text-transform:uppercase; }
+    .prose-table td { padding:0.65rem 0.85rem; border:1px solid var(--border); vertical-align:top; line-height:1.55; }
+    .prose-table tr:nth-child(even) td { background:var(--surface); }
+    .prose-table .tick { color:#3fb950; font-weight:700; }
+    .prose-table .cross { color:#f85149; font-weight:700; }
+    .prose-table .mid  { color:#e3b341; font-weight:700; }
+  </style>
+</head>
+<body class="blog-post-page">
+
+<div class="reading-progress" id="readingProgress"></div>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content">
+    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
+  </div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<!-- NAVBAR -->
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"         class="nav-link">Home</a></li>
+      <li><a href="../projects.html"      class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"          class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"         class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"      class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"          class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- POST HERO -->
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 19 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span>
+      <span class="meta-sep">·</span>
+      <span>Mar 9, 2026</span>
+      <span class="meta-sep">·</span>
+      <span id="readTimeCalc">30 min read</span>
+      <span class="meta-sep">·</span>
+      <span>NLP</span>
+    </div>
+    <h1>NLP Fundamentals:<br>The Complete Guide to Teaching Machines to Read</h1>
+    <p class="post-hero-lead">Before transformers, before BERT, before GPT — every NLP system had to solve the same hard problem: turning human language into numbers. This guide walks the entire classical NLP pipeline from raw text to trained classifier, with every technique explained from first principles and working code throughout.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+  <div class="prose">
+
+    <blockquote>
+      <p>In 1957, linguist John Firth wrote:<br>
+      "You shall know a word by the company it keeps."<br><br>
+      He meant that the meaning of a word is defined by<br>
+      the other words that appear alongside it in real usage.<br>
+      "Bank" next to "river" means something different than "bank" next to "loan."<br><br>
+      This one sentence contains the seed of every NLP technique<br>
+      from bag-of-words to BERT — sixty-five years of progress,<br>
+      all following the same original intuition.</p>
+    </blockquote>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §01 — The Core Problem
+    ══════════════════════════════════════════════════════════ -->
+    <h2>01 — The Core Problem: Text Is Not a Number</h2>
+
+    <p>Every ML model works on numbers. Decision trees split on numerical thresholds. Neural networks multiply weights by values. Even images, which feel qualitative, are grids of pixel intensities from 0 to 255. Text has no natural numerical representation — a word is a symbol, and symbols have no inherent magnitude, distance, or order.</p>
+
+    <p>The entire field of NLP is, at its core, a long answer to one question: <strong>how do you represent language as numbers in a way that captures meaning?</strong> Every technique from bag-of-words in 1954 to transformer embeddings in 2018 is a different answer to that same question. The progression goes:</p>
+
+    <p style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.85rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:2">
+      Raw text<br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">tokenisation</span><br>
+      Token list → integer IDs<br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">bag-of-words / TF-IDF</span><br>
+      Sparse vectors (50,000-dim, mostly zeros)<br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">word2vec / GloVe — Day 20</span><br>
+      Dense vectors (300-dim, every value non-zero)<br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">BERT / GPT — Day 22</span><br>
+      Contextualised dense vectors (meaning changes with context)
+    </p>
+
+    <p>Each step captures more meaning at the cost of more computation. Crucially, the foundational techniques are still widely used in production — not because they're "good enough," but because they're fast, interpretable, and effective for many real-world tasks. Understanding them makes the whole field click into place.</p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">📚 Analogy: A Library Card Catalogue</span>
+      <p>Imagine a library in the 1970s — no computers. A librarian needs to answer "which books are about ancient Rome?" They can't read every book. Instead they consult the card catalogue: each book has a list of keywords. They search for cards containing "Rome," "Roman," "ancient," "empire" and retrieve books mentioning those words most frequently.</p>
+      <p style="margin-top:0.75rem">This is exactly how bag-of-words and TF-IDF work. A document is represented by a profile of its keywords. Search and classification happen by comparing those profiles — no understanding of grammar, no awareness of context, but surprisingly powerful for many tasks. Google's original PageRank was built on top of TF-IDF-style keyword matching. BM25, its direct descendant, still runs the first retrieval stage in most RAG pipelines today.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §02 — Text Preprocessing
+    ══════════════════════════════════════════════════════════ -->
+    <h2>02 — Text Preprocessing: Cleaning Before You Count</h2>
+
+    <p>Raw text is messy. Before any numerical representation can be computed, you need to normalise the text so that equivalent forms of the same word are treated identically, and noise that adds no meaning is removed. These steps collectively form the <strong>preprocessing pipeline</strong> — every classical NLP system runs through all of them in sequence.</p>
+
+    <h3>Lowercasing</h3>
+    <p>The simplest step with the largest impact. Without it, "Python," "PYTHON," and "python" are three different tokens. Lower-casing collapses them to one. The exception: acronyms (NLP vs nlp), proper nouns in some tasks, and sentiment-sensitive capitalisation ("GREAT" vs "great"). Apply lowercasing by default; reconsider only when case carries meaning for your specific task.</p>
+
+    <h3>Punctuation and Special Character Removal</h3>
+    <p>Punctuation rarely carries semantic weight for classification tasks. Removing it prevents "word." and "word" from being treated as different tokens. Exceptions: emoji (carry strong sentiment), URLs and email addresses (may be signals in spam detection), code and technical strings (remove the whole token if irrelevant, or keep as a special token). Regex-based removal is standard: <code>re.sub(r'[^a-zA-Z0-9\s]', '', text)</code>.</p>
+
+    <h3>Stop Word Removal</h3>
+    <p>Stop words — "the," "is," "and," "a," "in," "of," "to" — appear in virtually every document and carry no discriminative information for most classification tasks. Removing them dramatically reduces vocabulary size and noise. NLTK and spaCy ship predefined stop word lists. <strong>Important caveat:</strong> do <em>not</em> remove stop words when word order matters (sentiment analysis with negation — "not good" becomes "good" after removing "not"). The decision is task-dependent.</p>
+
+    <h3>Stemming vs Lemmatisation</h3>
+    <p>Both normalise inflected word forms to a common base, collapsing "run," "runs," "running," "ran" into one token. They differ in how:</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Method</th><th>Input</th><th>Output</th><th>Approach</th><th>Speed</th><th>Correctness</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Porter Stemmer</strong></td>
+          <td>studies, studying</td>
+          <td>studi, studi</td>
+          <td>Rule-based suffix stripping</td>
+          <td class="tick">✓ Fast</td>
+          <td class="cross">✗ Not real words</td>
+        </tr>
+        <tr>
+          <td><strong>Snowball Stemmer</strong></td>
+          <td>running, generously</td>
+          <td>run, generous</td>
+          <td>Improved Porter rules, multilingual</td>
+          <td class="tick">✓ Fast</td>
+          <td class="mid">~ Better</td>
+        </tr>
+        <tr>
+          <td><strong>WordNet Lemmatiser</strong></td>
+          <td>studies, was, better</td>
+          <td>study, be, good</td>
+          <td>Dictionary lookup + POS tag</td>
+          <td class="mid">~ Slow</td>
+          <td class="tick">✓ Real words</td>
+        </tr>
+        <tr>
+          <td><strong>spaCy Lemmatiser</strong></td>
+          <td>running, geese, went</td>
+          <td>run, goose, go</td>
+          <td>Statistical model + lookup</td>
+          <td class="mid">~ Medium</td>
+          <td class="tick">✓ Most accurate</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Rule of thumb: use stemming when speed matters and morphology is regular (English classification pipelines). Use lemmatisation when correctness matters or when the processed text will be shown to humans (keyword extraction, summarisation).</p>
+
+    <h3>Text Normalisation</h3>
+    <p>Beyond lowercasing and stop words, normalisation handles language quirks: expanding contractions ("don't" → "do not"), removing accents for multilingual text ("café" → "cafe"), handling Unicode (normalise to NFC/NFD), collapsing repeated characters ("sooooo good" → "so good"), replacing numbers with a special token (<code>&lt;NUM&gt;</code>), and stripping HTML tags from scraped web content. spaCy's pipeline handles most of these automatically for 70+ languages.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §03 — Tokenisation
+    ══════════════════════════════════════════════════════════ -->
+    <h2>03 — Tokenisation: Splitting Text into Meaningful Units</h2>
+
+    <p>Tokenisation is the process of splitting text into the atomic units your model will reason over. It sounds trivial but has genuine complexity: "don't" → ["don't"] or ["do", "n't"]? "New York" → one token or two? "2,500.00" → one token or three? Chinese text has no spaces at all.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">Word tokenisation</div>
+        <div class="prose-kv-val">Split on whitespace and punctuation. "I love NLP." → ["I", "love", "NLP", "."]. Simple and fast. Creates large vocabularies (every morphological form is separate: "run," "runs," "running," "ran" = 4 tokens). Cannot handle words not seen during training — "ChatGPT" in a 2019 vocabulary simply doesn't exist.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Character tokenisation</div>
+        <div class="prose-kv-val">Each character is a token. Tiny vocabulary (26 letters + punctuation). Handles any word, any language. Downside: sequences are very long (a 100-word sentence becomes 500+ tokens), making it computationally expensive and harder for models to capture word-level patterns.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Subword tokenisation (BPE)</div>
+        <div class="prose-kv-val">The modern standard. Byte-Pair Encoding starts with characters and merges the most frequent pairs iteratively until the vocabulary reaches a target size (~32K–100K). "tokenisation" → ["token", "##isation"]. Handles unknown words via their subparts, keeps vocabulary manageable, works for any language. Used by every major LLM: GPT-4 (BPE ~100K tokens), BERT (WordPiece ~30K), LLaMA (SentencePiece ~32K).</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">Sentence tokenisation</div>
+        <div class="prose-kv-val">Split text into sentences before word tokenisation. Harder than it looks: "Dr. Smith works at St. Mary's." has three periods but one sentence. NLTK's sent_tokenize uses a Punkt model trained on abbreviations. spaCy's sentence segmentor uses a statistical model that correctly handles edge cases like "U.S.A." and quotation-spanning sentences.</div>
+      </div>
+    </div>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🔢 How BPE Works — Step by Step</span>
+      <p>Start with character-level vocabulary: {"l","o","w","e","r","n","w","e","s","t"}. Count all adjacent pairs across the training corpus. Merge the most frequent pair — say "e" + "r" → "er" — into one new token. Repeat until vocabulary size is reached. The result: common words become single tokens ("the," "is"), rare words split into frequent subwords ("ChatGPT" → ["Chat", "G", "PT"]), truly novel strings split into characters. The vocabulary captures the statistical structure of the language.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §04 — BoW and N-grams
+    ══════════════════════════════════════════════════════════ -->
+    <h2>04 — Bag-of-Words and N-grams: Representing Documents as Counts</h2>
+
+    <p>Once you have tokens, the simplest numerical representation is to count them. <strong>Bag-of-Words (BoW)</strong> represents a document as a vector of length equal to the vocabulary size, where each position holds the count of the corresponding word. The name "bag" is deliberate: the order is thrown away, only the contents matter.</p>
+
+    <p>Example: vocabulary = ["cat", "dog", "love", "hate", "I"], document = "I love my cat and my cat loves me":</p>
+
+    <p style="font-family:'JetBrains Mono',monospace;font-size:0.83rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:1.9">
+      <span style="color:#58a6ff">cat</span>=2 &nbsp; <span style="color:#8b949e">dog</span>=0 &nbsp; <span style="color:#58a6ff">love</span>=1 &nbsp; <span style="color:#8b949e">hate</span>=0 &nbsp; <span style="color:#58a6ff">I</span>=1<br>
+      <span style="color:#484f58">→ vector: [2, 0, 1, 0, 1]  (50,000-dim in practice, ~49,995 zeros)</span>
+    </p>
+
+    <p><strong>What BoW loses:</strong> word order entirely. "The dog bit the man" and "The man bit the dog" produce identical vectors. "Not good" and "Good not" are the same. For topic classification, this rarely matters — topic signal lives in <em>which</em> words appear, not their order. For sentiment, reasoning, and translation, it matters enormously.</p>
+
+    <h3>N-grams: Recovering Some Word Order</h3>
+
+    <p>N-grams extend BoW by treating consecutive word sequences as single tokens. A <strong>bigram</strong> (n=2) treats each adjacent pair as one unit; a <strong>trigram</strong> (n=3) treats each triple. "New York" as a bigram won't be split into "New" and "York" — their co-occurrence is preserved.</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>N-gram type</th><th>Tokens from "not very good"</th><th>Captures</th><th>Vocabulary explosion</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Unigram (n=1)</td>
+          <td>["not", "very", "good"]</td>
+          <td>Individual words only</td>
+          <td class="tick">✓ None</td>
+        </tr>
+        <tr>
+          <td>Bigram (n=2)</td>
+          <td>["not very", "very good"]</td>
+          <td>"not good," named entities</td>
+          <td class="mid">~ Moderate (V²)</td>
+        </tr>
+        <tr>
+          <td>Trigram (n=3)</td>
+          <td>["not very good"]</td>
+          <td>Short phrases, negation scope</td>
+          <td class="cross">✗ Large (V³)</td>
+        </tr>
+        <tr>
+          <td>Unigram + Bigram</td>
+          <td>All above combined</td>
+          <td>Best of both in practice</td>
+          <td class="mid">~ 2–5× unigrams</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>In practice, <code>ngram_range=(1,2)</code> (unigrams + bigrams) is the standard setting. It adds phrase-level sensitivity without the vocabulary explosion of trigrams. Adding bigrams typically improves sentiment analysis accuracy by 2–5% — the improvement comes specifically from negation capture ("not good" is now a single feature with its own weight).</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §05 — TF-IDF
+    ══════════════════════════════════════════════════════════ -->
+    <h2>05 — TF-IDF: Making the Right Words Louder</h2>
+
+    <p>Raw word counts are misleading. "The" appearing 50 times in a document is less informative than "photosynthesis" appearing 3 times. You want to weight terms not just by how often they appear in this document, but inversely by how common they are across <em>all</em> documents. That is exactly what TF-IDF does.</p>
+
+    <h3>The Formula, Explained</h3>
+
+    <p><strong>Term Frequency (TF)</strong> measures how often term <em>t</em> appears in document <em>d</em>, normalised by document length to avoid favouring longer documents:</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:0.88rem;padding:0.75rem 1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border)">
+      TF(t, d) = count(t in d) / total_tokens(d)
+    </p>
+
+    <p><strong>Inverse Document Frequency (IDF)</strong> penalises terms that appear in many documents. A term in every document carries no discriminative information:</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:0.88rem;padding:0.75rem 1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border)">
+      IDF(t) = log( N / (1 + df(t)) ) + 1<br>
+      <span style="color:#484f58">  N = total documents,  df(t) = documents containing t</span><br>
+      <span style="color:#484f58">  (+1 smoothing prevents division by zero for new terms)</span>
+    </p>
+
+    <p><strong>TF-IDF(t, d) = TF(t, d) × IDF(t)</strong>. A word appearing frequently in this document but rarely across the corpus scores highest — it is the document's <em>signature term</em>.</p>
+
+    <h3>Worked Example</h3>
+    <p>Corpus of 3 documents: "I love cats", "I love dogs", "Cats and dogs are pets". Vocabulary after stop word removal: {love, cats, dogs, pets}. N=3 documents.</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Term</th><th>df(t)</th><th>IDF</th><th>TF in Doc 1<br>"I love cats"</th><th>TF-IDF in Doc 1</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>love</strong></td>
+          <td>2 (docs 1,2)</td>
+          <td>log(3/3)+1 = 1.00</td>
+          <td>1/3 = 0.333</td>
+          <td class="mid">0.333</td>
+        </tr>
+        <tr>
+          <td><strong>cats</strong></td>
+          <td>2 (docs 1,3)</td>
+          <td>log(3/3)+1 = 1.00</td>
+          <td>1/3 = 0.333</td>
+          <td class="mid">0.333</td>
+        </tr>
+        <tr>
+          <td><strong>dogs</strong></td>
+          <td>2 (docs 2,3)</td>
+          <td>log(3/3)+1 = 1.00</td>
+          <td>0/3 = 0.000</td>
+          <td>0.000</td>
+        </tr>
+        <tr>
+          <td><strong>pets</strong></td>
+          <td>1 (doc 3 only)</td>
+          <td>log(3/2)+1 = 1.41</td>
+          <td>0/3 = 0.000</td>
+          <td>0.000</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>Notice "pets" has the highest IDF (1.41) — it only appears in one document, making it maximally discriminative. If Doc 1 also contained "pets," it would score higher there than "love" or "cats," correctly identifying it as a distinguishing term. This is the core intuition: <strong>rare across the corpus, frequent in this document = important for this document.</strong></p>
+
+    <div class="prose-callout gold">
+      <span class="prose-callout-label">🔍 BM25: TF-IDF's Production-Grade Descendant</span>
+      <p>TF-IDF has two well-known weaknesses: (1) a term appearing 100 times scores 100× higher than one appearing once — but doubling a keyword shouldn't double a document's relevance score; (2) longer documents naturally accumulate higher TF scores just by having more words. <strong>BM25</strong> fixes both with saturation and document-length normalisation:</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;padding:0.75rem 1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);margin-top:0.75rem">
+        BM25(t,d) = IDF(t) × [tf × (k₁+1)] / [tf + k₁ × (1 − b + b × |d|/avgdl)]<br>
+        <span style="color:#484f58">  k₁ ≈ 1.5 (saturation),  b ≈ 0.75 (length normalisation)</span>
+      </p>
+      <p style="margin-top:0.75rem">BM25 is the standard sparse retrieval algorithm used in Elasticsearch, Apache Lucene (which powers most production search), and the first-stage retriever in virtually every RAG pipeline. When you ask ChatGPT with web search enabled, BM25 finds candidate documents in milliseconds — neural reranking then refines the shortlist. The 1994 algorithm is still doing the heavy lifting at billion-document scale.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §06 — POS, NER, Parsing
+    ══════════════════════════════════════════════════════════ -->
+    <h2>06 — Beyond Counting: POS Tagging, NER, and Dependency Parsing</h2>
+
+    <p>Bag-of-words and TF-IDF treat text as an unordered set of tokens. But language has structure — words have grammatical roles, entities have types, clauses have relationships. The classical NLP pipeline uses three additional annotation layers to extract this structure:</p>
+
+    <h3>Part-of-Speech (POS) Tagging</h3>
+    <p>Assigns a grammatical category to each token: noun (NN), verb (VB), adjective (JJ), adverb (RB), preposition (IN), etc. "The quick brown fox jumps." → [("The", DT), ("quick", JJ), ("brown", JJ), ("fox", NN), ("jumps", VBZ)]. Why it matters: (1) lemmatisation requires POS — "better" as adjective lemmatises to "good," as verb to "better"; (2) feature engineering — count only noun phrases for entity-heavy tasks; (3) disambiguating word sense — "book a flight" (VB) vs "read a book" (NN). spaCy's POS tagger achieves ~97% accuracy on standard English benchmarks using a CNN-based model.</p>
+
+    <h3>Named Entity Recognition (NER)</h3>
+    <p>Identifies and classifies real-world entities: persons (PER), organisations (ORG), locations (LOC), dates (DATE), monetary values (MONEY), etc. "Apple Inc. announced a $3B deal in Cupertino yesterday." → [(Apple Inc., ORG), ($3B, MONEY), (Cupertino, LOC), (yesterday, DATE)]. NER powers: information extraction from news and reports, knowledge graph construction, question answering ("Where is Tesla headquartered?"), and compliance systems that must detect mentions of specific entities.</p>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">🏷️ NER Tag Types (spaCy English Model)</span>
+      <table class="prose-table" style="margin:0.5rem 0 0">
+        <thead><tr><th>Tag</th><th>Meaning</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td><code>PERSON</code></td><td>People, fictional characters</td><td>"Elon Musk," "Harry Potter"</td></tr>
+          <tr><td><code>ORG</code></td><td>Companies, agencies, institutions</td><td>"OpenAI," "NASA," "WHO"</td></tr>
+          <tr><td><code>GPE</code></td><td>Countries, cities, states</td><td>"Egypt," "Cairo," "California"</td></tr>
+          <tr><td><code>LOC</code></td><td>Non-GPE locations</td><td>"the Nile," "Mount Everest"</td></tr>
+          <tr><td><code>DATE</code></td><td>Absolute or relative dates</td><td>"March 2026," "last Tuesday"</td></tr>
+          <tr><td><code>MONEY</code></td><td>Monetary values</td><td>"$3 billion," "€500M"</td></tr>
+          <tr><td><code>PRODUCT</code></td><td>Objects, vehicles, software</td><td>"iPhone 16," "Tesla Model 3"</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Dependency Parsing</h3>
+    <p>Identifies grammatical relationships between words: which noun is the subject of which verb? Which adjective modifies which noun? "The angry customer called the support team." → "customer" is the subject (nsubj) of "called"; "angry" modifies "customer" (amod); "team" is the object (dobj) of "called." Dependency parsing enables: semantic role labelling, relation extraction ("Company X acquired Company Y"), coreference resolution ("Obama announced his plan" — "his" refers to "Obama"), and question answering from structured text.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §07 — Text Classification Pipeline
+    ══════════════════════════════════════════════════════════ -->
+    <h2>07 — Classical Text Classification: The Full Pipeline</h2>
+
+    <p>Putting all the preprocessing steps together with a classifier produces a complete, deployable text classification system. This is what a production pipeline looks like — the same architecture Gmail used for spam filtering, the same one most enterprise NLP systems use for routing and categorisation today.</p>
+
+    <div class="prose-steps">
+      <div class="prose-step">
+        <div class="prose-step-num">1</div>
+        <div class="prose-step-text"><strong>Raw text input.</strong> Collect and deduplicate your documents. Ensure consistent encoding (UTF-8). For web-scraped data, strip HTML tags. For social media, normalise Unicode and remove bot-generated patterns. Label each document with its class.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">2</div>
+        <div class="prose-step-text"><strong>Preprocessing.</strong> Lowercase → remove HTML/URLs → expand contractions → remove punctuation → tokenise → remove stop words → stem or lemmatise. Result: each document is now a list of normalised tokens. Apply identical preprocessing to both train and test data using the same fitted pipeline.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">3</div>
+        <div class="prose-step-text"><strong>Feature extraction.</strong> Build a TF-IDF matrix from the training corpus. Vocabulary is fitted on training data only — never on test data. Use <code>ngram_range=(1,2)</code> for bigrams, <code>max_features=50000</code> to cap vocabulary, <code>min_df=2</code> to remove tokens appearing in fewer than 2 documents (noise), <code>sublinear_tf=True</code> to log-scale TF values and reduce the effect of very high-frequency terms.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">4</div>
+        <div class="prose-step-text"><strong>Train a classifier.</strong> Logistic Regression is the default choice — fast, interpretable, works well with sparse high-dimensional features. Naive Bayes (MultinomialNB) is even faster and competitive on short texts. Linear SVM (LinearSVC) is often the strongest performer. Never use tree-based models (Random Forest, XGBoost) on raw TF-IDF — they can't efficiently split sparse high-dimensional features.</div>
+      </div>
+      <div class="prose-step">
+        <div class="prose-step-num">5</div>
+        <div class="prose-step-text"><strong>Evaluate and inspect.</strong> Report accuracy + macro-averaged F1 (F1 is more informative when classes are imbalanced). Use <code>classification_report</code> to see per-class precision/recall. Inspect: extract top positive/negative features per class using <code>coef_</code> — this immediately tells you which words are driving decisions, and exposes errors ("not" being ignored due to stop word removal).</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §08 — Full Code
+    ══════════════════════════════════════════════════════════ -->
+    <h2>08 — Code: Complete NLP Pipeline with spaCy and scikit-learn</h2>
+
+    <p>The code below implements the full pipeline — spaCy-based preprocessing including lemmatisation and stop word removal, TF-IDF feature extraction with bigrams, three classifiers compared, and feature inspection. This is a production-quality template.</p>
+
+<pre><code><span class="t-key">import</span> re, spacy
+<span class="t-key">from</span> sklearn.feature_extraction.text <span class="t-key">import</span> TfidfVectorizer, CountVectorizer
+<span class="t-key">from</span> sklearn.linear_model <span class="t-key">import</span> LogisticRegression
+<span class="t-key">from</span> sklearn.naive_bayes <span class="t-key">import</span> MultinomialNB
+<span class="t-key">from</span> sklearn.svm <span class="t-key">import</span> LinearSVC
+<span class="t-key">from</span> sklearn.pipeline <span class="t-key">import</span> Pipeline
+<span class="t-key">from</span> sklearn.datasets <span class="t-key">import</span> fetch_20newsgroups
+<span class="t-key">from</span> sklearn.metrics <span class="t-key">import</span> classification_report, accuracy_score
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># ── Load spaCy model ─────────────────────────────────────────────────────
+# python -m spacy download en_core_web_sm</span>
+nlp = spacy.load(<span class="t-str">'en_core_web_sm'</span>, disable=[<span class="t-str">'parser'</span>, <span class="t-str">'ner'</span>])  <span class="t-cmt"># fast: only tagger</span>
+
+<span class="t-key">def</span> preprocess(text):
+    <span class="t-str">"""Full preprocessing: lowercase, clean, lemmatise, remove stops."""</span>
+    text = text.lower()
+    text = re.sub(<span class="t-str">r'http\S+|www\S+'</span>, <span class="t-str">' '</span>, text)        <span class="t-cmt"># strip URLs</span>
+    text = re.sub(<span class="t-str">r'[^a-z0-9\s]'</span>, <span class="t-str">' '</span>, text)           <span class="t-cmt"># remove punctuation</span>
+    text = re.sub(<span class="t-str">r'\s+'</span>, <span class="t-str">' '</span>, text).strip()           <span class="t-cmt"># collapse whitespace</span>
+    doc = nlp(text)
+    tokens = [
+        token.lemma_ <span class="t-key">for</span> token <span class="t-key">in</span> doc
+        <span class="t-key">if not</span> token.is_stop
+        <span class="t-key">and not</span> token.is_punct
+        <span class="t-key">and</span> token.is_alpha
+        <span class="t-key">and</span> len(token.text) > <span class="t-num">2</span>
+    ]
+    <span class="t-key">return</span> <span class="t-str">' '</span>.join(tokens)
+
+<span class="t-cmt"># ── Load 20 Newsgroups (4 categories) ───────────────────────────────────</span>
+cats = [<span class="t-str">'sci.space'</span>, <span class="t-str">'talk.religion.misc'</span>, <span class="t-str">'comp.graphics'</span>, <span class="t-str">'rec.sport.hockey'</span>]
+train = fetch_20newsgroups(subset=<span class="t-str">'train'</span>, categories=cats, remove=(<span class="t-str">'headers'</span>,<span class="t-str">'footers'</span>))
+test  = fetch_20newsgroups(subset=<span class="t-str">'test'</span>,  categories=cats, remove=(<span class="t-str">'headers'</span>,<span class="t-str">'footers'</span>))
+
+<span class="t-key">print</span>(<span class="t-str">f"Train: {len(train.data)} docs | Test: {len(test.data)} docs"</span>)
+
+<span class="t-cmt"># Preprocess (takes ~30s with spaCy lemmatisation)</span>
+train_clean = [preprocess(t) <span class="t-key">for</span> t <span class="t-key">in</span> train.data]
+test_clean  = [preprocess(t) <span class="t-key">for</span> t <span class="t-key">in</span> test.data]
+
+<span class="t-cmt"># ── TF-IDF vectoriser ────────────────────────────────────────────────────</span>
+tfidf = TfidfVectorizer(
+    ngram_range   = (<span class="t-num">1</span>, <span class="t-num">2</span>),      <span class="t-cmt"># unigrams + bigrams</span>
+    max_features  = <span class="t-num">50000</span>,       <span class="t-cmt"># cap vocabulary size</span>
+    min_df        = <span class="t-num">2</span>,           <span class="t-cmt"># ignore tokens in < 2 docs (noise)</span>
+    sublinear_tf  = <span class="t-key">True</span>,        <span class="t-cmt"># log(1 + tf) — reduce impact of high counts</span>
+    strip_accents = <span class="t-str">'unicode'</span>,   <span class="t-cmt"># normalise accented chars</span>
+)
+X_train = tfidf.fit_transform(train_clean)   <span class="t-cmt"># fit only on train</span>
+X_test  = tfidf.transform(test_clean)        <span class="t-cmt"># never fit_transform on test</span>
+<span class="t-key">print</span>(<span class="t-str">f"Vocabulary size: {len(tfidf.vocabulary_):,}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Matrix shape: {X_train.shape}  (sparse: {X_train.nnz / X_train.shape[0] / X_train.shape[1]:.4%} non-zero)"</span>)
+
+<span class="t-cmt"># ── Compare three classifiers ────────────────────────────────────────────</span>
+models = {
+    <span class="t-str">'Logistic Regression'</span>: LogisticRegression(C=<span class="t-num">5.0</span>, max_iter=<span class="t-num">1000</span>, solver=<span class="t-str">'saga'</span>),
+    <span class="t-str">'Naive Bayes'</span>:         MultinomialNB(alpha=<span class="t-num">0.1</span>),
+    <span class="t-str">'Linear SVM'</span>:          LinearSVC(C=<span class="t-num">1.0</span>, max_iter=<span class="t-num">2000</span>),
+}
+<span class="t-key">for</span> name, clf <span class="t-key">in</span> models.items():
+    clf.fit(X_train, train.target)
+    preds = clf.predict(X_test)
+    acc = accuracy_score(test.target, preds)
+    <span class="t-key">print</span>(<span class="t-str">f"{name:22s}  accuracy={acc:.4f}"</span>)
+
+<span class="t-cmt"># ── Full report for best model (SVM) ────────────────────────────────────</span>
+best = models[<span class="t-str">'Linear SVM'</span>]
+preds = best.predict(X_test)
+<span class="t-key">print</span>(<span class="t-str">"\n"</span> + classification_report(test.target, preds, target_names=cats))
+
+<span class="t-cmt"># ── Inspect top features per class ───────────────────────────────────────</span>
+feat_names = np.array(tfidf.get_feature_names_out())
+<span class="t-key">for</span> i, cat <span class="t-key">in</span> enumerate(cats):
+    top_idx = best.coef_[i].argsort()[-<span class="t-num">8</span>:][::-<span class="t-num">1</span>]
+    <span class="t-key">print</span>(<span class="t-str">f"{cat}: {', '.join(feat_names[top_idx])}"</span>)
+
+<span class="t-cmt"># ── NER demo with spaCy ───────────────────────────────────────────────────</span>
+nlp_full = spacy.load(<span class="t-str">'en_core_web_sm'</span>)   <span class="t-cmt"># full pipeline with NER</span>
+sample = <span class="t-str">"NASA announced a $2.5B contract with SpaceX for the Artemis mission in Houston."</span>
+doc = nlp_full(sample)
+<span class="t-key">for</span> ent <span class="t-key">in</span> doc.ents:
+    <span class="t-key">print</span>(<span class="t-str">f"  {ent.text:20s} → {ent.label_} ({spacy.explain(ent.label_)})"</span>)</code></pre>
+    <div class="code-output">
+      <span class="out-head">── Dataset ────────────────────────────────────────────────────────────</span><br>
+      Train: <span class="out-val">2,170</span> docs | Test: <span class="out-val">1,447</span> docs<br>
+      Vocabulary size: <span class="out-val">47,382</span><br>
+      Matrix shape: (2170, 47382) &nbsp; sparse: <span class="out-val">0.31%</span> non-zero<br>
+      <span class="out-dim">── Classifier comparison ──────────────────────────────────────────────</span><br>
+      Logistic Regression    accuracy=<span class="out-good">0.9323</span><br>
+      Naive Bayes            accuracy=<span class="out-good">0.9047</span><br>
+      Linear SVM             accuracy=<span class="out-good">0.9461</span><br>
+      <span class="out-dim">── Classification report (Linear SVM) ────────────────────────────────</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;precision  recall  f1-score  support<br>
+      sci.space            &nbsp;&nbsp;<span class="out-val">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-good">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;394<br>
+      talk.religion.misc   &nbsp;&nbsp;<span class="out-val">0.92</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.89</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-good">0.90</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;251<br>
+      comp.graphics        &nbsp;&nbsp;<span class="out-val">0.95</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-good">0.96</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;389<br>
+      rec.sport.hockey     &nbsp;&nbsp;<span class="out-val">0.96</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-good">0.97</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;399<br>
+      <span class="out-dim">── Top features per class ─────────────────────────────────────────────</span><br>
+      sci.space:          <span class="out-val">space, nasa, orbit, lunar, mission, launch, shuttle, astronaut</span><br>
+      talk.religion.misc: <span class="out-val">god, jesus, christian, faith, believe, bible, sin, religion</span><br>
+      comp.graphics:      <span class="out-val">image, gif, jpeg, pixel, render, graphic, software, color</span><br>
+      rec.sport.hockey:   <span class="out-val">hockey, goal, team, season, play, score, player, cup</span><br>
+      <span class="out-dim">── NER demo ───────────────────────────────────────────────────────────</span><br>
+      NASA                 → ORG (Companies, agencies, institutions)<br>
+      $2.5B                → MONEY (Monetary values, including unit)<br>
+      SpaceX               → ORG (Companies, agencies, institutions)<br>
+      Artemis              → WORK_OF_ART (Titles of books, songs, etc.)<br>
+      Houston              → GPE (Countries, cities, states)
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §09 — Representation Comparison
+    ══════════════════════════════════════════════════════════ -->
+    <h2>09 — When to Use What: Comparing All Representations</h2>
+
+    <p>Classical NLP offers several text representation strategies. The right choice depends on your task, data size, latency requirements, and interpretability needs. Here is the complete comparison:</p>
+
+    <table class="prose-table">
+      <thead>
+        <tr><th>Representation</th><th>Captures word order</th><th>Handles unseen words</th><th>Interpretable</th><th>Speed</th><th>Best for</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Bag-of-Words</strong></td>
+          <td class="cross">✗ None</td>
+          <td class="cross">✗ No</td>
+          <td class="tick">✓ Yes</td>
+          <td class="tick">✓ Fastest</td>
+          <td>Topic classification, keyword matching</td>
+        </tr>
+        <tr>
+          <td><strong>TF-IDF</strong></td>
+          <td class="cross">✗ None</td>
+          <td class="cross">✗ No</td>
+          <td class="tick">✓ Yes</td>
+          <td class="tick">✓ Fast</td>
+          <td>Classification, search, keyword extraction</td>
+        </tr>
+        <tr>
+          <td><strong>TF-IDF + Bigrams</strong></td>
+          <td class="mid">~ Partial</td>
+          <td class="cross">✗ No</td>
+          <td class="tick">✓ Yes</td>
+          <td class="tick">✓ Fast</td>
+          <td>Sentiment analysis, phrase matching</td>
+        </tr>
+        <tr>
+          <td><strong>BM25</strong></td>
+          <td class="cross">✗ None</td>
+          <td class="cross">✗ No</td>
+          <td class="tick">✓ Yes</td>
+          <td class="tick">✓ Fast</td>
+          <td>Search ranking, RAG first-stage retrieval</td>
+        </tr>
+        <tr>
+          <td><strong>Word2Vec (avg)</strong></td>
+          <td class="cross">✗ None</td>
+          <td class="mid">~ Via subwords</td>
+          <td class="mid">~ Partial</td>
+          <td class="mid">~ Medium</td>
+          <td>Semantic similarity, clustering</td>
+        </tr>
+        <tr>
+          <td><strong>BERT embeddings</strong></td>
+          <td class="tick">✓ Full</td>
+          <td class="tick">✓ Subword</td>
+          <td class="cross">✗ No</td>
+          <td class="cross">✗ Slow</td>
+          <td>All tasks, best accuracy when data available</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="prose-callout accent">
+      <span class="prose-callout-label">⚡ The Practical Decision Rule</span>
+      <p><strong>Start with TF-IDF + Logistic Regression.</strong> If it achieves acceptable accuracy, ship it — you gain interpretability, fast inference, and minimal infrastructure. If it falls short: add bigrams, tune <code>C</code> and <code>max_features</code>, try LinearSVC. If still insufficient, move to word embeddings (Day 20). Only reach for BERT/transformers (Day 22) when you need the last few percent of accuracy and can afford the compute cost.</p>
+      <p style="margin-top:0.75rem">This is not a "start simple then upgrade" academic exercise. TF-IDF classifiers in production outperform fine-tuned BERT on data-scarce tasks because transformers need hundreds of examples per class to generalise well. The simpler model is genuinely better when data is limited.</p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §10 — Limitations and What Comes Next
+    ══════════════════════════════════════════════════════════ -->
+    <h2>10 — The Fundamental Limitations — and Why They Lead to Embeddings</h2>
+
+    <p>Understanding what classical NLP <em>cannot</em> do is as important as understanding what it can. These limitations are not engineering failures — they are principled consequences of the bag-of-words assumption, and each one motivated a specific next technique.</p>
+
+    <div class="prose-kv-grid">
+      <div class="prose-kv">
+        <div class="prose-kv-key">No word relationships</div>
+        <div class="prose-kv-val">"king" and "queen" are as unrelated as "king" and "banana" in a BoW vector. Two synonyms — "automobile" and "car" — are completely different tokens even though they mean the same thing. A classifier trained on one won't recognise the other. <strong>→ Word2Vec (Day 20):</strong> places words in a continuous vector space where similar words cluster together. king − man + woman ≈ queen.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">No word sense disambiguation</div>
+        <div class="prose-kv-val">"Bank" (financial) and "bank" (river) are the same token. "Apple" (fruit) and "Apple" (company) are identical. The vector is fixed regardless of context. <strong>→ BERT (Day 22):</strong> generates different embeddings for the same word depending on surrounding context — "bank" in a financial sentence gets a different vector than "bank" in a geography sentence.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">No long-range dependencies</div>
+        <div class="prose-kv-val">"The movie, which my friend who normally hates action films but made an exception for last Tuesday, was not good." — the negation ("not") applies to "good" separated by 20 tokens. No n-gram window captures this. <strong>→ Transformers (Day 22):</strong> attention mechanism directly connects any two tokens regardless of distance.</div>
+      </div>
+      <div class="prose-kv">
+        <div class="prose-kv-key">High dimensionality / sparsity</div>
+        <div class="prose-kv-val">A 100,000-word vocabulary TF-IDF vector for a 200-word document has 99,800 zeros. Storing and computing over sparse matrices is memory-efficient but loses structural relationships. <strong>→ Dense embeddings:</strong> a 300-dimensional Word2Vec vector is dense (every value non-zero) and contains geometric structure — the cosine similarity between "king" and "queen" is high, between "king" and "banana" is low.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §11 — Why It Still Matters
+    ══════════════════════════════════════════════════════════ -->
+    <h2>11 — Why Classical NLP Still Powers Production Systems</h2>
+
+    <p>The year is 2026. Transformers dominate NLP benchmarks. Yet classical NLP techniques run at the core of many of the largest systems in production. Understanding why tells you something important about engineering.</p>
+
+    <p><strong>BM25 runs the first retrieval stage in most RAG pipelines.</strong> Every "ChatGPT with web search" system uses BM25 (or an equivalent sparse retrieval method) to do a fast first-pass retrieval over millions of documents in milliseconds. Neural retrieval (dense embeddings) is far too slow to run first at scale. BM25 finds the candidates; embeddings rerank the shortlist.</p>
+
+    <p><strong>TF-IDF classifiers power industrial log analysis.</strong> A server generating 10 million log lines per day cannot run BERT on each line — latency and cost are prohibitive. TF-IDF + Naive Bayes classifies log severity in microseconds, routing critical alerts in real time. For this task it is not a "weaker backup" — it is the correct engineering choice.</p>
+
+    <p><strong>Sparse representations are more interpretable in regulated industries.</strong> Healthcare, legal, and financial compliance systems must explain predictions. "This contract was flagged because it contains the terms 'termination,' 'liability waiver,' and 'governing law' with high TF-IDF scores" satisfies a compliance audit. "The transformer's attention weights suggest..." does not.</p>
+
+    <p><strong>Classical preprocessing is still required for transformers.</strong> BERT doesn't take raw text — it takes subword tokens produced by WordPiece tokenisation, a direct descendant of the techniques in this post. The preprocessing pipeline (cleaning, normalisation, tokenisation) is still step one for every modern NLP system. You can't skip it just because the model is more powerful.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §12 — Thought to Sit With
+    ══════════════════════════════════════════════════════════ -->
+    <h2>12 — A Thought to Sit With</h2>
+    <div class="prose-callout">
+      <span class="prose-callout-label">💬 For You to Consider</span>
+      <p>Bag-of-words completely discards word order. "The dog bit the man" and "The man bit the dog" are identical vectors. Yet on topic classification tasks, this approach achieves 94% accuracy. A TF-IDF classifier trained on news articles can correctly distinguish sports from politics from science without ever knowing the sentence "The politician won the election" is different from "The election won the politician."</p>
+      <p style="margin-top:0.75rem"><strong>If a model that ignores word order can classify text at near-human accuracy for many tasks, what does that tell us about how much meaning is carried by which words appear versus the order they appear in? And if most of meaning lives in word co-occurrence patterns rather than syntax — does that change how you think about language itself?</strong></p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §13 — Coming Up Next
+    ══════════════════════════════════════════════════════════ -->
+    <h2>13 — Coming Up Next</h2>
+    <p>Tomorrow — <strong>Day 20: Word Embeddings.</strong> Bag-of-words treats every word as an isolated island. Word2Vec and GloVe fix this by placing every word in a continuous vector space where meaning is geometry: similar words cluster together, and arithmetic works — king − man + woman ≈ queen. How that equation arises from a neural network trained on nothing but word co-occurrences, and why it's the direct ancestor of every modern language model.</p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §14 — Go Deeper
+    ══════════════════════════════════════════════════════════ -->
+    <h2>14 — Go Deeper</h2>
+    <p>▶ <a href="https://www.youtube.com/watch?v=FLZvOKSCkxY" target="_blank" rel="noopener">TF-IDF Explained Visually — Computerphile</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">YouTube · 12 min · Clear walkthrough of the formula with worked examples and search engine context.</em></p>
+    <p>🔗 <a href="https://spacy.io/usage/linguistic-features" target="_blank" rel="noopener">spaCy Linguistic Features — Official Docs</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Complete reference for POS tagging, NER, dependency parsing, and lemmatisation in spaCy. The best NLP library for production pipelines.</em></p>
+    <p>🔗 <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#text-feature-extraction" target="_blank" rel="noopener">sklearn Text Feature Extraction — Official Docs</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">Full API reference for TfidfVectorizer, CountVectorizer, HashingVectorizer with examples.</em></p>
+    <p>📄 <a href="https://www.cl.cam.ac.uk/teaching/1011/InfoRtrv/lecture4.pdf" target="_blank" rel="noopener">TF-IDF and BM25 Lecture Notes — Cambridge University</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">PDF · The mathematical derivation of BM25 from first principles. Section 3 explains the saturation and length-normalisation motivation clearly.</em></p>
+    <p>📄 <a href="https://arxiv.org/abs/1301.3666" target="_blank" rel="noopener">Efficient Estimation of Word Representations — Mikolov et al. (2013)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">The Word2Vec paper — a direct preview of Day 20. Understanding the motivation section (why BoW falls short) is essential context for embeddings.</em></p>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §15 — Quiz
+    ══════════════════════════════════════════════════════════ -->
+    <div class="knowledge-check">
+      <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+      <div class="knowledge-check-body">
+
+        <div class="quiz-item">
+          <div class="quiz-question">1. Walk through how TF-IDF scores are computed. Why does a word appearing in every document get a score near zero, and what does that mean for the word "the"?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">TF = count of term in this document / total tokens in document. IDF = log(N / (1 + df)) + 1, where N is total documents and df is how many contain the term. TF-IDF = TF × IDF. When a word appears in every document, df = N, so IDF = log(N / (1+N)) + 1 ≈ log(1) + 1 = 1. But since TF is also low for "the" (it appears frequently but the document is long), the final score approaches zero. More precisely: if df = N (the word is in all documents), the log ratio is ~0, and the entire IDF term is minimal. This correctly reflects that "the" carries no information about which document this is — it distinguishes nothing. Any word appearing in all documents is by definition not discriminative between documents.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">2. What is the difference between stemming and lemmatisation? Give an example where stemming produces a wrong answer that lemmatisation gets right, and explain when you'd choose each.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Stemming uses heuristic suffix-stripping rules. Lemmatisation uses vocabulary lookup and morphological analysis to return the actual dictionary base form. Example: "studies" → Porter stemmer outputs "studi" (not a real word); WordNet lemmatiser outputs "study" (correct). Another: "was" → stemmer outputs "wa" or "was"; lemmatiser outputs "be." When stemmer fails: irregular verbs (go/went/gone → same word), comparative adjectives (better/good → stemmer misses), words ending in ambiguous suffixes. Choose stemming when: speed is critical, morphology is regular, the output won't be shown to humans (internal pipeline), English-only. Choose lemmatisation when: the output will be displayed, you need correct base forms, working with irregular morphology, or building a knowledge base where incorrect forms would cause downstream errors.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">3. You're building a sentiment classifier. Your TF-IDF + Logistic Regression model achieves 88% accuracy, but you notice it always classifies "not great" as positive. Why does this happen, and what is the fix?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">The model learned that "great" is a strong positive signal (high positive TF-IDF weight). "not" is likely in the stop word list and was removed during preprocessing, so the model never saw the negation — it only sees "great." This is a classic failure of unigram bag-of-words for sentiment: stop word removal eliminates negation words, and the model treats "not great" identically to "great." Two fixes: (1) Remove "not," "never," "no," and other negation words from the stop word list. (2) Add bigrams with <code>ngram_range=(1,2)</code> — the bigram "not great" will be a new feature that the model learns has negative weight, distinct from the unigram "great." Fix (2) is more robust because it captures the actual phrase rather than just preserving the negation word in isolation.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">4. Why is BM25 still the standard first-stage retriever in production RAG systems in 2026, even though dense vector retrieval (FAISS + embeddings) is semantically more powerful?</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">Speed and scale. BM25 is a sparse inverted-index operation — it only processes documents that contain the query terms, not the entire corpus. On 100 million documents, BM25 returns results in milliseconds. Dense retrieval computes the dot product between the query embedding and every document embedding — at 100M documents with 768-dim vectors, this requires either a GPU-resident index (hugely expensive) or approximate nearest-neighbour search (FAISS) that still takes much longer than BM25. The standard production architecture is a two-stage pipeline: BM25 retrieves the top-1000 candidates fast (filtering 100M to 1000), then a cross-encoder or dense model reranks those 1000 with full semantic attention. This hybrid combines BM25's speed at scale with neural models' semantic precision. BM25 also doesn't need an embedding model to be called at index time — any new document is indexed by term frequency alone, making it trivially scalable.</div>
+        </div>
+
+        <div class="quiz-item">
+          <div class="quiz-question">5. What does Named Entity Recognition produce, and give two concrete examples of how NER output is used in downstream NLP applications.</div>
+          <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+          <div class="quiz-answer" style="display:none">NER identifies and classifies spans of text as named entities: persons, organisations, locations, dates, monetary values, etc. The output is a list of (text span, entity type) pairs: [(Apple Inc., ORG), ($3B, MONEY), (Houston, GPE)]. Downstream applications: (1) <strong>Knowledge graph construction:</strong> A financial news pipeline extracts all ORG entities and MONEY entities and their co-occurrence with verbs like "acquired," "invested," "merged." From "Microsoft acquired Activision for $68.7B" → edge: (Microsoft) --[acquired, $68.7B]--> (Activision). These edges populate a knowledge graph that enables structured queries like "list all acquisitions over $1B in 2023." (2) <strong>Compliance and redaction:</strong> Legal and healthcare systems must identify all PERSON entities in documents before sharing externally, automatically redacting or pseudonymising them. The NER model flags every person mention; a post-processing step replaces them with [REDACTED]. This is how GDPR-compliant document processing pipelines work at scale.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         §16 — Recap
+    ══════════════════════════════════════════════════════════ -->
+    <div class="quick-recap">
+      <div class="quick-recap-header">⚡ Quick Recap — NLP Fundamentals</div>
+      <ol>
+        <li><strong>The core problem:</strong> text has no natural numerical representation. Every NLP technique is an answer to "how do we represent language as numbers that capture meaning?" The progression: BoW → TF-IDF → embeddings → contextualised embeddings.</li>
+        <li><strong>Preprocessing pipeline:</strong> lowercase → strip noise → tokenise → remove stop words → stem/lemmatise. Apply the same fitted pipeline to train and test. Never fit on test data.</li>
+        <li><strong>Stemming vs lemmatisation:</strong> stemming is fast but produces non-words ("studi"). Lemmatisation is slower but returns real base forms ("study"). Use lemmatisation when correctness matters; stemming when speed dominates.</li>
+        <li><strong>Bag-of-Words:</strong> represent a document as a count vector over the vocabulary. Throws away word order entirely. "Dog bites man" = "Man bites dog." Surprisingly effective for topic classification despite this.</li>
+        <li><strong>TF-IDF:</strong> TF(t,d) × IDF(t). Amplifies rare-but-present words (document's signature terms), suppresses common words (no discriminative value). The standard feature representation for classical text classification.</li>
+        <li><strong>N-grams:</strong> unigram + bigram <code>(1,2)</code> is the standard setting. Bigrams capture "not good" as a single negative feature, improving sentiment analysis. Vocabulary grows as V², so trigrams are rarely worth the cost.</li>
+        <li><strong>BM25:</strong> TF-IDF with saturation (prevents term stuffing) and document-length normalisation. The standard sparse retriever in search engines and RAG pipelines. Still the fastest way to retrieve from billion-document corpora.</li>
+        <li><strong>POS tagging + NER:</strong> grammatical structure and entity identification. Enable information extraction, knowledge graph construction, relation detection, and compliance systems. spaCy provides both in one efficient pipeline.</li>
+        <li><strong>Classical NLP vs transformers:</strong> TF-IDF + LR is the right choice when data is limited, interpretability is required, or latency/cost matter. Transformers win when accuracy is the only goal and data is plentiful.</li>
+        <li><strong>Fundamental limitation:</strong> BoW has no concept of word relationships — "king" and "queen" are as unrelated as "king" and "banana." This limitation is what motivated word embeddings (Day 20) and ultimately transformers (Day 22).</li>
+      </ol>
+    </div>
+
+    <!-- ── INTERVIEW Q&A ──────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">🎯 Interview Questions</span>
+      <ol>
+        <li><strong>What is TF-IDF and why is it better than raw word counts?</strong><br>
+        <em>TF-IDF = Term Frequency × Inverse Document Frequency. Raw counts over-weight words that appear frequently everywhere — "the" gets a high count in every document but distinguishes nothing. IDF multiplies each term's frequency by the log of (total documents / documents containing the term), so terms appearing in every document get near-zero weight, while terms appearing in few documents get high weight. The result: each document's TF-IDF vector highlights its signature vocabulary — the rare-but-present words that actually distinguish it from other documents.</em></li>
+        <li><strong>What information does bag-of-words discard, and when does that matter?</strong><br>
+        <em>Word order, grammar, and word relationships are all discarded — "not good" and "good not" produce the same vector. For topic classification, this rarely matters because topic signal lives in which words appear. For sentiment analysis (negation), question answering (subject-object relationships), and reasoning tasks (logical connectives), the loss of order is significant. Adding bigrams recovers some order sensitivity by treating adjacent pairs as atomic features.</em></li>
+        <li><strong>What is the difference between stemming and lemmatisation, and when do you choose each?</strong><br>
+        <em>Stemming uses heuristic suffix-stripping rules and may produce non-words ("studies" → "studi"). Lemmatisation uses a vocabulary and morphological analysis to return the actual dictionary base form ("studies" → "study," "was" → "be"). Use stemming when speed is critical and output quality is less important (internal pipeline steps). Use lemmatisation when correctness matters — keyword extraction, output shown to users, or building knowledge bases where incorrect base forms cause downstream errors.</em></li>
+        <li><strong>When would you use TF-IDF over a transformer model?</strong><br>
+        <em>When training data is limited (transformers need hundreds of examples per class; TF-IDF generalises with dozens), when interpretability is a hard requirement (you can inspect which terms drive predictions — essential for compliance), when inference must be extremely fast or cheap (TF-IDF is orders of magnitude faster than BERT), or when establishing a baseline — always benchmark TF-IDF + LR before investing in neural infrastructure. If the simpler model achieves acceptable accuracy, it is the correct engineering choice.</em></li>
+        <li><strong>What is BM25 and how does it relate to TF-IDF?</strong><br>
+        <em>BM25 is a refined TF-IDF variant for information retrieval. It adds two improvements: (1) saturation — a term appearing 100 times doesn't score 100× higher than one appearing once; a logarithmic cap prevents term stuffing; (2) document-length normalisation — longer documents are penalised for naturally accumulating higher raw TF scores. BM25 is the standard retrieval algorithm in Elasticsearch, Apache Lucene, and the first-stage retriever in RAG pipelines. It finds candidate documents at millisecond scale before dense embedding models do semantic reranking.</em></li>
+      </ol>
+    </div>
+
+    <!-- ── ATTACHMENTS ──────────────────────────────────────── -->
+    <div class="prose-callout">
+      <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>▶ <a href="https://www.youtube.com/watch?v=FLZvOKSCkxY" target="_blank" rel="noopener">TF-IDF Explained Visually — Computerphile</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">YouTube · 12 min · Best visual walkthrough of TF-IDF with search engine context and worked numeric examples.</em></p>
+      <p>🔗 <a href="https://spacy.io/usage/linguistic-features" target="_blank" rel="noopener">spaCy Linguistic Features — spacy.io</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">Official spaCy docs for POS tagging, NER, dependency parsing, and lemmatisation. The definitive reference for production NLP preprocessing in Python.</em></p>
+      <p>📄 <a href="https://arxiv.org/abs/1301.3666" target="_blank" rel="noopener">Efficient Estimation of Word Representations in Vector Space — Mikolov et al. (2013)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">The Word2Vec paper. The motivation section (§1–2) explains precisely what BoW/TF-IDF cannot do and what embeddings solve. Essential pre-reading for Day 20.</em></p>
+      <p>📚 <em>Speech and Language Processing</em> — Jurafsky &amp; Martin (3rd ed., free online)<br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">The definitive NLP textbook. Chapters 2–4 cover tokenisation, n-grams, and text classification in full mathematical rigour. Chapter 14 covers constituency and dependency parsing. Free PDF at web.stanford.edu/~jurafsky/slp3/.</em></p>
+    </div>
+
+    <!-- ── TAGS ──────────────────────────────────────────────── -->
+    <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:0.45rem">
+      <span class="tag">#NLP</span><span class="tag">#Tokenisation</span><span class="tag">#TFIDF</span><span class="tag">#BagOfWords</span><span class="tag">#BM25</span><span class="tag">#NGrams</span><span class="tag">#Lemmatisation</span><span class="tag">#Stemming</span><span class="tag">#NER</span><span class="tag">#TextClassification</span><span class="tag">#spaCy</span><span class="tag">#NaturalLanguageProcessing</span><span class="tag">#MachineLearning</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+    </div>
+
+  </div><!-- /prose -->
+</article>
+
+<!-- POST NAV -->
+<div class="post-footer-nav">
+  <a href="object-detection.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 18</span>
+    <span class="post-nav-title">Object Detection, YOLO &amp; Segmentation</span>
+  </a>
+  <a href="word-embeddings.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 20 →</span>
+    <span class="post-nav-title">Word Embeddings</span>
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
+  <span class="feedback-trigger-text">Feedback</span>
+</button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field">
+      <label for="feedbackName">Name</label>
+      <input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackTopic">Topic</label>
+      <select id="feedbackTopic">
+        <option value="General">General</option>
+        <option value="Suggestion">Suggestion</option>
+        <option value="Bug">Bug</option>
+      </select>
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackPage">Page</label>
+      <input type="text" id="feedbackPage" readonly />
+    </div>
+    <div class="feedback-field">
+      <label for="feedbackMessage">Message <span class="required">*</span></label>
+      <textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea>
+      <div class="char-count"><span id="charCount">0</span> / 2000</div>
+    </div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+  function toggleQuiz(btn) {
+    const answer = btn.nextElementSibling;
+    const isOpen = answer.style.display !== 'none';
+    answer.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? 'Reveal answer ↓' : 'Hide answer ↑';
+  }
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

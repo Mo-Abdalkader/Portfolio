@@ -551,7 +551,7 @@
     <div class="prose-callout gold">
       <span class="prose-callout-label">📐 IoU: The Core Detection Metric</span>
       <p><strong>Intersection over Union (IoU)</strong> = area of overlap between predicted box and ground-truth box ÷ area of their union. A perfect prediction has IoU = 1.0. Complete miss has IoU = 0. IoU > 0.5 is the conventional threshold for a "correct" detection in standard benchmarks. IoU appears in three places in YOLO: the loss function (penalise imprecise boxes), confidence thresholding (is there actually an object here?), and NMS (are these two boxes covering the same object?).</p>
-      <p style="margin-top:0.75rem">The COCO benchmark evaluates mAP at IoU thresholds from 0.5 to 0.95 in 0.05 steps and averages them — written as AP@[.5:.95]. This is much harder than the older PASCAL VOC metric (<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="27667767170912">[email&#160;protected]</a> only), which is why COCO scores look lower.</p>
+      <p style="margin-top:0.75rem">The COCO benchmark evaluates mAP at IoU thresholds from 0.5 to 0.95 in 0.05 steps and averages them — written as AP@[.5:.95]. This is much harder than the older PASCAL VOC metric, which is why COCO scores look lower.</p>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════
