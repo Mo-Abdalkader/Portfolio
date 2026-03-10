@@ -193,9 +193,9 @@
       Token list → integer IDs<br>
       ↓ <span style="color:var(--text-muted);font-size:0.78rem">bag-of-words / TF-IDF</span><br>
       Sparse vectors (50,000-dim, mostly zeros)<br>
-      ↓ <span style="color:var(--text-muted);font-size:0.78rem">word2vec / GloVe — Day 20</span><br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">word2vec / GloVe — Day 23</span><br>
       Dense vectors (300-dim, every value non-zero)<br>
-      ↓ <span style="color:var(--text-muted);font-size:0.78rem">BERT / GPT — Day 22</span><br>
+      ↓ <span style="color:var(--text-muted);font-size:0.78rem">BERT / GPT — Day 26</span><br>
       Contextualised dense vectors (meaning changes with context)
     </p>
 
@@ -675,7 +675,7 @@ doc = nlp_full(sample)
 
     <div class="prose-callout accent">
       <span class="prose-callout-label">⚡ The Practical Decision Rule</span>
-      <p><strong>Start with TF-IDF + Logistic Regression.</strong> If it achieves acceptable accuracy, ship it — you gain interpretability, fast inference, and minimal infrastructure. If it falls short: add bigrams, tune <code>C</code> and <code>max_features</code>, try LinearSVC. If still insufficient, move to word embeddings (Day 20). Only reach for BERT/transformers (Day 22) when you need the last few percent of accuracy and can afford the compute cost.</p>
+      <p><strong>Start with TF-IDF + Logistic Regression.</strong> If it achieves acceptable accuracy, ship it — you gain interpretability, fast inference, and minimal infrastructure. If it falls short: add bigrams, tune <code>C</code> and <code>max_features</code>, try LinearSVC. If still insufficient, move to word embeddings (Day 23). Only reach for BERT/transformers (Day 26) when you need the last few percent of accuracy and can afford the compute cost.</p>
       <p style="margin-top:0.75rem">This is not a "start simple then upgrade" academic exercise. TF-IDF classifiers in production outperform fine-tuned BERT on data-scarce tasks because transformers need hundreds of examples per class to generalise well. The simpler model is genuinely better when data is limited.</p>
     </div>
 
@@ -689,7 +689,7 @@ doc = nlp_full(sample)
     <div class="prose-kv-grid">
       <div class="prose-kv">
         <div class="prose-kv-key">No word relationships</div>
-        <div class="prose-kv-val">"king" and "queen" are as unrelated as "king" and "banana" in a BoW vector. Two synonyms — "automobile" and "car" — are completely different tokens even though they mean the same thing. A classifier trained on one won't recognise the other. <strong>→ Word2Vec (Day 20):</strong> places words in a continuous vector space where similar words cluster together. king − man + woman ≈ queen.</div>
+        <div class="prose-kv-val">"king" and "queen" are as unrelated as "king" and "banana" in a BoW vector. Two synonyms — "automobile" and "car" — are completely different tokens even though they mean the same thing. A classifier trained on one won't recognise the other. <strong>→ Word2Vec (Day 23):</strong> places words in a continuous vector space where similar words cluster together. king − man + woman ≈ queen.</div>
       </div>
       <div class="prose-kv">
         <div class="prose-kv-key">No word sense disambiguation</div>
@@ -734,7 +734,7 @@ doc = nlp_full(sample)
          §13 — Coming Up Next
     ══════════════════════════════════════════════════════════ -->
     <h2>13 — Coming Up Next</h2>
-    <p>Tomorrow — <strong>Day 20: Word Embeddings.</strong> Bag-of-words treats every word as an isolated island. Word2Vec and GloVe fix this by placing every word in a continuous vector space where meaning is geometry: similar words cluster together, and arithmetic works — king − man + woman ≈ queen. How that equation arises from a neural network trained on nothing but word co-occurrences, and why it's the direct ancestor of every modern language model.</p>
+    <p>Tomorrow — <strong>Day 20: Recurrent Neural Networks.</strong> Classical NLP treats language as bags of tokens — order doesn't matter, memory doesn't exist. The RNN was the first serious attempt to fix that: a network that reads a sequence word by word, carrying a hidden state forward as it goes, so that every word is understood in light of everything that came before it. We'll build the RNN cell from scratch, trace the forward pass, derive exactly why gradients vanish over long sequences — and understand why that one mathematical problem drove 20 years of research leading straight to the transformer.</p>
 
     <!-- ══════════════════════════════════════════════════════════
          §14 — Go Deeper
@@ -746,6 +746,11 @@ doc = nlp_full(sample)
     <em style="font-size:0.875rem;color:var(--text-muted)">Complete reference for POS tagging, NER, dependency parsing, and lemmatisation in spaCy. The best NLP library for production pipelines.</em></p>
     <p>🔗 <a href="https://scikit-learn.org/stable/modules/feature_extraction.html#text-feature-extraction" target="_blank" rel="noopener">sklearn Text Feature Extraction — Official Docs</a><br>
     <em style="font-size:0.875rem;color:var(--text-muted)">Full API reference for TfidfVectorizer, CountVectorizer, HashingVectorizer with examples.</em></p>
+    <p>📄 <a href="https://www.cl.cam.ac.uk/teaching/1011/InfoRtrv/lecture4.pdf" target="_blank" rel="noopener">TF-IDF and BM25 Lecture Notes — Cambridge University</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">PDF · The mathematical derivation of BM25 from first principles. Section 3 explains the saturation and length-normalisation motivation clearly.</em></p>
+    <p>📄 <a href="https://arxiv.org/abs/1301.3666" target="_blank" rel="noopener">Efficient Estimation of Word Representations — Mikolov et al. (2013)</a><br>
+    <em style="font-size:0.875rem;color:var(--text-muted)">The Word2Vec paper — a direct preview of Day 23. Understanding the motivation section (why BoW falls short) is essential context for embeddings.</em></p>
+
     <!-- ══════════════════════════════════════════════════════════
          §15 — Quiz
     ══════════════════════════════════════════════════════════ -->
@@ -801,7 +806,7 @@ doc = nlp_full(sample)
         <li><strong>BM25:</strong> TF-IDF with saturation (prevents term stuffing) and document-length normalisation. The standard sparse retriever in search engines and RAG pipelines. Still the fastest way to retrieve from billion-document corpora.</li>
         <li><strong>POS tagging + NER:</strong> grammatical structure and entity identification. Enable information extraction, knowledge graph construction, relation detection, and compliance systems. spaCy provides both in one efficient pipeline.</li>
         <li><strong>Classical NLP vs transformers:</strong> TF-IDF + LR is the right choice when data is limited, interpretability is required, or latency/cost matter. Transformers win when accuracy is the only goal and data is plentiful.</li>
-        <li><strong>Fundamental limitation:</strong> BoW has no concept of word relationships — "king" and "queen" are as unrelated as "king" and "banana." This limitation is what motivated word embeddings (Day 20) and ultimately transformers (Day 22).</li>
+        <li><strong>Fundamental limitation:</strong> BoW has no concept of word relationships — "king" and "queen" are as unrelated as "king" and "banana." This limitation is what motivated word embeddings (Day 23) and ultimately transformers (Day 26).</li>
       </ol>
     </div>
 
@@ -825,6 +830,14 @@ doc = nlp_full(sample)
     <!-- ── ATTACHMENTS ──────────────────────────────────────── -->
     <div class="prose-callout">
       <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+      <p>▶ <a href="https://www.youtube.com/watch?v=FLZvOKSCkxY" target="_blank" rel="noopener">TF-IDF Explained Visually — Computerphile</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">YouTube · 12 min · Best visual walkthrough of TF-IDF with search engine context and worked numeric examples.</em></p>
+      <p>🔗 <a href="https://spacy.io/usage/linguistic-features" target="_blank" rel="noopener">spaCy Linguistic Features — spacy.io</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">Official spaCy docs for POS tagging, NER, dependency parsing, and lemmatisation. The definitive reference for production NLP preprocessing in Python.</em></p>
+      <p>📄 <a href="https://arxiv.org/abs/1301.3666" target="_blank" rel="noopener">Efficient Estimation of Word Representations in Vector Space — Mikolov et al. (2013)</a><br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">The Word2Vec paper. The motivation section (§1–2) explains precisely what BoW/TF-IDF cannot do and what embeddings solve. Essential pre-reading for Day 23.</em></p>
+      <p>📚 <em>Speech and Language Processing</em> — Jurafsky &amp; Martin (3rd ed., free online)<br>
+      <em style="font-size:0.85rem;color:var(--text-muted)">The definitive NLP textbook. Chapters 2–4 cover tokenisation, n-grams, and text classification in full mathematical rigour. Chapter 14 covers constituency and dependency parsing. Free PDF at web.stanford.edu/~jurafsky/slp3/.</em></p>
     </div>
 
     <!-- ── TAGS ──────────────────────────────────────────────── -->
@@ -841,9 +854,9 @@ doc = nlp_full(sample)
     <span class="post-nav-label">← Day 18</span>
     <span class="post-nav-title">Object Detection, YOLO &amp; Segmentation</span>
   </a>
-  <a href="categories.html" class="post-nav-card next">
-    <span class="post-nav-label">Go to →</span>
-    <span class="post-nav-title">Browse All Categories</span>
+  <a href="rnn.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 20 →</span>
+    <span class="post-nav-title">Recurrent Neural Networks</span>
   </a>
 </div>
 
@@ -925,6 +938,4 @@ doc = nlp_full(sample)
 <script src="../js/main.js"></script>
 <script src="../js/feedback.js"></script>
 </body>
-
 </html>
-

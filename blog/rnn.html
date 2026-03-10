@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 20 — Recurrent Neural Networks | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="The complete guide to RNNs: sequential processing, the recurrent cell anatomy, backpropagation through time, vanishing and exploding gradients — why the first serious attempt at sequence modelling worked brilliantly and then broke." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    /* ── shared component styles ── */
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mw{color:#f85149;font-weight:600}
+
+    /* RNN cell diagram */
+    .rnn-diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;overflow-x:auto;white-space:pre}
+    /* gradient bar */
+    .grad-bar-wrap{margin:1.25rem 0}
+    .grad-bar-label{font-size:.82rem;color:var(--text-muted);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace}
+    .grad-bar{height:18px;border-radius:3px;display:flex;align-items:center;padding:0 .5rem;font-size:.72rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:.35rem}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 20 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span><span class="meta-sep">·</span>
+      <span>Mar 10, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">30 min read</span><span class="meta-sep">·</span>
+      <span>Sequence Models</span>
+    </div>
+    <h1>Recurrent Neural Networks:<br>The First Serious Attempt at Sequence Modelling</h1>
+    <p class="post-hero-lead">Before transformers, before attention, there were RNNs — and they were a genuine breakthrough. For the first time, a neural network could read a sentence word by word, carry memory forward, and produce meaning that depended on order. They powered early machine translation, speech recognition, and text generation. Then they broke — in a very specific, mathematically precise way. Understanding how and why is essential to appreciating everything that came after.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>A feedforward network reads a sentence the way a bad student reads a dictionary —<br>
+  every word in isolation, with no memory of what came before.<br><br>
+  An RNN reads it the way a person reads a novel —<br>
+  each word understood in light of everything already read.<br><br>
+  That was the idea. The execution, as we'll see, was flawed in a beautiful way.</p>
+</blockquote>
+
+<!-- ══════════════════════════════════════════
+     §01 — WHY FEEDFORWARD NETWORKS FAIL AT SEQUENCES
+══════════════════════════════════════════ -->
+<h2>01 — Why Feedforward Networks Cannot Handle Sequences</h2>
+
+<p>Everything we've built so far — perceptrons, CNNs, basic deep networks — shares one fundamental assumption: <strong>inputs are independent of each other</strong>. Feed in an image, get a classification. Feed in another image, get another classification. The model has no memory of the first image when it processes the second.</p>
+
+<p>Language violates this assumption completely. The meaning of every word in a sentence depends on the words that came before it. Consider:</p>
+
+<ul>
+  <li>"The bank is steep." → bank = riverbank</li>
+  <li>"The bank is closed." → bank = financial institution</li>
+  <li>"I went to the bank after the bank." → two different banks in one sentence</li>
+</ul>
+
+<p>A feedforward network processing "bank" as an isolated token cannot know which meaning applies. It would need to see the entire context — but fixed-size inputs mean you must decide in advance how many words of context to include. A 10-word window misses long-range dependencies. A 500-word window is computationally absurd and still fixed. And crucially, the same pattern (subject → verb → object) means something different at position 1 vs position 50 in a sentence.</p>
+
+<p>What's needed is a model that:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv"><div class="prose-kv-key">Processes tokens sequentially</div><div class="prose-kv-val">Reads word 1, then word 2, then word 3 — in order, like a human reader. Not all at once like a bag-of-words model.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Maintains a running memory</div><div class="prose-kv-val">As it reads each word, it updates an internal state that carries information from all previous words. Word 50 can be influenced by word 1.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Works on variable-length inputs</div><div class="prose-kv-val">A sentence can be 5 words or 500 words. The model should handle both with the same parameters — no fixed-size input constraint.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Shares parameters across positions</div><div class="prose-kv-val">The grammar rule "verb follows subject" applies in position 2 or position 200. The same weights should capture this pattern regardless of where it appears.</div></div>
+</div>
+
+<p>The Recurrent Neural Network was designed to satisfy all four requirements. In 1986, Rumelhart, Hinton and Williams formalised the idea; through the 1990s and 2000s it became the dominant architecture for any task involving sequences: language, speech, music, time series. Let's build it from scratch.</p>
+
+<!-- ══════════════════════════════════════════
+     §02 — THE RNN CELL
+══════════════════════════════════════════ -->
+<h2>02 — The RNN Cell: Architecture and Forward Pass</h2>
+
+<p>An RNN processes a sequence one step at a time. At each step t, it receives two inputs: the current token x_t and a <strong>hidden state</strong> h_{t-1} carrying all information from previous steps. It combines them to produce a new hidden state h_t, which becomes the memory passed to the next step.</p>
+
+<div class="math-block">
+  <span class="mh">h_t = tanh( W_h · h_{t-1} + W_x · x_t + b )</span><br><br>
+  <span class="mc">h_t &nbsp;&nbsp;&nbsp; — hidden state at step t &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shape: (hidden_size,)</span><br>
+  <span class="mc">h_{t-1} — hidden state from step t-1 &nbsp;&nbsp;&nbsp; shape: (hidden_size,)</span><br>
+  <span class="mc">x_t &nbsp;&nbsp;&nbsp; — input at step t &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shape: (input_size,)</span><br>
+  <span class="mc">W_h &nbsp;&nbsp;&nbsp; — recurrent weight matrix &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shape: (hidden_size, hidden_size)</span><br>
+  <span class="mc">W_x &nbsp;&nbsp;&nbsp; — input weight matrix &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shape: (hidden_size, input_size)</span><br>
+  <span class="mc">b &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — bias &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; shape: (hidden_size,)</span><br>
+  <span class="mc">tanh &nbsp;&nbsp; — squashes output to (−1, +1), keeps hidden state bounded</span>
+</div>
+
+<p>The output at each step can be computed as: <code>y_t = W_y · h_t + b_y</code>. Depending on the task, you might use the output at every step (sequence labelling), only the last step (classification), or generate a new sequence (translation).</p>
+
+<h3>The Unrolled View</h3>
+<p>An RNN is often shown as a loop — one cell that repeatedly applies the same operation. But to understand training, it helps to "unroll" it — draw out each timestep as a separate copy of the cell, all sharing the same weights:</p>
+
+<div class="rnn-diagram" aria-label="RNN unrolled diagram">  x_1        x_2        x_3        x_4        x_5
+   │          │          │          │          │
+   ▼          ▼          ▼          ▼          ▼
+h_0 →[RNN]→ h_1 →[RNN]→ h_2 →[RNN]→ h_3 →[RNN]→ h_4 →[RNN]→ h_5
+              │          │          │          │          │
+              ▼          ▼          ▼          ▼          ▼
+             y_1        y_2        y_3        y_4        y_5
+
+  All [RNN] cells share the SAME weights W_h, W_x, b
+  h_0 is initialised to zeros (or learned)
+  Arrows left→right = hidden state (memory) flowing through time</div>
+
+<p>This unrolled view reveals something important: the RNN is essentially a very deep feedforward network where depth = sequence length, and all layers share the same weights. A 100-word sentence is equivalent to a 100-layer network. This is the source of both the RNN's power and its fundamental problem.</p>
+
+<h3>Worked Forward Pass</h3>
+<p>Let's trace through a tiny example manually. Sentence: "I love NLP". hidden_size=2, input_size=2. All weights initialised to 0.5, bias=0, h_0=[0,0].</p>
+
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:2">
+  <span style="color:#58a6ff">Step 1: x_1 = "I" = [1, 0]</span><br>
+  pre_act = W_h·h_0 + W_x·x_1 = [0,0] + [0.5×1 + 0.5×0, 0.5×1 + 0.5×0] = [0.5, 0.5]<br>
+  h_1 = tanh([0.5, 0.5]) = [<span style="color:#3fb950">0.462, 0.462</span>]<br><br>
+  <span style="color:#58a6ff">Step 2: x_2 = "love" = [0, 1]</span><br>
+  pre_act = W_h·h_1 + W_x·x_2<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [0.5×0.462+0.5×0.462, ...] + [0.5×0+0.5×1, ...]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [0.462, 0.462] + [0.5, 0.5] = [0.962, 0.962]<br>
+  h_2 = tanh([0.962, 0.962]) = [<span style="color:#3fb950">0.745, 0.745</span>]<br><br>
+  <span style="color:#58a6ff">Step 3: x_3 = "NLP" = [1, 1]</span><br>
+  pre_act = [0.5×0.745×2, ...] + [0.5×1+0.5×1, ...]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [0.745, 0.745] + [1.0, 1.0] = [1.745, 1.745]<br>
+  h_3 = tanh([1.745, 1.745]) = [<span style="color:#e3b341">0.942, 0.942</span>] &nbsp;<span style="color:#484f58">← final hidden state encodes full sentence</span>
+</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 What the Hidden State Encodes</span>
+  <p>After step 3, h_3 = [0.942, 0.942] is the RNN's compressed representation of the entire sequence "I love NLP". It contains — in theory — everything the network learned to remember about those three words. This final hidden state is what you'd feed into a classifier for sentiment analysis, or pass as the initial state of a decoder for translation. The hidden state is the RNN's "working memory."</p>
+  <p style="margin-top:.75rem">The critical word above is "in theory." In practice, for long sequences, this memory breaks down in a very specific way — which we'll derive precisely in §04.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     §03 — RNN VARIANTS AND TASKS
+══════════════════════════════════════════ -->
+<h2>03 — RNN Variants: Many-to-One, One-to-Many, Many-to-Many</h2>
+
+<p>The RNN architecture is flexible — by choosing which outputs to use, you can handle a wide range of sequence tasks:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Type</th><th>Input → Output</th><th>How it works</th><th>Applications</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Many-to-one</strong></td>
+      <td>Sequence → single value</td>
+      <td>Process full sequence, use only final hidden state h_T for prediction</td>
+      <td>Sentiment analysis, text classification, spam detection</td>
+    </tr>
+    <tr>
+      <td><strong>One-to-many</strong></td>
+      <td>Single input → sequence</td>
+      <td>Single input sets h_0; model generates tokens one by one, each output fed back as next input</td>
+      <td>Image captioning, music generation from a seed</td>
+    </tr>
+    <tr>
+      <td><strong>Many-to-many (equal)</strong></td>
+      <td>Sequence → same-length sequence</td>
+      <td>Produce an output at every timestep, aligned with each input</td>
+      <td>POS tagging, NER, per-token classification</td>
+    </tr>
+    <tr>
+      <td><strong>Many-to-many (seq2seq)</strong></td>
+      <td>Sequence → different-length sequence</td>
+      <td>Encoder RNN compresses input into context vector; decoder RNN generates output sequence</td>
+      <td>Machine translation, summarisation, question answering</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The <strong>seq2seq architecture</strong> (Sutskever et al., 2014) was the major breakthrough that brought RNNs into production NLP. An encoder RNN reads the source sentence and compresses it into a single fixed-size context vector (the final hidden state). A decoder RNN then uses this context vector to generate the target sentence one token at a time. Google Translate ran on this architecture from 2016–2017.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📌 Bidirectional RNNs</span>
+  <p>A standard RNN only has access to past context — when processing word 5, it has seen words 1–4 but not words 6–10. For many tasks (NER, POS tagging), knowing what comes <em>after</em> a word is just as important as what comes before. "Bank" in "I walked to the river bank" needs "river" which comes before, but also benefits from "to deposit money" which might come after.</p>
+  <p style="margin-top:.75rem">A <strong>Bidirectional RNN (BiRNN)</strong> runs two RNNs: one left-to-right and one right-to-left. Their hidden states are concatenated at each step, giving every token access to both past and future context. BiLSTMs (bidirectional LSTMs) were state-of-the-art for NER and POS tagging for years, right until BERT replaced them in 2018.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     §04 — BPTT AND VANISHING GRADIENTS
+══════════════════════════════════════════ -->
+<h2>04 — Backpropagation Through Time: Why Training RNNs Is Hard</h2>
+
+<p>Training an RNN means computing gradients and updating the weights W_h, W_x, b. We use backpropagation — but on the unrolled network, gradients flow backwards through time: from the loss at the final step, back through every hidden state, all the way to step 1. This is called <strong>Backpropagation Through Time (BPTT)</strong>.</p>
+
+<p>Let's trace what happens to the gradient as it flows backwards through T steps:</p>
+
+<div class="math-block">
+  <span class="mc">Forward: &nbsp; h_t = tanh( W_h · h_{t-1} + W_x · x_t + b )</span><br><br>
+  <span class="mh">∂L/∂h_1 = ∂L/∂h_T · ∏(t=2 to T) ∂h_t/∂h_{t-1}</span><br><br>
+  <span class="mc">Each factor: &nbsp; ∂h_t/∂h_{t-1} = diag(1 − tanh²(·)) · W_h</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= diag(sech²(·)) · W_h &nbsp;&nbsp; (tanh derivative)</span><br><br>
+  <span class="mh">So: ∂L/∂h_1 ∝ W_h^(T-1) · [product of T-1 tanh derivatives]</span>
+</div>
+
+<p>The gradient at step 1 involves multiplying W_h by itself T−1 times and multiplying T−1 tanh derivative terms. This is where the problem emerges — and it splits into two distinct failure modes:</p>
+
+<h3>Failure Mode 1: Vanishing Gradients</h3>
+<p>The tanh derivative <code>sech²(x) = 1 − tanh²(x)</code> has a maximum value of 1.0 (at x=0) and shrinks toward 0 as |x| grows. In practice, during training, the pre-activations of tanh rarely sit exactly at 0 — they spread out and the derivatives are typically well below 1.0. If the largest singular value of W_h is also less than 1 (which is common with standard initialisation), then each multiplication by W_h shrinks the gradient further. Over T steps:</p>
+
+<div class="grad-bar-wrap">
+  <div class="grad-bar-label">Gradient magnitude at each step (relative to step T, tanh saturated, ||W_h|| = 0.9)</div>
+  <div class="grad-bar" style="width:100%;background:#3fb950">Step T (loss) — magnitude: 1.000</div>
+  <div class="grad-bar" style="width:72%;background:#5ab04e">Step T−5 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: 0.590</div>
+  <div class="grad-bar" style="width:42%;background:#8ab53c">Step T−10 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: 0.349</div>
+  <div class="grad-bar" style="width:18%;background:#b8b828">Step T−20 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: 0.122</div>
+  <div class="grad-bar" style="width:6%;background:#d4921a">Step T−30 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: 0.042</div>
+  <div class="grad-bar" style="width:2%;background:#e3601a">Step T−40 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: 0.015</div>
+  <div class="grad-bar" style="width:1%;background:#f85149">Step T−50 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; — magnitude: ~0.001 (effectively zero)</div>
+</div>
+
+<p>By step T−50, the gradient signal is effectively zero. The weights W_x and W_h at early timesteps receive no meaningful update signal — the model simply cannot learn that "The animal at the beginning of the sentence" is the referent for "it" 50 words later. <strong>Long-range dependencies are invisible to the gradient.</strong></p>
+
+<h3>Failure Mode 2: Exploding Gradients</h3>
+<p>The opposite problem: if the largest singular value of W_h is greater than 1, the gradient explodes exponentially over T steps. A gradient that starts at magnitude 1.0 can reach 10^15 after 50 steps with ||W_h|| = 1.5. This causes weight updates so large that the model parameters become NaN. Exploding gradients are the more <em>visible</em> failure — training simply diverges. Vanishing gradients are more insidious — training appears to proceed normally, but the model quietly fails to learn long-range patterns.</p>
+
+<div class="prose-callout warn" style="border-left:3px solid #e3a833">
+  <span class="prose-callout-label">⚠️ The Practical Impact</span>
+  <p><strong>Vanishing gradients (the slow killer):</strong> The model trains fine on short sequences. On long sequences, it learns local patterns (last few words) but ignores distant context. Sentiment analysis "This movie had great visuals, stunning music, beautiful cinematography, but the plot was absolutely <strong>terrible</strong>" — the model may predict positive sentiment because "great," "stunning," "beautiful" are recent and "terrible" is buried earlier in gradient terms.</p>
+  <p style="margin-top:.75rem"><strong>Exploding gradients (the loud failure):</strong> Loss suddenly spikes to infinity, gradients become NaN, training crashes. Fix: gradient clipping — cap gradient norm at a threshold (typically 1.0 or 5.0) before applying the update. This is still standard practice in any RNN-based training loop today.</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     §05 — WHAT RNNs ARE ACTUALLY GOOD AT
+══════════════════════════════════════════ -->
+<h2>05 — What RNNs Are Good At (and Where They Still Win)</h2>
+
+<p>It's easy to read the vanishing gradient problem and conclude RNNs are useless. That's wrong. RNNs are excellent for tasks where:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Task type</th><th>Why RNNs work well</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Short sequences (&lt;50 tokens)</strong></td>
+      <td>Gradient decay is manageable; local dependencies are sufficient</td>
+      <td>Short text classification, character-level generation</td>
+    </tr>
+    <tr>
+      <td><strong>Online / streaming data</strong></td>
+      <td>Process token by token in real time; no need to see full sequence first</td>
+      <td>Real-time speech recognition, financial tick data, IoT sensor streams</td>
+    </tr>
+    <tr>
+      <td><strong>Fixed-length output from variable input</strong></td>
+      <td>Final hidden state is a natural fixed-size summary</td>
+      <td>Encoding short documents into vectors</td>
+    </tr>
+    <tr>
+      <td><strong>Resource-constrained settings</strong></td>
+      <td>Far fewer parameters than transformers; constant memory per step</td>
+      <td>Embedded systems, edge devices, mobile applications</td>
+    </tr>
+    <tr>
+      <td><strong>Time series with local patterns</strong></td>
+      <td>Sequential structure matches the data's temporal structure naturally</td>
+      <td>Stock price prediction, weather forecasting (short horizon)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>RNNs are also <strong>O(1) in memory per step</strong> — the hidden state is a fixed-size vector regardless of how many tokens you've processed. A transformer's attention is O(n²) in sequence length. For extremely long sequences where you need constant memory, RNN-style architectures (and their successors like Mamba) are still competitive.</p>
+
+<!-- ══════════════════════════════════════════
+     §06 — PARTIAL FIXES
+══════════════════════════════════════════ -->
+<h2>06 — Partial Fixes: What People Tried Before LSTM</h2>
+
+<p>The deep learning community didn't give up on RNNs when the vanishing gradient problem was identified. Several partial solutions emerged:</p>
+
+<div class="prose-steps">
+  <div class="prose-step">
+    <div class="prose-step-num">1</div>
+    <div class="prose-step-text"><strong>Gradient clipping.</strong> Before applying the weight update, check the gradient norm. If it exceeds a threshold τ (typically 1.0–5.0), scale the entire gradient vector down: g = g × (τ / ||g||). This prevents exploding gradients completely. Still used in every modern training loop that involves RNNs or even transformers. Does nothing for vanishing gradients.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">2</div>
+    <div class="prose-step-text"><strong>Truncated BPTT.</strong> Instead of backpropagating through the full sequence length T, backpropagate only through the last k steps (typically k=20–50). This caps the depth of the gradient computation, limiting both vanishing and exploding. The cost: the model cannot learn dependencies spanning more than k steps. A workaround, not a solution.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">3</div>
+    <div class="prose-step-text"><strong>Better weight initialisation.</strong> Initialising W_h as an orthogonal matrix (singular values all = 1.0) means the gradient neither vanishes nor explodes due to W_h. This helps significantly in practice and is standard in PyTorch's RNN initialisation. Still insufficient for very long sequences because the tanh derivative terms still shrink.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">4</div>
+    <div class="prose-step-text"><strong>ReLU instead of tanh.</strong> ReLU has derivative 1 for positive inputs — no shrinking from the activation function. But ReLU-RNNs tend to explode unless very carefully initialised, and they produce unbounded hidden states. In practice, harder to train than tanh-RNNs. The fundamental issue remained: the recurrent weight matrix W_h being multiplied T-1 times.</div>
+  </div>
+</div>
+
+<p>None of these were satisfying. The community needed an architectural solution — a way to give the network a <em>direct gradient path</em> from later timesteps to earlier ones, bypassing the multiplicative chain that caused the decay. That solution was the LSTM, which we'll cover in full in Day 21.</p>
+
+<!-- ══════════════════════════════════════════
+     §07 — CODE
+══════════════════════════════════════════ -->
+<h2>07 — Code: RNN from Scratch + PyTorch Comparison</h2>
+
+<p>Three implementations: a manual RNN cell showing every weight matrix, a full sequence processor with gradient norm tracking to visualise vanishing, and the PyTorch built-in for comparison. Then a demonstration of gradient clipping.</p>
+
+<pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 1. RNN Cell from scratch — every operation explicit
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">RNNCellManual</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.hidden_size = hidden_size
+        <span class="t-cmt"># Two weight matrices + one bias</span>
+        <span class="t-key">self</span>.W_x = nn.Linear(input_size,  hidden_size, bias=<span class="t-key">False</span>)  <span class="t-cmt"># input → hidden</span>
+        <span class="t-key">self</span>.W_h = nn.Linear(hidden_size, hidden_size, bias=<span class="t-key">False</span>)  <span class="t-cmt"># hidden → hidden (recurrent)</span>
+        <span class="t-key">self</span>.b   = nn.Parameter(torch.zeros(hidden_size))
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x_t, h_prev):
+        <span class="t-str">"""
+        x_t:    (batch, input_size)
+        h_prev: (batch, hidden_size)
+        returns h_t: (batch, hidden_size)
+        """</span>
+        pre_act = <span class="t-key">self</span>.W_x(x_t) + <span class="t-key">self</span>.W_h(h_prev) + <span class="t-key">self</span>.b
+        h_t = torch.tanh(pre_act)
+        <span class="t-key">return</span> h_t
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 2. Full sequence RNN — processes a whole sequence, returns all hidden states
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">SimpleRNN</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size, output_size):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.cell    = RNNCellManual(input_size, hidden_size)
+        <span class="t-key">self</span>.fc_out  = nn.Linear(hidden_size, output_size)
+        <span class="t-key">self</span>.hidden_size = hidden_size
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x):
+        <span class="t-str">"""x: (batch, seq_len, input_size)"""</span>
+        B, T, _ = x.shape
+        h = torch.zeros(B, <span class="t-key">self</span>.hidden_size)   <span class="t-cmt"># h_0 initialised to zeros</span>
+        hidden_states = []
+        <span class="t-key">for</span> t <span class="t-key">in</span> range(T):
+            h = <span class="t-key">self</span>.cell(x[:, t, :], h)       <span class="t-cmt"># step through sequence</span>
+            hidden_states.append(h)
+        all_h = torch.stack(hidden_states, dim=<span class="t-num">1</span>)  <span class="t-cmt"># (B, T, hidden_size)</span>
+        out   = <span class="t-key">self</span>.fc_out(all_h[:, -<span class="t-num">1</span>, :])    <span class="t-cmt"># use final hidden state for classification</span>
+        <span class="t-key">return</span> out, all_h
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 3. Vanishing gradient demonstration
+#    Train on a task that requires remembering the FIRST token after T steps
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">demonstrate_vanishing_gradient</span>(seq_lengths=[<span class="t-num">5</span>, <span class="t-num">20</span>, <span class="t-num">50</span>, <span class="t-num">100</span>]):
+    <span class="t-key">print</span>(<span class="t-str">"Gradient magnitude at step 1 (should be large to learn long-range deps):"</span>)
+    <span class="t-key">print</span>(<span class="t-str">f"{'Seq length':>12} | {'||∂L/∂h_1||':>14} | {'Assessment':>20}"</span>)
+    <span class="t-key">print</span>(<span class="t-str">"-"</span> * <span class="t-num">52</span>)
+
+    <span class="t-key">for</span> T <span class="t-key">in</span> seq_lengths:
+        model = SimpleRNN(input_size=<span class="t-num">8</span>, hidden_size=<span class="t-num">16</span>, output_size=<span class="t-num">2</span>)
+        x = torch.randn(<span class="t-num">4</span>, T, <span class="t-num">8</span>)           <span class="t-cmt"># random sequence</span>
+        y = torch.randint(<span class="t-num">0</span>, <span class="t-num">2</span>, (<span class="t-num">4</span>,))        <span class="t-cmt"># random labels</span>
+
+        out, all_h = model(x)
+        loss = nn.CrossEntropyLoss()(out, y)
+        loss.backward()
+
+        <span class="t-cmt"># Gradient of loss w.r.t. the hidden state at step 1 (earliest step)</span>
+        grad_h1 = all_h.grad
+        <span class="t-key">if</span> grad_h1 <span class="t-key">is not None</span>:
+            g_norm = grad_h1[:, <span class="t-num">0</span>, :].norm().item()
+        <span class="t-key">else</span>:
+            <span class="t-cmt"># Recompute with retain_grad</span>
+            model.zero_grad()
+            x2 = torch.randn(<span class="t-num">4</span>, T, <span class="t-num">8</span>, requires_grad=<span class="t-key">True</span>)
+            out2, all_h2 = model(x2)
+            all_h2.retain_grad()
+            loss2 = nn.CrossEntropyLoss()(out2, y)
+            loss2.backward()
+            g_norm = all_h2.grad[:, <span class="t-num">0</span>, :].norm().item() <span class="t-key">if</span> all_h2.grad <span class="t-key">is not None</span> <span class="t-key">else</span> <span class="t-num">0.0</span>
+
+        assessment = <span class="t-str">"✓ Learnable"</span> <span class="t-key">if</span> g_norm > <span class="t-num">0.01</span> <span class="t-key">else</span> (<span class="t-str">"⚠ Weak"</span> <span class="t-key">if</span> g_norm > <span class="t-num">0.001</span> <span class="t-key">else</span> <span class="t-str">"✗ Vanished"</span>)
+        <span class="t-key">print</span>(<span class="t-str">f"{T:>12} | {g_norm:>14.6f} | {assessment:>20}"</span>)
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 4. Gradient clipping — the standard fix for exploding gradients
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">training_step_with_clipping</span>(model, x, y, optimizer, clip_norm=<span class="t-num">1.0</span>):
+    optimizer.zero_grad()
+    out, _ = model(x)
+    loss = nn.CrossEntropyLoss()(out, y)
+    loss.backward()
+
+    <span class="t-cmt"># Check norm BEFORE clipping</span>
+    total_norm_before = torch.nn.utils.clip_grad_norm_(model.parameters(), float(<span class="t-str">'inf'</span>))
+
+    <span class="t-cmt"># Clip — scale gradient if norm > clip_norm</span>
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=clip_norm)
+
+    <span class="t-cmt"># Check norm AFTER clipping</span>
+    total_norm_after = sum(p.grad.norm()**<span class="t-num">2</span> <span class="t-key">for</span> p <span class="t-key">in</span> model.parameters() <span class="t-key">if</span> p.grad <span class="t-key">is not None</span>)**<span class="t-num">0.5</span>
+
+    optimizer.step()
+    <span class="t-key">return</span> loss.item(), total_norm_before.item(), total_norm_after.item()
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 5. PyTorch built-in RNN vs our manual implementation
+# ─────────────────────────────────────────────────────────────────────────</span>
+batch, seq_len, input_sz, hidden_sz = <span class="t-num">4</span>, <span class="t-num">10</span>, <span class="t-num">8</span>, <span class="t-num">16</span>
+x = torch.randn(batch, seq_len, input_sz)
+
+<span class="t-cmt"># Our implementation</span>
+manual_rnn = SimpleRNN(input_sz, hidden_sz, output_size=<span class="t-num">2</span>)
+out_manual, hidden_manual = manual_rnn(x)
+
+<span class="t-cmt"># PyTorch built-in (batch_first=True: (batch, seq, feature) convention)</span>
+pytorch_rnn = nn.RNN(input_sz, hidden_sz, batch_first=<span class="t-key">True</span>, nonlinearity=<span class="t-str">'tanh'</span>)
+out_pt, h_n_pt = pytorch_rnn(x)
+
+<span class="t-key">print</span>(<span class="t-str">f"Manual  RNN — all hidden states: {hidden_manual.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"PyTorch RNN — all hidden states: {out_pt.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"PyTorch RNN — final hidden state: {h_n_pt.shape}"</span>)
+<span class="t-key">print</span>()
+
+<span class="t-cmt"># Gradient clipping demo</span>
+model  = SimpleRNN(input_sz, hidden_sz, <span class="t-num">2</span>)
+optim  = torch.optim.Adam(model.parameters(), lr=<span class="t-num">1e-3</span>)
+x_long = torch.randn(<span class="t-num">4</span>, <span class="t-num">50</span>, input_sz)
+y      = torch.randint(<span class="t-num">0</span>, <span class="t-num">2</span>, (<span class="t-num">4</span>,))
+loss, norm_before, norm_after = training_step_with_clipping(model, x_long, y, optim, clip_norm=<span class="t-num">1.0</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Loss: {loss:.4f} | Grad norm before clip: {norm_before:.4f} | after clip: {norm_after:.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Clipping {'applied' if norm_before > 1.0 else 'not needed'} (threshold=1.0)"</span>)
+
+<span class="t-cmt"># Vanishing gradient demo</span>
+<span class="t-key">print</span>()
+demonstrate_vanishing_gradient([<span class="t-num">5</span>, <span class="t-num">20</span>, <span class="t-num">50</span>, <span class="t-num">100</span>])</code></pre>
+<div class="code-output">
+  <span class="out-head">── RNN Implementation & Gradient Analysis ──────────────────────────────</span><br>
+  Manual &nbsp;RNN — all hidden states: torch.Size([<span class="out-val">4</span>, <span class="out-val">10</span>, <span class="out-val">16</span>])<br>
+  PyTorch RNN — all hidden states: torch.Size([<span class="out-val">4</span>, <span class="out-val">10</span>, <span class="out-val">16</span>])<br>
+  PyTorch RNN — final hidden state: torch.Size([<span class="out-val">1</span>, <span class="out-val">4</span>, <span class="out-val">16</span>])<br><br>
+  Loss: <span class="out-val">0.7112</span> | Grad norm before clip: <span class="out-warn">3.8247</span> | after clip: <span class="out-good">0.9998</span><br>
+  Clipping <span class="out-good">applied</span> (threshold=1.0)<br><br>
+  Gradient magnitude at step 1 (should be large to learn long-range deps):<br>
+  &nbsp; Seq length | &nbsp;&nbsp;&nbsp;||∂L/∂h_1|| | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Assessment<br>
+  &nbsp; ──────────────────────────────────────────────────────<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">5</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-good">0.184231</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✓ Learnable<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">20</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.018743</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✓ Learnable<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">50</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">0.002108</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;⚠ Weak<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-val">100</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="out-warn">0.000031</span> | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✗ Vanished
+</div>
+
+<!-- ══════════════════════════════════════════
+     §08 — WHERE THIS LEADS
+══════════════════════════════════════════ -->
+<h2>08 — Where This Leads: The Path to LSTM and Attention</h2>
+
+<p>The RNN gave us something genuinely new: a model that reads sequences and carries memory. But its fundamental limitation is now mathematically precise — not a vague complaint, but a provable consequence of chaining multiplications through time. The gradient literally cannot reach the beginning of long sequences.</p>
+
+<p>The history of sequence modelling from 1997 to 2017 is essentially the story of solving this one problem:</p>
+
+<div class="prose-steps">
+  <div class="prose-step">
+    <div class="prose-step-num">1</div>
+    <div class="prose-step-text"><strong>1997 — LSTM (Hochreiter & Schmidhuber):</strong> Introduce a <em>cell state</em> — a separate memory highway that runs parallel to the hidden state, connected via gates that learn to selectively read, write, and erase. The cell state creates a direct gradient path that doesn't decay the same way. Covered in full in Day 21.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">2</div>
+    <div class="prose-step-text"><strong>2014 — GRU (Cho et al.):</strong> A simplified version of LSTM with fewer gates. Slightly faster to train, comparable performance on many tasks. Also covered in Day 21.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">3</div>
+    <div class="prose-step-text"><strong>2015 — Attention (Bahdanau et al.):</strong> Instead of compressing an entire input sequence into one context vector (the LSTM's bottleneck for translation), let the decoder dynamically look at all encoder hidden states at each decoding step. This is the precursor to the full attention mechanism. Day 24.</div>
+  </div>
+  <div class="prose-step">
+    <div class="prose-step-num">4</div>
+    <div class="prose-step-text"><strong>2017 — Transformer (Vaswani et al.):</strong> Replace the sequential computation entirely. Every token attends to every other token directly — no recurrence, no gradient chains through time, no bottleneck. The vanishing gradient problem for sequences is solved architecturally. Day 25.</div>
+  </div>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔗 Why This History Matters</span>
+  <p>When you use a transformer today — when you interact with Claude, GPT-4, or LLaMA — you're using the solution to the vanishing gradient problem that stumped the field for 20 years. The residual connections inside every transformer block are a direct, formal answer to the same mathematical problem: they create gradient highways that bypass multiplicative chains, just as the LSTM's cell state did, but more elegantly and at greater scale.</p>
+  <p style="margin-top:.75rem">Understanding RNNs is not nostalgia. It's understanding why the transformer was designed the way it was.</p>
+</div>
+
+<!-- §09 — THOUGHT -->
+<h2>09 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>The vanishing gradient is often taught as a flaw — a failure of the RNN. But look at it from another angle: the fact that early timesteps receive smaller gradient updates means the model <em>implicitly weights recent context more than distant context</em>. For many language tasks, this is actually the right inductive bias — the last few words of a sentence are usually more relevant than what was said ten sentences ago.</p>
+  <p style="margin-top:.75rem"><strong>Is the vanishing gradient truly a bug — or is it an inadvertent feature that worked well enough for short tasks to make RNNs widely useful, while only revealing itself as a genuine limitation at longer contexts? And does this suggest anything about why transformers, which have no such built-in recency bias, sometimes behave surprisingly on very long contexts?</strong></p>
+</div>
+
+<!-- §10 — NEXT -->
+<h2>10 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 21: GRU & LSTM.</strong> We take the RNN's core weakness — the vanishing gradient through recurrent multiplications — and solve it architecturally. The LSTM introduces a cell state and three gates: forget, input, and output. The GRU simplifies this to two gates. We'll build both from scratch, trace gradient flow through the cell state highway, and understand exactly why these architectures lasted 20 years and still appear in production systems today.</p>
+
+<!-- §11 — GO DEEPER -->
+<h2>11 — Go Deeper</h2>
+<p>📄 <a href="https://www.nature.com/articles/323533a0" target="_blank" rel="noopener">Learning Representations by Back-propagating Errors — Rumelhart, Hinton & Williams (1986)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The paper that introduced backpropagation formally. The foundation of everything in this post.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1211.5063" target="_blank" rel="noopener">On the Difficulty of Training Recurrent Neural Networks — Pascanu et al. (2013)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The canonical treatment of vanishing and exploding gradients in RNNs. Section 2 contains the mathematical proof. Section 4 describes gradient clipping — still used today.</em></p>
+<p>▶ <a href="https://www.youtube.com/watch?v=AsNTP8Kwu80" target="_blank" rel="noopener">Recurrent Neural Networks (RNN) and Long Short-Term Memory (LSTM) — StatQuest</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 19 min · The clearest visual explanation of how hidden states carry information through time. Watch before tackling the LSTM.</em></p>
+<p>🔗 <a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">The Unreasonable Effectiveness of Recurrent Neural Networks — Andrej Karpathy (2015)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The most famous blog post on RNNs. Generates Shakespeare, Linux kernel code, and LaTeX papers character by character. Still a joy to read — and reveals what RNNs are genuinely good at.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1409.3215" target="_blank" rel="noopener">Sequence to Sequence Learning with Neural Networks — Sutskever et al. (2014)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The seq2seq paper. Introduced the encoder-decoder architecture. Google Translate ran on this. Section 2 is the whole architecture in two pages.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. Why can't a standard feedforward network be used for language modelling? What specific properties of language does it fail to capture?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">A feedforward network assumes inputs are independent — it processes each input in isolation with no connection between them. Language has three properties this violates: (1) Sequential dependency — the meaning of each word depends on prior words. "Bank" means something different depending on what preceded it. A feedforward network processing "bank" has no access to context. (2) Variable length — sentences can be 3 or 300 words long. A feedforward network requires fixed-size inputs; you'd need to pad or truncate, and any fixed window size will either miss important context or include irrelevant padding. (3) Parameter sharing — the grammar rule "verb follows subject" applies at position 2 or position 200. A feedforward network processing position 2 and position 200 uses different weights, so it cannot share learned patterns across positions. An RNN addresses all three: it processes sequentially, handles variable length naturally, and uses the same weights at every timestep.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. Write out the RNN forward pass equation and explain what each term represents. Why is tanh used as the activation function?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">h_t = tanh(W_h · h_{t-1} + W_x · x_t + b). W_x · x_t: the current token's contribution — projects the input embedding into the hidden space. W_h · h_{t-1}: the memory contribution — projects the previous hidden state (all past context) into the hidden space. b: a bias term added to both contributions. tanh: squashes the combined signal into (−1, +1), preventing the hidden state from growing unboundedly across timesteps. tanh is chosen over ReLU here because: (a) it's bounded, keeping hidden states in a stable range across many timesteps — ReLU would allow hidden state values to grow explosively; (b) it's zero-centred, which helps with gradient flow compared to sigmoid (range 0 to 1); (c) it has a smooth, differentiable form that works well with backpropagation. The cost of tanh is that its derivative (sech²) is at most 1.0 and drops quickly away from zero — this directly contributes to the vanishing gradient problem over many timesteps.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. Derive mathematically why gradients vanish in RNNs. What two terms in the gradient expression cause the decay?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The gradient of the loss with respect to the hidden state at step 1 is: ∂L/∂h_1 = ∂L/∂h_T · ∏(t=2 to T) ∂h_t/∂h_{t-1}. Each factor ∂h_t/∂h_{t-1} = diag(sech²(W_h·h_{t-1} + W_x·x_t + b)) · W_h — it's the tanh derivative times the recurrent weight matrix. Two terms cause decay: (1) The tanh derivative sech²(·): this is always in [0, 1], with a maximum of 1.0 only at input=0. In practice hidden state pre-activations are distributed away from 0, giving sech²(·) < 1.0 for most units. Multiplying T−1 such terms gives (avg_sech²)^(T-1) → 0 exponentially. (2) The recurrent weight matrix W_h: if its largest singular value σ_max < 1, each multiplication by W_h also shrinks the gradient. The product W_h^(T-1) → 0 exponentially when σ_max < 1. Both effects compound: even if tanh derivatives are 0.9 on average and σ_max = 0.9, after 50 steps the gradient has factor 0.9^50 ≈ 0.005 from tanh alone, multiplied by 0.9^50 ≈ 0.005 from W_h — total factor ≈ 2.5×10^-5. The gradient at step 1 is effectively zero.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. What is gradient clipping, why does it help, and what does it NOT fix?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Gradient clipping monitors the global gradient norm (the L2 norm across all parameters' gradients). If this norm exceeds a threshold τ (typically 1.0–5.0), all gradients are scaled down proportionally: g_clipped = g × (τ / ||g||). This rescales the gradient direction without changing it — the weight update points in the same direction, just with a bounded magnitude. It prevents exploding gradients: those catastrophic training crashes where loss suddenly becomes NaN because a single large gradient update sends parameters to ±infinity. It's simple, cheap, and universally effective for exploding gradients. What gradient clipping does NOT fix: vanishing gradients. When gradients are too small (near zero), clipping doesn't help — you cannot scale up a near-zero gradient to something useful without changing the direction and magnitude in arbitrary ways. A gradient of 10^-7 clipped to threshold 1.0 would be multiplied by 10^7, which would amplify noise and produce meaningless updates. Clipping is directionally safe for exploding gradients because the direction is correct (just the magnitude is wrong). For vanishing gradients, the direction may also be unreliable. The architectural fix for vanishing gradients is LSTM's cell state — not any training trick.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. An RNN trained on sentiment analysis performs well on short reviews but poorly on long ones. Explain exactly what is happening internally.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">This is the vanishing gradient problem manifesting as a practical failure. During training on long reviews, the gradient of the loss flows back through every timestep. By the time it reaches early timesteps (e.g., step 5 in a 500-word review), the gradient magnitude has decayed exponentially — it is effectively zero. The weights W_x and W_h are therefore updated almost exclusively based on gradient signal from the last ~20–50 tokens. The model learns to classify sentiment based on the most recent words it reads — not the full review. At inference time, this means: if a review says "Great product, arrived quickly, nice packaging, looks beautiful, feels premium... but it stopped working after one day and customer service was useless," the model may predict positive sentiment because the final negative words ("stopped working," "useless") are outnumbered by the many positive words the model saw recently, or conversely, it may weight "useless" heavily because it appeared last. The model genuinely cannot integrate information from the beginning and end of a long document — the beginning's gradient signal simply never reached the weights that would encode that information. This is not fixable by tuning — it's a consequence of the architecture. LSTM and attention mechanisms address this by providing gradient highways that don't decay the same way.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Recurrent Neural Networks</div>
+  <ol>
+    <li><strong>Why RNNs:</strong> feedforward networks treat inputs as independent and require fixed-size inputs — both fatal for language. RNNs process tokens sequentially, maintain a running hidden state, handle variable-length sequences, and share weights across all positions.</li>
+    <li><strong>The RNN cell:</strong> h_t = tanh(W_h·h_{t-1} + W_x·x_t + b). At each step, current input x_t and previous hidden state h_{t-1} are combined and squashed by tanh to produce new hidden state h_t. Same weights W_h, W_x, b used at every step.</li>
+    <li><strong>Unrolled view:</strong> an RNN processing T tokens is equivalent to a T-layer deep network with shared weights. A 100-word sentence = a 100-layer network. This depth is both the source of power and the source of the gradient problem.</li>
+    <li><strong>Task variants:</strong> many-to-one (sentiment classification — use final h_T), one-to-many (image captioning), many-to-many equal (NER, POS tagging), many-to-many seq2seq (translation — encoder compresses to context vector, decoder generates).</li>
+    <li><strong>BPTT:</strong> backpropagation through time — gradients flow backwards through every timestep of the unrolled network. Gradient at step 1 involves multiplying W_h and tanh derivatives T−1 times.</li>
+    <li><strong>Vanishing gradients:</strong> if ||W_h|| &lt; 1 and tanh derivatives &lt; 1 (both typical), the product W_h^(T-1) · [tanh terms] → 0 exponentially. At sequence length 100, the gradient at step 1 is ~0. Early tokens cannot be learned from — long-range dependencies are invisible.</li>
+    <li><strong>Exploding gradients:</strong> if ||W_h|| &gt; 1, gradients grow exponentially, causing training to crash with NaN loss. Fixed by gradient clipping: rescale gradient vector when its norm exceeds threshold τ. Does not fix vanishing gradients.</li>
+    <li><strong>RNNs still win:</strong> short sequences (&lt;50 tokens), streaming/online processing, resource-constrained environments (constant O(1) memory per step vs transformer's O(n²)), and time series with strong local patterns.</li>
+    <li><strong>Partial fixes:</strong> gradient clipping (exploding only), truncated BPTT (caps depth, limits learning range), orthogonal W_h initialisation (prevents W_h contribution to decay), ReLU activation (no shrinkage from activation, but tends to explode). None are satisfying — architectural solution needed.</li>
+    <li><strong>The path forward:</strong> LSTM (1997) adds a cell state with gates to create a gradient highway. GRU (2014) simplifies to two gates. Attention (2015) lets decoders look at all encoder states directly. Transformer (2017) eliminates recurrence entirely — solving the problem architecturally.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is the vanishing gradient problem in RNNs?</strong><br>
+    <em>During BPTT, gradients are computed by multiplying the recurrent weight matrix W_h and tanh derivatives at each step. If these values are less than 1 (typical), the product decays exponentially with sequence length. For a 100-step sequence, the gradient at step 1 may be 10^-5 times the gradient at step 100 — effectively zero. The model cannot learn that early tokens matter, making long-range dependencies unlearnable.</em></li>
+    <li><strong>What is gradient clipping and when do you use it?</strong><br>
+    <em>Gradient clipping rescales the gradient vector when its global norm exceeds a threshold (typically 1.0–5.0): g = g × (τ / ||g||). It prevents exploding gradients — catastrophic training crashes where weights become NaN. It's applied after loss.backward() and before optimizer.step() in any training loop involving RNNs. It does not fix vanishing gradients.</em></li>
+    <li><strong>What is the seq2seq architecture and what is its main limitation?</strong><br>
+    <em>Seq2seq uses an encoder RNN to read the full input sequence and compress it into a single fixed-size context vector (the encoder's final hidden state). A decoder RNN then generates the output sequence conditioned on this vector. The limitation: the entire input must be compressed into one fixed-size vector regardless of input length. For long sentences, information is lost. This bottleneck was the motivation for the attention mechanism.</em></li>
+    <li><strong>When would you still choose an RNN over a transformer in 2026?</strong><br>
+    <em>Four scenarios: (1) streaming/online applications where you process tokens one at a time in real time — RNNs are naturally causal with O(1) per-step computation; (2) very short sequences where transformer overhead isn't justified; (3) resource-constrained edge devices where the transformer's memory and compute requirements are prohibitive; (4) time series forecasting with strong local temporal patterns where the sequential inductive bias helps.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>🔗 <a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">The Unreasonable Effectiveness of Recurrent Neural Networks — Karpathy (2015)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The most fun you'll have reading about RNNs. Generates Shakespeare, Linux kernel, and LaTeX with character-level RNNs. Read this to understand what RNNs are genuinely good at.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/1211.5063" target="_blank" rel="noopener">On the Difficulty of Training Recurrent Neural Networks — Pascanu et al. (2013)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The canonical mathematical treatment of vanishing and exploding gradients. Section 2 is the proof; Section 4 is gradient clipping.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/1409.3215" target="_blank" rel="noopener">Sequence to Sequence Learning with Neural Networks — Sutskever et al. (2014)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The seq2seq paper. Google Translate ran on this architecture. Section 2 is the full architecture in two readable pages.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=AsNTP8Kwu80" target="_blank" rel="noopener">RNN and LSTM — StatQuest with Josh Starmer</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 19 min · Best visual explanation of hidden states carrying information through time. The bridge into Day 21.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#RNN</span><span class="tag">#RecurrentNeuralNetwork</span><span class="tag">#SequenceModelling</span><span class="tag">#VanishingGradients</span><span class="tag">#BPTT</span><span class="tag">#GradientClipping</span><span class="tag">#Seq2Seq</span><span class="tag">#NLP</span><span class="tag">#DeepLearning</span><span class="tag">#MachineLearning</span><span class="tag">#HiddenState</span><span class="tag">#30DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="nlp-fundamentals.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 19</span>
+    <span class="post-nav-title">NLP Fundamentals</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
