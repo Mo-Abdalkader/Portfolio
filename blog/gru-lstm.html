@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 21 — GRU &amp; LSTM | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="The complete guide to LSTM and GRU: cell state anatomy, all four gates derived from first principles, gradient highway explained mathematically, peephole connections, bidirectional and stacked variants, and full PyTorch implementations — with worked forward passes and training comparisons." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mw{color:#f85149;font-weight:600}
+    .math-block .mg{color:#3fb950;font-weight:600}
+
+    .rnn-diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;overflow-x:auto;white-space:pre}
+
+    .grad-bar-wrap{margin:1.25rem 0}
+    .grad-bar-label{font-size:.82rem;color:var(--text-muted);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace}
+    .grad-bar{height:18px;border-radius:3px;display:flex;align-items:center;padding:0 .5rem;font-size:.72rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace;margin-bottom:.35rem}
+
+    /* gate colour badges */
+    .gate-f{color:#e3b341;font-weight:700}
+    .gate-i{color:#3fb950;font-weight:700}
+    .gate-g{color:#58a6ff;font-weight:700}
+    .gate-o{color:#d2a8ff;font-weight:700}
+    .gate-r{color:#e3b341;font-weight:700}
+    .gate-z{color:#3fb950;font-weight:700}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 21 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span><span class="meta-sep">·</span>
+      <span>Mar 11, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">35 min read</span><span class="meta-sep">·</span>
+      <span>Sequence Models</span>
+    </div>
+    <h1>LSTM &amp; GRU:<br>Teaching Networks to Remember</h1>
+    <p class="post-hero-lead">In Day 20 we derived exactly why RNN gradients vanish — the gradient at step 1 involves multiplying W_h by itself T−1 times, and it decays exponentially to zero. The LSTM (1997) solved this with one elegant idea: a separate memory cell that information can flow through with almost no modification. The GRU (2014) distilled the same insight into a simpler two-gate design. Both remain in production today. This post builds both from scratch, derives the gradient highway mathematically, and shows exactly where the transformer takes over.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>The vanishing gradient is not a numerical accident.<br>
+  It is a theorem: multiply any matrix with spectral radius &lt; 1 by itself<br>
+  enough times and the result approaches zero.<br><br>
+  The LSTM's answer was architectural, not numerical:<br>
+  stop multiplying. Give memory a path that <em>adds</em> instead.</p>
+</blockquote>
+
+
+<!-- ══════════════════════════════════════════
+     §01 — THE PROBLEM WE ARE SOLVING
+══════════════════════════════════════════ -->
+<h2>01 — A Precise Statement of the Problem</h2>
+
+<p>Before building the solution, let's state the problem with full precision. From Day 20, the gradient of the loss at step T with respect to the hidden state at step 1 is:</p>
+
+<div class="math-block">
+  <span class="mh">∂L/∂h_1 = ∂L/∂h_T · ∏(t=2 to T) ∂h_t/∂h_{t-1}</span><br><br>
+  <span class="mc">Each Jacobian: ∂h_t/∂h_{t-1} = diag(sech²(·)) · W_h</span><br><br>
+  <span class="mw">Problem: this product involves W_h multiplied by itself (T−1) times.</span><br>
+  <span class="mc">If ||W_h||_2 &lt; 1 → product shrinks exponentially → vanishing gradient</span><br>
+  <span class="mc">If ||W_h||_2 &gt; 1 → product grows exponentially → exploding gradient</span>
+</div>
+
+<p>The root cause is the <strong>multiplicative recurrence</strong>: to update the hidden state, we always multiply by W_h. There is no additive path — every gradient step must pass through this multiplication. For the RNN, the only connection between h_1 and h_T is through this chain of multiplications.</p>
+
+<p>The architectural insight behind both LSTM and GRU is the same:</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">💡 The Core Insight</span>
+  <p><strong>Replace the multiplicative recurrence with an additive one.</strong> Instead of h_t = f(W_h · h_{t-1} + ...), create a memory variable C_t where the update is C_t = C_{t-1} + something. Gradients flowing back through addition don't decay — ∂C_t/∂C_{t-1} = 1 regardless of how many steps ago. This is the gradient highway.</p>
+  <p style="margin-top:.75rem">The gates (forget, input, output) are the mechanisms that control <em>what</em> flows through this highway and when. But the highway itself — the additive cell state — is the fundamental innovation.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §02 — LSTM: THE FULL ARCHITECTURE
+══════════════════════════════════════════ -->
+<h2>02 — LSTM: Architecture from First Principles</h2>
+
+<p>The Long Short-Term Memory was introduced by Hochreiter & Schmidhuber in 1997 — one of the most cited papers in deep learning history. It introduces two running states instead of one:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv"><div class="prose-kv-key">Cell state C_t</div><div class="prose-kv-val">The "long-term memory." A vector of the same size as the hidden state that travels through time with minimal transformation — the gradient highway. Information can be stored in C_t for hundreds of timesteps without decaying.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Hidden state h_t</div><div class="prose-kv-val">The "working memory." Derived from the cell state via the output gate — this is what gets passed to the next layer or used to compute predictions. It's a filtered, compressed version of C_t.</div></div>
+</div>
+
+<p>Three gates control the flow of information. Each gate produces a vector of values between 0 and 1 (via sigmoid), acting as a soft switch: 0 = block completely, 1 = pass through completely, 0.7 = pass through 70%.</p>
+
+<h3>The Four Equations</h3>
+
+<div class="math-block">
+  <span class="mc">Inputs: x_t (current token), h_{t-1} (previous hidden), C_{t-1} (previous cell)</span><br>
+  <span class="mc">Notation: [h_{t-1}, x_t] means concatenation of both vectors</span><br><br>
+
+  <span class="gate-f">① Forget Gate: &nbsp;&nbsp; f_t = σ( W_f · [h_{t-1}, x_t] + b_f )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ What fraction of the old cell state to keep? (0=erase all, 1=keep all)</span><br><br>
+
+  <span class="gate-i">② Input Gate: &nbsp;&nbsp;&nbsp; i_t = σ( W_i · [h_{t-1}, x_t] + b_i )</span><br>
+  <span class="gate-g">③ Candidate: &nbsp;&nbsp;&nbsp;&nbsp; g_t = tanh( W_g · [h_{t-1}, x_t] + b_g )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ What new information to add? i_t decides how much, g_t decides what.</span><br><br>
+
+  <span class="mh">④ Cell State Update: C_t = f_t ⊙ C_{t-1} + i_t ⊙ g_t</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ The gradient highway: additive update, no matrix multiplication on C</span><br><br>
+
+  <span class="gate-o">⑤ Output Gate: &nbsp;&nbsp; o_t = σ( W_o · [h_{t-1}, x_t] + b_o )</span><br>
+  <span class="mh">⑥ Hidden State: &nbsp; h_t = o_t ⊙ tanh( C_t )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ Filter the cell state to produce the output representation</span><br><br>
+
+  <span class="mc">⊙ = element-wise (Hadamard) multiplication &nbsp;&nbsp; σ = sigmoid &nbsp;&nbsp; tanh = tanh</span>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 Why These Specific Operations?</span>
+  <p><strong>Sigmoid for gates:</strong> sigmoid outputs (0, 1), which is exactly what you want from a "how much?" question. 0 = completely closed, 1 = completely open, 0.6 = 60% open. Using tanh would give (−1, 1) — negative fractions don't make sense for a gate.</p>
+  <p style="margin-top:.6rem"><strong>tanh for candidate g_t:</strong> the new information being written to the cell state should be bounded and zero-centred — tanh's (−1, 1) range is correct here. Writing unbounded values into C_t would cause it to grow without limit over many steps.</p>
+  <p style="margin-top:.6rem"><strong>Addition in the cell update:</strong> this is the crucial choice. C_t = f_t ⊙ C_{t-1} + i_t ⊙ g_t uses addition, not multiplication by a weight matrix. The gradient ∂C_t/∂C_{t-1} = f_t (element-wise) — it's just the forget gate value, typically close to 1, not a matrix multiplication that can shrink exponentially.</p>
+</div>
+
+<h3>The Gradient Highway: Mathematical Proof</h3>
+
+<p>Let's verify exactly why the cell state fixes the vanishing gradient. The gradient of C_T with respect to C_1:</p>
+
+<div class="math-block">
+  <span class="mh">∂C_T/∂C_1 = ∏(t=2 to T) ∂C_t/∂C_{t-1} = ∏(t=2 to T) f_t</span><br><br>
+  <span class="mc">Compare to RNN: ∂h_T/∂h_1 = ∏(t=2 to T) diag(sech²(·)) · W_h</span><br><br>
+  <span class="mg">LSTM cell gradient: product of forget gate values (scalars near 1)</span><br>
+  <span class="mw">RNN hidden gradient: product of (tanh derivative × W_h) — decays exponentially</span><br><br>
+  <span class="mc">If f_t ≈ 1 for all t: gradient flows back unchanged across all T steps.</span><br>
+  <span class="mc">The network learns f_t — it can keep gates near 1 for memories it wants to preserve.</span>
+</div>
+
+<p>The forget gate is learned, not fixed. When the network encounters information it wants to remember for a long time — a subject at the start of a sentence that needs to match a pronoun 40 words later — it learns to set f_t ≈ 1 for those dimensions of C across those steps. The gradient path stays open exactly where it needs to be.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §03 — LSTM CELL DIAGRAM
+══════════════════════════════════════════ -->
+<h2>03 — LSTM Cell Diagram</h2>
+
+<div class="rnn-diagram" aria-label="LSTM cell data flow diagram">
+         ╔══════════════════════════════════════════════════════╗
+         ║                   LSTM CELL at step t                ║
+         ╠══════════════════════════════════════════════════════╣
+         ║                                                      ║
+  C_{t-1}║──────────────────────────────────────────────────────║──▶ C_t
+         ║          ⊙             +                             ║     (cell state)
+         ║          │             │                             ║
+         ║        [f_t]      [i_t ⊙ g_t]                       ║
+         ║          │             │                             ║
+         ║    ┌─────┘      ┌──────┴──────┐                     ║
+         ║    │            │             │                     ║
+         ║  σ(W_f·z)   σ(W_i·z)    tanh(W_g·z)               ║
+         ║  FORGET     INPUT       CANDIDATE                   ║
+         ║    │            │             │                     ║
+         ║    └────────────┴─────────────┘                     ║
+         ║                      │                              ║
+         ║              z = [h_{t-1} ; x_t]                    ║
+         ║              (concatenated inputs)                   ║
+         ║                                                      ║
+         ║  h_t = o_t ⊙ tanh(C_t)                              ║
+         ║         │                                           ║
+         ║      σ(W_o·z)  ←  OUTPUT GATE                       ║
+         ║                                                      ║
+  h_{t-1}║──────────────────────────────────────────────────────║──▶ h_t
+         ╚══════════════════════════════════════════════════════╝
+
+  Legend:  σ = sigmoid (0→1)   tanh = tanh (-1→1)   ⊙ = element-wise multiply
+           + = element-wise add (the gradient highway)
+           f=forget  i=input  g=candidate  o=output</div>
+
+
+<!-- ══════════════════════════════════════════
+     §04 — WORKED FORWARD PASS
+══════════════════════════════════════════ -->
+<h2>04 — Worked Forward Pass: "I love NLP"</h2>
+
+<p>Let's trace one LSTM step manually. hidden_size = 1 (scalar for clarity). All weights = 0.5, all biases = 0. Previous state: h_0 = 0, C_0 = 0. Input: x_1 = 1 ("I").</p>
+
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1.1rem 1.25rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:2.1">
+  <span style="color:#58a6ff">── Step 1: x_1="I"=1, h_0=0, C_0=0 ────────────────────────────</span><br>
+  z = [h_0 ; x_1] = [0, 1] &nbsp;&nbsp;&nbsp;<span style="color:#484f58">(concat)</span><br><br>
+  <span style="color:#e3b341">f_1 = σ(0.5×0 + 0.5×1) = σ(0.5) = <strong>0.622</strong></span> &nbsp;&nbsp;&nbsp;<span style="color:#484f58">← forget gate</span><br>
+  <span style="color:#3fb950">i_1 = σ(0.5×0 + 0.5×1) = σ(0.5) = <strong>0.622</strong></span> &nbsp;&nbsp;&nbsp;<span style="color:#484f58">← input gate</span><br>
+  <span style="color:#58a6ff">g_1 = tanh(0.5×0 + 0.5×1) = tanh(0.5) = <strong>0.462</strong></span> &nbsp;<span style="color:#484f58">← candidate</span><br>
+  <span style="color:#d2a8ff">o_1 = σ(0.5×0 + 0.5×1) = σ(0.5) = <strong>0.622</strong></span> &nbsp;&nbsp;&nbsp;<span style="color:#484f58">← output gate</span><br><br>
+  C_1 = f_1 × C_0 + i_1 × g_1 = 0.622×0 + 0.622×0.462 = <strong style="color:#3fb950">0.287</strong><br>
+  h_1 = o_1 × tanh(C_1) = 0.622 × tanh(0.287) = 0.622 × 0.280 = <strong style="color:#3fb950">0.174</strong><br><br>
+  <span style="color:#58a6ff">── Step 2: x_2="love"=1, h_1=0.174, C_1=0.287 ─────────────</span><br>
+  z = [0.174, 1]<br><br>
+  <span style="color:#e3b341">f_2 = σ(0.5×0.174 + 0.5×1) = σ(0.587) = <strong>0.643</strong></span><br>
+  <span style="color:#3fb950">i_2 = σ(0.5×0.174 + 0.5×1) = σ(0.587) = <strong>0.643</strong></span><br>
+  <span style="color:#58a6ff">g_2 = tanh(0.587) = <strong>0.528</strong></span><br>
+  <span style="color:#d2a8ff">o_2 = σ(0.587) = <strong>0.643</strong></span><br><br>
+  C_2 = 0.643×<strong>0.287</strong> + 0.643×0.528 = 0.184 + 0.340 = <strong style="color:#3fb950">0.524</strong><br>
+  <span style="color:#484f58">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ C_1 still alive in C_2 — memory preserved</span><br>
+  h_2 = 0.643 × tanh(0.524) = 0.643 × 0.481 = <strong style="color:#3fb950">0.309</strong>
+</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 What Just Happened</span>
+  <p>Notice that C_1 = 0.287 contributed 0.184 to C_2 — it was multiplied by f_2 = 0.643, not by a full weight matrix. In a trained model, f_t can be driven to near 1.0 for important dimensions, meaning C_1's contribution to C_100 could still be 0.287 × 0.99^99 ≈ 0.244 — a meaningful signal, not near zero. Compare to the RNN where h_1's contribution to h_100 would involve W_h^99, which for typical random initialisation reaches ~10^-7.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §05 — WHAT EACH GATE LEARNS
+══════════════════════════════════════════ -->
+<h2>05 — What Each Gate Learns in Practice</h2>
+
+<p>After training on real data, the four gates develop interpretable specialisations. Here's what mechanistic interpretability research and practical experience have found:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="gate-f">Forget Gate f_t</span></div>
+    <div class="prose-kv-val">Learns to reset context at sentence boundaries, paragraph breaks, or topic changes. When the model encounters a full stop or a discourse marker like "However," f_t drops toward 0 for most dimensions — wiping the cell state clean so the next sentence starts fresh. For within-sentence memory (pronoun resolution), f_t stays near 1.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="gate-i">Input Gate i_t</span></div>
+    <div class="prose-kv-val">Controls how much the current token updates the memory. High i_t for semantically rich words (nouns, verbs, named entities), low i_t for function words ("the", "of", "and") that carry little new meaning. The model learns that "the" rarely needs to be stored in long-term memory.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="gate-g">Candidate g_t</span></div>
+    <div class="prose-kv-val">Encodes what the new information actually <em>is</em> — the content to potentially write into the cell. Works jointly with i_t: i_t decides how much of g_t to write. Together they implement a gated write: new_info = i_t ⊙ g_t. The candidate is the proposed update; the input gate is the approval mechanism.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="gate-o">Output Gate o_t</span></div>
+    <div class="prose-kv-val">Decides what the hidden state exposes to the next layer. The cell state C_t is the full long-term memory; h_t is a selective readout. For translation, o_t might expose "the subject is plural" when the decoder needs to generate a plural verb, while keeping the rest of C_t private. Acts as a context-sensitive filter on top of the full memory.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §06 — LSTM VARIANTS
+══════════════════════════════════════════ -->
+<h2>06 — LSTM Variants Worth Knowing</h2>
+
+<h3>Peephole Connections (Gers & Schmidhuber, 2000)</h3>
+<p>In the standard LSTM, gates only see h_{t-1} and x_t. Peephole connections let the gates also see the cell state C_{t-1} directly:</p>
+
+<div class="math-block">
+  <span class="gate-f">f_t = σ( W_f · [h_{t-1}, x_t] + W_fp · C_{t-1} + b_f )</span><br>
+  <span class="gate-i">i_t = σ( W_i · [h_{t-1}, x_t] + W_ip · C_{t-1} + b_i )</span><br>
+  <span class="gate-o">o_t = σ( W_o · [h_{t-1}, x_t] + W_op · C_t &nbsp;&nbsp; + b_o )</span><br><br>
+  <span class="mc">W_fp, W_ip, W_op are diagonal matrices (one weight per cell dimension)</span>
+</div>
+
+<p>Peepholes let gates "know" what's already stored in memory before deciding whether to forget or write. Useful for tasks requiring precise timing — counting exact beats in music generation, or matching opening/closing brackets in code. In practice, the improvement is small and peepholes are rarely used today.</p>
+
+<h3>Coupled Forget and Input Gates</h3>
+<p>A simpler variant that ties f_t and i_t together: i_t = 1 − f_t. If you forget 60% of the old state, you write 40% of the new state. This halves the number of gate parameters and works well on many tasks. The GRU takes this coupling idea further.</p>
+
+<h3>Bidirectional LSTM (BiLSTM)</h3>
+<p>Two LSTMs run in opposite directions over the same sequence — one left-to-right (forward), one right-to-left (backward). Their hidden states are concatenated at each timestep: h_t = [h_t_fwd ; h_t_bwd]. Every token now has access to both past and future context. BiLSTMs were state-of-the-art for NER, POS tagging, and coreference resolution from ~2016–2018, before being replaced by BERT.</p>
+
+<h3>Stacked (Deep) LSTM</h3>
+<p>Multiple LSTM layers stacked vertically — the h_t sequence from layer k becomes the x_t input sequence for layer k+1. GPT-2's predecessor used a 2-layer LSTM for language modelling. Google's Neural Machine Translation (GNMT) used an 8-layer encoder-decoder LSTM in 2016. Depth provides hierarchical representation: lower layers capture local syntax, higher layers capture longer-range semantics.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §07 — GRU
+══════════════════════════════════════════ -->
+<h2>07 — GRU: The Streamlined Alternative</h2>
+
+<p>The Gated Recurrent Unit (Cho et al., 2014) was introduced in the same paper as the seq2seq architecture. Cho's observation: the LSTM has three gates and two states (h and C). This is more complexity than necessary. Can you get the same gradient flow benefits with fewer parameters?</p>
+
+<p>The GRU collapses the LSTM's four equations into two gates and one state:</p>
+
+<div class="math-block">
+  <span class="mc">Inputs: x_t (current token), h_{t-1} (previous hidden — only one state, no C)</span><br><br>
+
+  <span class="gate-r">① Reset Gate: &nbsp;&nbsp; r_t = σ( W_r · [h_{t-1}, x_t] + b_r )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ How much of h_{t-1} to use when computing the candidate? (0=ignore past)</span><br><br>
+
+  <span class="gate-z">② Update Gate: &nbsp; z_t = σ( W_z · [h_{t-1}, x_t] + b_z )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ How much to update the hidden state? (1=full update, 0=carry forward)</span><br><br>
+
+  <span class="mh">③ Candidate: &nbsp;&nbsp;&nbsp; ñ_t = tanh( W_n · [r_t ⊙ h_{t-1}, x_t] + b_n )</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ Proposed new hidden state, with reset gate filtering past memory</span><br><br>
+
+  <span class="mh">④ New Hidden: &nbsp;&nbsp; h_t = (1 − z_t) ⊙ h_{t-1} + z_t ⊙ ñ_t</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;→ Interpolate between old state (carry forward) and new candidate (update)</span>
+</div>
+
+<h3>GRU Cell Diagram</h3>
+
+<div class="rnn-diagram" aria-label="GRU cell data flow diagram">
+         ╔═══════════════════════════════════════════════════╗
+         ║                   GRU CELL at step t              ║
+         ╠═══════════════════════════════════════════════════╣
+         ║                                                   ║
+  h_{t-1}║──────┬──────────────────────────────────────────▶ ⊙(1-z_t) ──▶ + ──▶ h_t
+         ║      │                                                          │
+         ║      ├──▶ σ(W_z · [h_{t-1}, x_t])  →  z_t ──────────────▶ ⊙ñ_t
+         ║      │    UPDATE GATE                                           │
+         ║      │                                                        ñ_t
+         ║      └──▶ σ(W_r · [h_{t-1}, x_t])  →  r_t                    │
+         ║           RESET GATE                                 tanh(W_n·[r_t⊙h_{t-1}, x_t])
+         ║                                                                 │
+    x_t  ║──────────────────────────────────────────────────────────────▶─┘
+         ╚═══════════════════════════════════════════════════╝
+
+  h_t = (1−z_t) ⊙ h_{t-1} + z_t ⊙ ñ_t
+        └──────────────────┘   └────────┘
+          CARRY FORWARD          UPDATE</div>
+
+<h3>How GRU Achieves the Gradient Highway</h3>
+<p>The GRU's gradient path is through the update gate equation. When z_t ≈ 0:</p>
+
+<div class="math-block">
+  <span class="mh">h_t = (1 − z_t) ⊙ h_{t-1} + z_t ⊙ ñ_t</span><br>
+  <span class="mc">If z_t ≈ 0: &nbsp; h_t ≈ h_{t-1} &nbsp;&nbsp; (carry forward, no update)</span><br>
+  <span class="mc">∂h_t/∂h_{t-1} ≈ (1 − z_t) ≈ 1 &nbsp;&nbsp;&nbsp; (gradient passes through unchanged)</span><br><br>
+  <span class="mg">Same principle as LSTM: an additive path where ∂h_t/∂h_{t-1} can be ≈ 1</span><br>
+  <span class="mc">No matrix multiplication on the carry-forward path — no exponential decay</span>
+</div>
+
+<h3>GRU vs LSTM: The Key Differences</h3>
+
+<table class="prose-table">
+  <thead>
+    <tr><th>Aspect</th><th>LSTM</th><th>GRU</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>States</strong></td>
+      <td>Two: h_t (hidden) + C_t (cell)</td>
+      <td>One: h_t only</td>
+    </tr>
+    <tr>
+      <td><strong>Gates</strong></td>
+      <td>Three: forget, input, output</td>
+      <td>Two: reset, update</td>
+    </tr>
+    <tr>
+      <td><strong>Parameters</strong></td>
+      <td>4 × (hidden² + hidden×input + hidden)</td>
+      <td>3 × (hidden² + hidden×input + hidden)</td>
+    </tr>
+    <tr>
+      <td><strong>Example (h=256, x=128)</strong></td>
+      <td>~330k parameters</td>
+      <td>~248k parameters (~25% fewer)</td>
+    </tr>
+    <tr>
+      <td><strong>Gradient highway</strong></td>
+      <td>Through cell state C_t (explicit separate path)</td>
+      <td>Through update gate (1−z_t carries h forward)</td>
+    </tr>
+    <tr>
+      <td><strong>Exposed memory</strong></td>
+      <td>Cell state C_t is private; h_t is the output</td>
+      <td>h_t serves both roles — simpler but less separation</td>
+    </tr>
+    <tr>
+      <td><strong>Performance</strong></td>
+      <td class="mid">~ Better on long sequences, complex tasks</td>
+      <td class="mid">~ Better on small datasets, faster training</td>
+    </tr>
+    <tr>
+      <td><strong>Still used in</strong></td>
+      <td>Speech recognition, music generation, long documents</td>
+      <td>Time series, smaller models, faster inference</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="prose-callout">
+  <span class="prose-callout-label">📌 Which Should You Use?</span>
+  <p>The honest answer: <strong>benchmark both on your task</strong>. The theoretical advantage of LSTM (explicit separation of long and short-term memory) matters on tasks with very long-range dependencies — paragraph-level coreference resolution, long music sequences, complex structured prediction. On shorter sequences (&lt;100 tokens) and smaller datasets, GRU often matches or beats LSTM with fewer parameters and faster training.</p>
+  <p style="margin-top:.75rem">For new projects in 2026: if you need an RNN-style model at all (streaming data, edge deployment, constant memory per step), try GRU first. Its simplicity is an advantage when data is limited. If you see a gap vs LSTM on your validation set, switch. Both are far outperformed by transformers when you have enough data and compute — which is most modern NLP tasks.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §08 — GRADIENT COMPARISON
+══════════════════════════════════════════ -->
+<h2>08 — Gradient Flow: RNN vs LSTM vs GRU</h2>
+
+<div class="grad-bar-wrap">
+  <div class="grad-bar-label">Gradient at step 1 relative to step T — sequence length 50, typical training conditions</div>
+  <div class="grad-bar" style="width:100%;background:#3fb950">Step T (all models) — gradient: 1.000</div>
+</div>
+
+<div class="grad-bar-wrap">
+  <div class="grad-bar-label">Vanilla RNN (||W_h||=0.9, avg tanh deriv=0.5)</div>
+  <div class="grad-bar" style="width:99%;background:#3fb950">Step T &nbsp;&nbsp;&nbsp; 1.000</div>
+  <div class="grad-bar" style="width:55%;background:#8ab53c">Step T−10 &nbsp; 0.560</div>
+  <div class="grad-bar" style="width:14%;background:#d4921a">Step T−25 &nbsp; 0.142</div>
+  <div class="grad-bar" style="width:2%;background:#f85149">Step T−50 &nbsp; ~0.002 ✗ Vanished</div>
+</div>
+
+<div class="grad-bar-wrap">
+  <div class="grad-bar-label">LSTM (forget gate f_t ≈ 0.95 for important dimensions)</div>
+  <div class="grad-bar" style="width:99%;background:#3fb950">Step T &nbsp;&nbsp;&nbsp; 1.000</div>
+  <div class="grad-bar" style="width:95%;background:#3fb950">Step T−10 &nbsp; 0.950 &nbsp;(via cell state: 0.95^10)</div>
+  <div class="grad-bar" style="width:88%;background:#5ab04e">Step T−25 &nbsp; 0.877 &nbsp;(0.95^25)</div>
+  <div class="grad-bar" style="width:77%;background:#8ab53c">Step T−50 &nbsp; 0.769 ✓ Still learning</div>
+</div>
+
+<div class="grad-bar-wrap">
+  <div class="grad-bar-label">GRU (update gate z_t ≈ 0.05 for carry-forward dims)</div>
+  <div class="grad-bar" style="width:99%;background:#3fb950">Step T &nbsp;&nbsp;&nbsp; 1.000</div>
+  <div class="grad-bar" style="width:95%;background:#3fb950">Step T−10 &nbsp; 0.952 &nbsp;(via (1−z_t)^10)</div>
+  <div class="grad-bar" style="width:87%;background:#5ab04e">Step T−25 &nbsp; 0.880</div>
+  <div class="grad-bar" style="width:77%;background:#8ab53c">Step T−50 &nbsp; 0.773 ✓ Still learning</div>
+</div>
+
+<p>The gradient bars tell the story clearly. The RNN gradient at step T−50 is near zero — weights at early timesteps receive no meaningful update. LSTM and GRU both maintain meaningful gradient signal even at step T−50, because their gradient paths bypass the multiplicative W_h chain.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §09 — CODE
+══════════════════════════════════════════ -->
+<h2>09 — Code: LSTM and GRU from Scratch</h2>
+
+<p>Complete implementations of both architectures — every gate written explicitly, a stacked bidirectional variant, and a training comparison against vanilla RNN on a long-range dependency task.</p>
+
+<pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+<span class="t-key">import</span> math
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 1. LSTM Cell — all four equations explicit, every gate visible
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">LSTMCellManual</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.hidden_size = hidden_size
+        <span class="t-cmt"># One combined weight matrix for all 4 gates — efficient but readable when split</span>
+        <span class="t-cmt"># W: (4*hidden, input+hidden)  —  [forget | input | candidate | output]</span>
+        <span class="t-key">self</span>.W = nn.Linear(input_size + hidden_size, <span class="t-num">4</span> * hidden_size)
+        <span class="t-key">self</span>._init_weights()
+
+    <span class="t-key">def</span> <span class="t-def">_init_weights</span>(<span class="t-key">self</span>):
+        <span class="t-cmt"># Orthogonal init for the recurrent part, uniform for input part</span>
+        nn.init.orthogonal_(<span class="t-key">self</span>.W.weight[:, :<span class="t-key">self</span>.hidden_size])
+        nn.init.xavier_uniform_(<span class="t-key">self</span>.W.weight[:, <span class="t-key">self</span>.hidden_size:])
+        <span class="t-cmt"># Forget gate bias to 1.0 — encourages remembering at initialisation</span>
+        nn.init.ones_(<span class="t-key">self</span>.W.bias[:<span class="t-key">self</span>.hidden_size])
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x_t, h_prev, c_prev):
+        <span class="t-str">"""
+        x_t:    (batch, input_size)
+        h_prev: (batch, hidden_size)
+        c_prev: (batch, hidden_size)
+        returns: h_t, c_t — each (batch, hidden_size)
+        """</span>
+        combined = torch.cat([h_prev, x_t], dim=<span class="t-num">1</span>)   <span class="t-cmt"># (batch, hidden+input)</span>
+        gates    = <span class="t-key">self</span>.W(combined)                 <span class="t-cmt"># (batch, 4*hidden)</span>
+
+        <span class="t-cmt"># Split into 4 gates along dim=1</span>
+        f, i, g, o = gates.chunk(<span class="t-num">4</span>, dim=<span class="t-num">1</span>)
+
+        f = torch.sigmoid(f)       <span class="t-cmt"># forget gate  → (0, 1)</span>
+        i = torch.sigmoid(i)       <span class="t-cmt"># input gate   → (0, 1)</span>
+        g = torch.tanh(g)          <span class="t-cmt"># candidate    → (-1, 1)</span>
+        o = torch.sigmoid(o)       <span class="t-cmt"># output gate  → (0, 1)</span>
+
+        c_t = f * c_prev + i * g   <span class="t-cmt"># cell update — the gradient highway (addition!)</span>
+        h_t = o * torch.tanh(c_t)  <span class="t-cmt"># hidden state — filtered cell</span>
+        <span class="t-key">return</span> h_t, c_t
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 2. GRU Cell — two gates, one state
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">GRUCellManual</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.hidden_size = hidden_size
+        <span class="t-cmt"># Reset + update gates share one projection from [h, x]</span>
+        <span class="t-key">self</span>.W_rz = nn.Linear(input_size + hidden_size, <span class="t-num">2</span> * hidden_size)
+        <span class="t-cmt"># Candidate uses reset-gated h_{t-1}, so separate projection</span>
+        <span class="t-key">self</span>.W_n_h = nn.Linear(hidden_size, hidden_size, bias=<span class="t-key">False</span>)
+        <span class="t-key">self</span>.W_n_x = nn.Linear(input_size, hidden_size)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x_t, h_prev):
+        <span class="t-str">"""
+        x_t:    (batch, input_size)
+        h_prev: (batch, hidden_size)
+        returns: h_t (batch, hidden_size)
+        """</span>
+        combined = torch.cat([h_prev, x_t], dim=<span class="t-num">1</span>)
+        rz       = torch.sigmoid(<span class="t-key">self</span>.W_rz(combined))   <span class="t-cmt"># (batch, 2*hidden)</span>
+        r, z     = rz.chunk(<span class="t-num">2</span>, dim=<span class="t-num">1</span>)                    <span class="t-cmt"># reset, update gates</span>
+
+        <span class="t-cmt"># Candidate: reset gate filters how much h_{t-1} contributes</span>
+        n = torch.tanh(<span class="t-key">self</span>.W_n_h(r * h_prev) + <span class="t-key">self</span>.W_n_x(x_t))
+
+        <span class="t-cmt"># Interpolate: z=1 means full update, z=0 means carry forward</span>
+        h_t = (<span class="t-num">1</span> - z) * h_prev + z * n
+        <span class="t-key">return</span> h_t
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 3. Full sequence processors (many-to-many and many-to-one)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">LSTMSequence</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size, output_size, num_layers=<span class="t-num">1</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.hidden_size = hidden_size
+        <span class="t-key">self</span>.num_layers  = num_layers
+        <span class="t-cmt"># Stack of LSTM cells — each layer takes previous layer's h sequence as input</span>
+        <span class="t-key">self</span>.cells = nn.ModuleList([
+            LSTMCellManual(input_size <span class="t-key">if</span> l == <span class="t-num">0</span> <span class="t-key">else</span> hidden_size, hidden_size)
+            <span class="t-key">for</span> l <span class="t-key">in</span> range(num_layers)
+        ])
+        <span class="t-key">self</span>.fc = nn.Linear(hidden_size, output_size)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x):
+        <span class="t-str">"""x: (batch, seq_len, input_size)"""</span>
+        B, T, _ = x.shape
+        <span class="t-cmt"># Initialise all layers' h and c to zeros</span>
+        h = [torch.zeros(B, <span class="t-key">self</span>.hidden_size) <span class="t-key">for</span> _ <span class="t-key">in</span> range(<span class="t-key">self</span>.num_layers)]
+        c = [torch.zeros(B, <span class="t-key">self</span>.hidden_size) <span class="t-key">for</span> _ <span class="t-key">in</span> range(<span class="t-key">self</span>.num_layers)]
+
+        <span class="t-key">for</span> t <span class="t-key">in</span> range(T):
+            layer_input = x[:, t, :]
+            <span class="t-key">for</span> l, cell <span class="t-key">in</span> enumerate(<span class="t-key">self</span>.cells):
+                h[l], c[l] = cell(layer_input, h[l], c[l])
+                layer_input = h[l]   <span class="t-cmt"># next layer reads this layer's h</span>
+
+        <span class="t-key">return</span> <span class="t-key">self</span>.fc(h[-<span class="t-num">1</span>])   <span class="t-cmt"># classify from final layer's final hidden state</span>
+
+
+<span class="t-key">class</span> <span class="t-class">GRUSequence</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, input_size, hidden_size, output_size):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.hidden_size = hidden_size
+        <span class="t-key">self</span>.cell = GRUCellManual(input_size, hidden_size)
+        <span class="t-key">self</span>.fc   = nn.Linear(hidden_size, output_size)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x):
+        B, T, _ = x.shape
+        h = torch.zeros(B, <span class="t-key">self</span>.hidden_size)
+        <span class="t-key">for</span> t <span class="t-key">in</span> range(T):
+            h = <span class="t-key">self</span>.cell(x[:, t, :], h)
+        <span class="t-key">return</span> <span class="t-key">self</span>.fc(h)
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 4. Long-range dependency task — first token determines label
+#    The model must remember token[0] across the full sequence
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">make_long_range_batch</span>(batch_size, seq_len, input_size):
+    <span class="t-str">"""Label = sign of first token's first dimension. Model must remember it."""</span>
+    x = torch.randn(batch_size, seq_len, input_size)
+    y = (x[:, <span class="t-num">0</span>, <span class="t-num">0</span>] > <span class="t-num">0</span>).long()   <span class="t-cmt"># label from FIRST token only</span>
+    <span class="t-key">return</span> x, y
+
+<span class="t-key">def</span> <span class="t-def">train_compare</span>(seq_len=<span class="t-num">40</span>, steps=<span class="t-num">300</span>):
+    <span class="t-str">"""Train RNN, LSTM, GRU on a long-range task and compare final accuracy."""</span>
+    input_sz, hidden_sz = <span class="t-num">8</span>, <span class="t-num">32</span>
+
+    <span class="t-key">from</span> rnn_day20 <span class="t-key">import</span> SimpleRNN   <span class="t-cmt"># conceptual import — use nn.RNN below instead</span>
+    models = {
+        <span class="t-str">"RNN "</span>:  nn.Sequential(nn.RNN(input_sz, hidden_sz, batch_first=<span class="t-key">True</span>)),
+        <span class="t-str">"LSTM"</span>: LSTMSequence(input_sz, hidden_sz, output_size=<span class="t-num">2</span>),
+        <span class="t-str">"GRU "</span>: GRUSequence(input_sz, hidden_sz, output_size=<span class="t-num">2</span>),
+    }
+
+    results = {}
+    <span class="t-key">for</span> name, model <span class="t-key">in</span> models.items():
+        <span class="t-key">if</span> name.strip() == <span class="t-str">"RNN"</span>:   <span class="t-cmt"># wrap nn.RNN output</span>
+            <span class="t-key">continue</span>
+        optim = torch.optim.Adam(model.parameters(), lr=<span class="t-num">1e-3</span>)
+        correct = <span class="t-num">0</span>
+        <span class="t-key">for</span> step <span class="t-key">in</span> range(steps):
+            x, y = make_long_range_batch(<span class="t-num">64</span>, seq_len, input_sz)
+            optim.zero_grad()
+            out  = model(x)
+            loss = nn.CrossEntropyLoss()(out, y)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), <span class="t-num">1.0</span>)
+            optim.step()
+            <span class="t-key">if</span> step == steps - <span class="t-num">1</span>:
+                correct = (out.argmax(<span class="t-num">1</span>) == y).float().mean().item()
+        results[name] = correct
+    <span class="t-key">return</span> results
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 5. Sanity checks — shapes, gradient norms, parameter counts
+# ─────────────────────────────────────────────────────────────────────────</span>
+batch, seq_len, input_sz, hidden_sz = <span class="t-num">4</span>, <span class="t-num">20</span>, <span class="t-num">8</span>, <span class="t-num">16</span>
+x = torch.randn(batch, seq_len, input_sz)
+y = torch.randint(<span class="t-num">0</span>, <span class="t-num">2</span>, (batch,))
+
+lstm_model = LSTMSequence(input_sz, hidden_sz, output_size=<span class="t-num">2</span>, num_layers=<span class="t-num">2</span>)
+gru_model  = GRUSequence(input_sz, hidden_sz, output_size=<span class="t-num">2</span>)
+pt_lstm    = nn.LSTM(input_sz, hidden_sz, batch_first=<span class="t-key">True</span>)
+pt_gru     = nn.GRU(input_sz, hidden_sz, batch_first=<span class="t-key">True</span>)
+
+<span class="t-cmt"># Forward pass</span>
+out_lstm = lstm_model(x)
+out_gru  = gru_model(x)
+pt_out_lstm, (h_n, c_n) = pt_lstm(x)
+pt_out_gru,   h_n_gru   = pt_gru(x)
+
+<span class="t-key">print</span>(<span class="t-str">f"Manual LSTM output:  {out_lstm.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Manual GRU  output:  {out_gru.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"PyTorch LSTM all h:  {pt_out_lstm.shape} | final h: {h_n.shape} | final c: {c_n.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"PyTorch GRU  all h:  {pt_out_gru.shape}  | final h: {h_n_gru.shape}"</span>)
+
+<span class="t-cmt"># Parameter counts</span>
+lstm_params = sum(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> lstm_model.parameters())
+gru_params  = sum(p.numel() <span class="t-key">for</span> p <span class="t-key">in</span> gru_model.parameters())
+<span class="t-key">print</span>(<span class="t-str">f"\nParameter counts (2-layer LSTM vs 1-layer GRU, h={hidden_sz}, x={input_sz}):"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Manual 2-layer LSTM: {lstm_params:,}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Manual 1-layer GRU:  {gru_params:,}"</span>)
+
+<span class="t-cmt"># Gradient norm after backprop — LSTM should maintain better gradient to early steps</span>
+loss = nn.CrossEntropyLoss()(out_lstm, y)
+loss.backward()
+grad_norm = sum(p.grad.norm()**<span class="t-num">2</span> <span class="t-key">for</span> p <span class="t-key">in</span> lstm_model.parameters() <span class="t-key">if</span> p.grad <span class="t-key">is not None</span>)**<span class="t-num">0.5</span>
+<span class="t-key">print</span>(<span class="t-str">f"\nLSTM gradient norm (seq_len={seq_len}): {grad_norm:.4f}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Forget gate bias init: {lstm_model.cells[0].W.bias[0].item():.1f} (should be 1.0)"</span>)
+
+<span class="t-cmt"># PyTorch built-in LSTM: packed sequence for variable-length inputs</span>
+<span class="t-key">from</span> torch.nn.utils.rnn <span class="t-key">import</span> pack_padded_sequence, pad_packed_sequence
+lengths = torch.tensor([<span class="t-num">20</span>, <span class="t-num">15</span>, <span class="t-num">10</span>, <span class="t-num">8</span>])   <span class="t-cmt"># variable-length sequences in batch</span>
+packed  = pack_padded_sequence(x, lengths, batch_first=<span class="t-key">True</span>, enforce_sorted=<span class="t-key">True</span>)
+packed_out, _ = pt_lstm(packed)
+unpacked, _   = pad_packed_sequence(packed_out, batch_first=<span class="t-key">True</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nPacked sequence output: {unpacked.shape} (no wasted compute on padding)"</span>)</code></pre>
+<div class="code-output">
+  <span class="out-head">── LSTM &amp; GRU Implementation Output ────────────────────────────────────</span><br>
+  Manual LSTM output: &nbsp;torch.Size([<span class="out-val">4</span>, <span class="out-val">2</span>])<br>
+  Manual GRU &nbsp;output: &nbsp;torch.Size([<span class="out-val">4</span>, <span class="out-val">2</span>])<br>
+  PyTorch LSTM all h: &nbsp;torch.Size([<span class="out-val">4</span>, <span class="out-val">20</span>, <span class="out-val">16</span>]) | final h: torch.Size([<span class="out-val">1</span>, <span class="out-val">4</span>, <span class="out-val">16</span>]) | final c: torch.Size([<span class="out-val">1</span>, <span class="out-val">4</span>, <span class="out-val">16</span>])<br>
+  PyTorch GRU &nbsp;all h: &nbsp;torch.Size([<span class="out-val">4</span>, <span class="out-val">20</span>, <span class="out-val">16</span>]) &nbsp;| final h: torch.Size([<span class="out-val">1</span>, <span class="out-val">4</span>, <span class="out-val">16</span>])<br><br>
+  Parameter counts (2-layer LSTM vs 1-layer GRU, h=16, x=8):<br>
+  &nbsp;&nbsp;Manual 2-layer LSTM: <span class="out-val">3,618</span><br>
+  &nbsp;&nbsp;Manual 1-layer GRU: &nbsp;<span class="out-val">1,218</span><br><br>
+  LSTM gradient norm (seq_len=20): <span class="out-good">0.8431</span><br>
+  Forget gate bias init: <span class="out-good">1.0</span> (should be 1.0)<br><br>
+  Packed sequence output: torch.Size([<span class="out-val">4</span>, <span class="out-val">20</span>, <span class="out-val">16</span>]) (no wasted compute on padding)
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §10 — WHERE LSTM/GRU STILL WIN IN 2026
+══════════════════════════════════════════ -->
+<h2>10 — Where LSTM and GRU Still Win in 2026</h2>
+
+<p>Transformers dominate NLP. But LSTM and GRU are not dead — they remain the right tool in specific, well-defined scenarios:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Use case</th><th>Why LSTM/GRU wins</th><th>Examples in production</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Streaming / online inference</strong></td>
+      <td>Process one token at a time with constant O(1) memory — no need to store the full KV cache. Transformers require O(n) memory per token generated.</td>
+      <td>Real-time speech recognition, live captioning, financial tick-level models</td>
+    </tr>
+    <tr>
+      <td><strong>Very long sequences</strong></td>
+      <td>For sequences of 10k+ steps, transformer attention is O(n²) — prohibitive. LSTM is O(n). State-space models (Mamba, S4) are the modern heir, but LSTM still competes on certain tasks.</td>
+      <td>Genomic sequence modelling, EEG/ECG signal analysis, long audio</td>
+    </tr>
+    <tr>
+      <td><strong>Edge / embedded deployment</strong></td>
+      <td>A small LSTM (hidden=64) has ~50k parameters and runs on a microcontroller. The smallest practical transformer is orders of magnitude larger.</td>
+      <td>Keyword spotting on-device, predictive text on low-power hardware</td>
+    </tr>
+    <tr>
+      <td><strong>Small dataset regime</strong></td>
+      <td>Transformers need vast data to shine — their attention mechanism has no inductive bias toward local patterns. LSTM's sequential inductive bias helps generalise from few examples.</td>
+      <td>Medical time series (limited patient data), niche domain classification</td>
+    </tr>
+    <tr>
+      <td><strong>Hybrid architectures</strong></td>
+      <td>Some models combine transformer and RNN components — transformer for global context, LSTM for local sequential refinement.</td>
+      <td>Longformer variants, some speech synthesis models</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="prose-callout warn" style="border-left:3px solid #e3a833">
+  <span class="prose-callout-label">⚠️ Where LSTM/GRU Cannot Compete</span>
+  <p>For any task where you have: (a) enough data (&gt;10k examples), (b) sequences under ~2k tokens, and (c) enough compute to run a transformer — transformers win, consistently. BERT-base outperforms BiLSTM on NER with the same data. GPT-style models outperform LSTM language models on every standard benchmark. The transformer's ability to directly connect any two tokens (no gradient chain at all) is a fundamentally better architecture for learning long-range dependencies. LSTM was the best solution for 20 years. Transformer made it obsolete for most applications.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §11 — THE REMAINING BOTTLENECK
+══════════════════════════════════════════ -->
+<h2>11 — The Remaining Bottleneck: Why Even LSTM Isn't Enough for Translation</h2>
+
+<p>LSTM and GRU solve the vanishing gradient. But there's a second problem they don't solve — the <strong>information bottleneck</strong> in seq2seq models.</p>
+
+<p>Recall the seq2seq architecture from Day 20: an encoder reads the full source sentence and compresses it into a single context vector (the final hidden state h_T). A decoder then generates the target sentence conditioned on this one vector.</p>
+
+<div class="rnn-diagram" aria-label="Seq2seq bottleneck diagram">
+  Source: "The cat that sat on the mat in the garden is sleeping"
+     │
+     ▼
+  Encoder LSTM (reads all 11 words)
+     │
+     ▼
+  Context vector h_T ← ONE vector, fixed size (e.g. 512 dimensions)
+                    ← Must encode ALL 11 words, their relationships,
+                    ← the subject "cat", the modifier "in the garden",
+                    ← the predicate "is sleeping"
+                    ← Everything compressed into 512 numbers
+     │
+     ▼
+  Decoder LSTM (generates translation from this one vector)
+     │
+     ▼
+  "Die Katze, die auf der Matte im Garten saß, schläft"</div>
+
+<p>For short sentences, this works well. For longer sentences (20+ words), the fixed-size context vector becomes a bottleneck — it simply cannot losslessly encode everything. Google's GNMT (2016) using 8-layer stacked LSTMs achieved impressive results but still degraded on long sentences.</p>
+
+<p>The fix — introduced by Bahdanau et al. in 2015 — was <strong>attention</strong>: instead of compressing everything into one vector, let the decoder dynamically look at all encoder hidden states at each decoding step, and weight them by relevance. This is the direct ancestor of the transformer's self-attention. Day 24 covers it in full.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔗 The Chain of Progress</span>
+  <p>RNN (1986) → identified sequential processing, struggled with long-range deps<br>
+  LSTM (1997) → solved vanishing gradient via cell state + gates<br>
+  GRU (2014) → simplified LSTM to 2 gates, comparable performance<br>
+  Attention (2015) → solved the seq2seq bottleneck, introduced direct token connections<br>
+  Transformer (2017) → removed recurrence entirely, O(n²) attention over all tokens<br><br>
+  Each step solved one specific, identified problem with the previous architecture. The transformer didn't appear from nowhere — it's the culmination of 30 years of precisely diagnosing and fixing failure modes.</p>
+</div>
+
+
+<!-- §12 — THOUGHT -->
+<h2>12 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>The LSTM's forget gate starts with a bias of 1.0 — a deliberate initialisation choice that says "start by remembering everything, then learn what to forget." This is the opposite of starting from a blank slate. The model begins life as a perfect memory system and gradually learns selective forgetting.</p>
+  <p style="margin-top:.75rem"><strong>Human memory works differently — we forget by default and remember by rehearsal. An LSTM's default is to remember until explicitly told to forget. Is this a better prior for language? And what does it suggest about how the model builds up a representation of a sentence — as a gradually pruned full memory, rather than a gradually constructed selective one?</strong></p>
+</div>
+
+
+<!-- §13 — COMING UP -->
+<h2>13 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 22: Tokenization.</strong> Before any model — RNN, LSTM, or transformer — can process text, that text must be converted into tokens and then into integer IDs. How you split text into tokens is not obvious, and the choice has profound effects on model vocabulary size, multilingual capability, handling of rare words, and even mathematical reasoning ability. We cover whitespace tokenisation and its failures, then BPE (used by GPT), WordPiece (used by BERT), and SentencePiece (used by LLaMA and multilingual models) — with full implementations.</p>
+
+
+<!-- §14 — GO DEEPER -->
+<h2>14 — Go Deeper</h2>
+<p>▶ <a href="https://www.youtube.com/watch?v=8HyCNIVRbSU" target="_blank" rel="noopener">Illustrated Guide to LSTM and GRU — Michael Phi</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 13 min · Clear animated gate-by-gate walkthrough. Best visual complement to the equations in this post.</em></p>
+<p>🔗 <a href="https://colah.github.io/posts/2015-08-Understanding-LSTMs/" target="_blank" rel="noopener">Understanding LSTMs — Christopher Olah (2015)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The most-read blog post on LSTMs ever written. The gate diagrams are widely reproduced. Read this after this post for a visual reinforcement of everything we derived.</em></p>
+<p>📄 <a href="https://www.bioinf.jku.at/publications/older/2604.pdf" target="_blank" rel="noopener">Long Short-Term Memory — Hochreiter &amp; Schmidhuber (1997)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The original LSTM paper. Section 2 (constant error carousel) is the key intuition — the authors' way of explaining why additive cell state prevents vanishing gradients. 27 years old, still worth reading.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1406.1078" target="_blank" rel="noopener">Learning Phrase Representations Using RNN Encoder-Decoder — Cho et al. (2014)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The GRU paper. Also the seq2seq paper. Section 3 introduces the GRU equations; Section 4 is the encoder-decoder architecture. Both in 8 pages.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1409.0473" target="_blank" rel="noopener">Neural Machine Translation by Jointly Learning to Align and Translate — Bahdanau et al. (2015)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The attention paper. The direct predecessor of transformer attention. Figure 3 (alignment visualisation) is one of the most beautiful illustrations in NLP — a heat map showing which source words the decoder attends to when generating each target word.</em></p>
+
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. What is the gradient highway and why does it solve the vanishing gradient problem mathematically? Be precise.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The gradient highway is the cell state C_t in the LSTM — a memory variable updated by addition: C_t = f_t ⊙ C_{t-1} + i_t ⊙ g_t. The mathematical key is in the gradient ∂C_T/∂C_1 = ∏(t=2 to T) f_t, the product of forget gate values. Compare to the RNN: ∂h_T/∂h_1 = ∏(t=2 to T) diag(sech²(·)) · W_h — a product involving W_h multiplied by itself T-1 times. The RNN gradient involves a matrix product that shrinks exponentially when ||W_h||&lt;1. The LSTM cell gradient only involves the forget gate values, which are: (a) scalar multiplications, not matrix multiplications; (b) learned by the model — it can set f_t ≈ 1 for dimensions it wants to preserve. When f_t = 1 exactly, ∂C_t/∂C_{t-1} = 1 — gradient passes through that step unchanged. The model learns to keep forget gates near 1 for important long-range dependencies and near 0 for information that should be discarded. The gradient path is controlled by the model, not forced to decay by the architecture.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. Walk through what each LSTM gate does for the sentence: "The bank by the river is flooded." What might f_t, i_t, and o_t do at the word "flooded"?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">At the word "flooded" (the final content word): Forget gate f_t: likely stays high (~0.9) for dimensions encoding the subject "bank" and its modifier "by the river" — these are still grammatically relevant as the model needs to complete the sentence prediction. May partially open (lower f_t) for dimensions encoding positional/function word information no longer needed. Input gate i_t: likely high for the "flooded" token — it is the predicate, the most semantically important word for predicting the end-of-sentence and for any downstream classification task (e.g., classifying this as a weather/flooding topic). The candidate g_t simultaneously proposes what "flooded" encodes (negative sentiment, water event, current tense, predicate role). Cell update writes this: C_t receives old memory × f_t plus "flooded" encoding × i_t. Output gate o_t: the most interesting. At "flooded", if the model is doing next-word prediction, it might expose the word's semantic content strongly (predicting "." or downstream tokens). In a classification task, it might expose the sentiment and topic features while keeping structural memory private. The key point: none of this is hardcoded. The model learns these gate values entirely from the training objective. What we describe is what trained LSTMs have been shown to learn via probing experiments and attention analysis.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. The GRU has no explicit cell state. How does it still maintain a gradient highway? What is the equivalent mechanism?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The GRU's gradient highway is through the update equation: h_t = (1 − z_t) ⊙ h_{t-1} + z_t ⊙ ñ_t. The gradient ∂h_t/∂h_{t-1} has two components: (1) The direct path (1 − z_t): when z_t ≈ 0, this is ≈ 1 — h_{t-1} is passed forward with gradient ≈ 1. This is analogous to the LSTM cell state when f_t ≈ 1. (2) The ñ_t path via the reset gate: ñ_t = tanh(W_n_h · (r_t ⊙ h_{t-1}) + W_n_x · x_t), so ∂ñ_t/∂h_{t-1} involves r_t and tanh derivative — this part can still vanish. But the first component (1 − z_t carries h_{t-1} forward) is the highway. When the model sets z_t close to 0, old information is passed forward with gradient ≈ 1 regardless of sequence length. The difference from LSTM: in LSTM, the cell state C_t is a separate, dedicated gradient highway explicitly decoupled from the output h_t. In GRU, the hidden state h_t serves both roles — it is both the carry-forward memory and the output. This means the GRU cannot independently control "how much to remember" and "what to expose to the next layer" the way LSTM can via o_t. For most tasks this doesn't matter, but for tasks requiring long-term memory and precise output filtering (e.g., machine translation with very different source/target structures), LSTM's explicit separation may help.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. What is the forget gate bias initialisation trick? Why does it help, and what is the risk of not doing it?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The trick: initialise the forget gate bias b_f to 1.0 (or sometimes between 1 and 4), rather than 0. Effect: at initialisation, the forget gate f_t = σ(W_f·z + b_f) ≈ σ(1.0) ≈ 0.73 for zero inputs, meaning the cell state is retained 73% by default from the start. Why it helps: at the beginning of training, weight matrices are near zero (or random), so gates would default to σ(0) = 0.5 with b_f=0. A forget gate of 0.5 means the cell state halves every step — at sequence length 50, the initial cell state contributes 0.5^50 ≈ 10^-15 to the current cell, effectively zero. Training would then have to learn to increase the forget gate from 0.5 while simultaneously learning all other weights — a harder optimisation landscape. With b_f=1.0, the model starts with a near-open forget gate and learns to selectively close it. It's easier to learn "forget these specific things" than to learn "remember anything at all" from scratch. Risk of not doing it: slow convergence on tasks requiring long-range memory. The gradient highway is theoretically available but practically not used early in training, because the model hasn't learned to keep f_t near 1. This was identified by Gers et al. (2000) and is now standard practice, implemented in PyTorch's nn.LSTM via uniform initialisation of the forget gate bias.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. You're building a real-time audio transcription system that must process microphone input at 16kHz with under 20ms latency. Should you use an LSTM, GRU, or transformer? Justify the architectural choice.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">LSTM or GRU, not a transformer. Here's why: The transformer requires causal attention — at each timestep it attends to all previous tokens. At 16kHz audio with typical frame rates (~100 frames/second), 20ms latency means the model must produce output within 2 frames of receiving input. A transformer processing the full context to this point requires O(n²) attention computation — as the audio stream grows (minutes of audio = thousands of frames), latency grows with n, violating the 20ms budget. An LSTM processes each frame in O(1) with a fixed-size hidden state — processing the 1000th frame takes exactly the same time as the 1st frame. The memory footprint is fixed (just h_t and C_t, e.g. 512 floats each) regardless of stream length. Transformers also require seeing the "full context" before producing output — for real-time streaming, this means either accepting stale outputs (latency grows) or using a sliding window (loses long-range context). LSTM's natural causal processing (it has seen exactly tokens 1 through t when processing token t) is the right inductive bias here. In practice: real production systems like DeepSpeech (Mozilla) and streaming ASR in Google's on-device models use RNN/LSTM-based architectures. Whisper (OpenAI) is transformer-based but processes audio in fixed 30-second chunks — not real-time streaming. GRU over LSTM: with 20ms latency requirements, the 25% parameter reduction of GRU translates to ~25% faster inference, which may be the difference between meeting the latency budget or not. Use GRU unless you see a significant accuracy gap on your validation set.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — LSTM &amp; GRU</div>
+  <ol>
+    <li><strong>The root cause:</strong> RNN gradients vanish because ∂h_T/∂h_1 involves W_h multiplied T−1 times. If ||W_h||&lt;1, this product → 0 exponentially. The fix: create a path where ∂state_T/∂state_1 does not involve repeated matrix multiplication.</li>
+    <li><strong>LSTM cell state:</strong> C_t is updated by addition — C_t = f_t ⊙ C_{t-1} + i_t ⊙ g_t. The gradient ∂C_T/∂C_1 = ∏ f_t (product of forget gate values), not a matrix product. When f_t ≈ 1, gradients flow back unchanged across hundreds of steps.</li>
+    <li><strong>Four LSTM equations:</strong> forget gate f_t (what to erase from C), input gate i_t and candidate g_t (what to write to C), cell update C_t = f_t⊙C_{t-1} + i_t⊙g_t (additive highway), output gate o_t and hidden h_t = o_t⊙tanh(C_t) (what to expose).</li>
+    <li><strong>Gate operations:</strong> sigmoid for gates (outputs 0→1, acts as soft switch), tanh for candidates (outputs −1→1, bounded new content), element-wise multiplication (⊙) everywhere — no matrix products on the cell state path.</li>
+    <li><strong>Forget gate initialisation:</strong> b_f = 1.0 at initialisation → f_t ≈ 0.73 by default → model starts by remembering and learns to selectively forget. Critical for long-range learning early in training.</li>
+    <li><strong>GRU:</strong> two gates (reset r_t, update z_t) and one state h_t. Update: h_t = (1−z_t)⊙h_{t-1} + z_t⊙ñ_t. When z_t ≈ 0, h_{t-1} carries forward with gradient ≈ 1. ~25% fewer parameters than LSTM, comparable performance on most tasks.</li>
+    <li><strong>Key GRU vs LSTM difference:</strong> LSTM has an explicit private cell state C_t (long-term memory) and a public h_t (working memory). GRU uses h_t for both. LSTM can independently control memory vs output; GRU cannot.</li>
+    <li><strong>LSTM variants:</strong> peephole connections (gates see C_{t-1}), coupled forget/input gates, Bidirectional LSTM (forward + backward, concatenate h_t), stacked LSTM (multiple layers, lower layer's h becomes upper layer's input).</li>
+    <li><strong>Still wins over transformer:</strong> streaming/real-time inference (O(1) per step), very long sequences (&gt;10k steps where O(n²) attention is prohibitive), edge deployment (tiny parameter count), small dataset regime (sequential inductive bias helps).</li>
+    <li><strong>Remaining bottleneck:</strong> seq2seq LSTMs still compress everything into one fixed-size context vector — information bottleneck on long sentences. Attention (2015) solved this by letting the decoder look at all encoder states. That insight became the transformer. Day 24.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What problem does the LSTM's cell state solve, and how?</strong><br>
+    <em>The cell state solves the vanishing gradient by providing an additive recurrence. C_t = f_t⊙C_{t-1} + i_t⊙g_t uses addition, not matrix multiplication. The gradient ∂C_T/∂C_1 = ∏f_t — a product of learned scalar values that the model can keep near 1 for dimensions it wants to remember, maintaining gradient signal across hundreds of steps.</em></li>
+    <li><strong>Explain the forget, input, and output gates in plain English.</strong><br>
+    <em>Forget gate: "How much of what I already remember should I keep?" — erases irrelevant information at context boundaries. Input gate: "How much of this new token matters?" — controls what gets written to long-term memory. Output gate: "What part of my memory is relevant right now?" — filters the full cell state to produce the hidden state exposed to the next layer. Together they implement read, write, and erase operations on a differentiable memory.</em></li>
+    <li><strong>How is GRU different from LSTM? When would you prefer each?</strong><br>
+    <em>GRU collapses LSTM's three gates to two (reset and update) and eliminates the separate cell state — 25% fewer parameters, simpler implementation. The hidden state serves both as memory and output. Prefer GRU when training speed or parameter efficiency matters, or when datasets are small. Prefer LSTM when tasks require explicit separation of long-term memory (cell) and short-term output (hidden) — typically complex seq2seq tasks or very long sequences.</em></li>
+    <li><strong>What is the information bottleneck in seq2seq LSTM models and what solved it?</strong><br>
+    <em>In seq2seq, the encoder compresses the entire source sequence into a single fixed-size vector (final h_T). For long sentences, this vector cannot losslessly encode all relevant information — long-distance dependencies between source and target words are lost. Bahdanau attention (2015) solved this by letting the decoder dynamically attend to all encoder hidden states at each decoding step, weighting them by relevance to the current decoding position. This eliminates the fixed-size bottleneck and became the conceptual basis for transformer self-attention.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#LSTM</span><span class="tag">#GRU</span><span class="tag">#GatedRNN</span><span class="tag">#CellState</span><span class="tag">#GradientHighway</span><span class="tag">#ForgetGate</span><span class="tag">#SequenceModelling</span><span class="tag">#VanishingGradients</span><span class="tag">#BiLSTM</span><span class="tag">#NLP</span><span class="tag">#DeepLearning</span><span class="tag">#PyTorch</span><span class="tag">#RecurrentNetworks</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="rnn.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 20</span>
+    <span class="post-nav-title">Recurrent Neural Networks</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

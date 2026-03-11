@@ -769,7 +769,8 @@ function copyPostLink(btn) {
     'transfer-learning.html',      // Day 17 - Mar 7
     'object-detection.html',       // Day 18 - Mar 8
     'nlp-fundamentals.html',       // Day 19 - Mar 9
-    'rnn.html'                     // Day 20 - Mar 10
+    'rnn.html',                    // Day 20 - Mar 10
+    'gru-lstm.html'                // Day 21 - Mar 11
     ];
 
   const TOTAL_POSTS = 30;
