@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 22 — Tokenization | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="What is tokenization, why does it exist, and what are the three strategies? A clear, intuitive guide for everyone — from curious readers to engineers — on how text becomes numbers before entering any language model." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mw{color:#f85149;font-weight:600}
+    .math-block .mg{color:#3fb950;font-weight:600}
+
+    .rnn-diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;overflow-x:auto;white-space:pre}
+
+    .tok-b{color:#3fb950;font-weight:700}
+    .tok-e{color:#f85149;font-weight:700}
+    .tok-c{color:#e3b341;font-weight:700}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 22 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Foundation</span><span class="meta-sep">·</span>
+      <span>Mar 12, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">12 min read</span><span class="meta-sep">·</span>
+      <span>NLP Foundations</span>
+    </div>
+    <h1>Tokenization:<br>How Text Becomes Numbers</h1>
+    <p class="post-hero-lead">Every time you send a message to an AI, your words vanish. What arrives at the model isn't text — it's a list of numbers. The step that makes this happen is called tokenization, and understanding it changes how you think about everything from why ChatGPT sometimes "misreads" a word to why the same model handles Arabic differently than English. No prior knowledge needed — but engineers will find the precision they're looking for too.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>The model never sees your words.<br>
+  It sees the numbers your words were translated into.<br><br>
+  Tokenization is that translation.<br>
+  And like any translation,<br>
+  something is always lost — or gained — in the process.</p>
+</blockquote>
+
+
+<!-- ══════════════════════════════════════════
+     §01 — THE ANALOGY
+══════════════════════════════════════════ -->
+<h2>01 — Start With an Analogy</h2>
+
+<p>Imagine you want to teach a calculator to understand a recipe. The problem: calculators don't understand "a pinch of salt" or "two cups of flour." They only understand numbers. So before the calculator can do anything useful, someone has to translate every ingredient into a code from a fixed list — flour = 12, salt = 47, eggs = 8.</p>
+
+<p>That fixed list is the <strong>vocabulary</strong>. The translation process is <strong>tokenization</strong>. The numbered codes are <strong>tokens</strong>.</p>
+
+<p>Language models work exactly the same way. They are, at their core, mathematical functions — matrix multiplications, additions, dot products. None of those operations work on letters or words. So before your message ever reaches the model, a tokenizer converts it into a sequence of numbers. Only then does the model start "thinking."</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">💡 The key insight</span>
+  <p>The model never sees the word "cat." It sees the number 9246. It never sees "running" — it sees 8996. Every word, every punctuation mark, every space has been replaced by a number from a predefined list before the model processes anything. <strong>Tokenization is the bridge between human language and machine math.</strong></p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §02 — THE VOCABULARY AND THE PIPELINE
+══════════════════════════════════════════ -->
+<h2>02 — The Vocabulary, the Token, and the Pipeline</h2>
+
+<p>Let's define the core concepts precisely — in plain English first, then with the technical layer underneath for those who want it.</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">The Vocabulary</div>
+    <div class="prose-kv-val">The complete list of every "chunk of text" the model knows, each assigned a unique number. Think of it as the model's dictionary — but instead of definitions, each entry just has an ID. Modern models have vocabularies of 32,000 to 128,000 entries. If something isn't in the vocabulary, the model has to represent it using smaller pieces that are.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">The Token</div>
+    <div class="prose-kv-val">A single entry from the vocabulary — the smallest unit of text the model processes at once. A token might be a full word like "cat", a word fragment like "ization", a single letter, a punctuation mark, or even a space. The average English word is about 1.3 tokens. "Tokenization" itself is two tokens: "Token" + "ization".</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Encoding</div>
+    <div class="prose-kv-val">The act of converting your text into a list of token IDs. "Hello world" → [15496, 995]. This happens automatically and invisibly every time you send a message to a language model.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Decoding</div>
+    <div class="prose-kv-val">The reverse: converting the model's output (a list of numbers) back into readable text. A good tokenizer guarantees this is lossless — you get back exactly what you put in.</div>
+  </div>
+</div>
+
+<p>Here is the full journey your text takes before the model sees it:</p>
+
+<div class="math-block">
+  <span class="mh">Your text → Tokenizer → [id₁, id₂, id₃, ...] → Embedding lookup → Model</span><br><br>
+  <span class="mc">Step 1: "I love AI" → split into tokens → ["I", " love", " AI"]</span><br>
+  <span class="mc">Step 2: Each token gets its ID → [40, 1842, 9552]</span><br>
+  <span class="mc">Step 3: Each ID is looked up in a table → a vector of ~1,000 numbers</span><br>
+  <span class="mc">Step 4: Those vectors enter the model — now the math begins</span><br><br>
+  <span class="mg">The model never touches raw text. It only ever sees vectors of numbers.</span>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 For Engineers</span>
+  <p>Each token ID is an integer index into an embedding matrix of shape <code>|V| × d_model</code>. For GPT-2: 50,257 × 768 = ~38.6M parameters just in the embedding layer. The embedding lookup is a simple table read — <code>E[token_id]</code> — returning a dense vector in ℝ<sup>d</sup>. This vector is what actually flows through the transformer's attention and feed-forward layers. The vocabulary size |V| directly determines this matrix's size and is one of the most consequential hyperparameters in model design.</p>
+  </div>
+
+
+<!-- ══════════════════════════════════════════
+     §03 — THREE STRATEGIES
+══════════════════════════════════════════ -->
+<h2>03 — Three Ways to Slice Text</h2>
+
+<p>Once we agree that text must become a sequence of numbered chunks, the next question is: <em>how big should each chunk be?</em> Should each letter be its own chunk? Each word? Something in between? There are three approaches, each with its own tradeoffs.</p>
+
+<h3>Strategy 1 — One Letter at a Time</h3>
+
+<p>The simplest idea: every single letter (character) is its own token. The word "cat" becomes three tokens: <code>c</code>, <code>a</code>, <code>t</code>.</p>
+
+<div class="rnn-diagram" aria-label="Character tokenization example">
+  Sentence:  "I love AI"
+
+  Tokens:   ['I', ' ', 'l', 'o', 'v', 'e', ' ', 'A', 'I']
+             ↑ every single character is its own token
+
+  Vocabulary size:  tiny — just the alphabet + punctuation (~256 entries)
+  Tokens needed for this sentence:  9
+
+  For comparison — a 200-word essay would become ~1,000 tokens.</div>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="tok-b">✓ What's good</span></div>
+    <div class="prose-kv-val">The vocabulary is tiny — you only need one entry per letter. The model can handle any word in any language, even made-up ones, because every word is just a combination of letters it already knows. Zero unknown words, ever.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="tok-e">✗ What's bad</span></div>
+    <div class="prose-kv-val">Sequences get very long, very fast. A typical paragraph becomes thousands of tokens. The model's processing cost grows with sequence length — longer sequences mean slower, more expensive computation. Worse, the model has to learn from scratch that <code>c</code>+<code>a</code>+<code>t</code> = a furry animal, with no direct signal that these three letters belong together as a concept.</div>
+  </div>
+</div>
+
+<h3>Strategy 2 — One Word at a Time</h3>
+
+<p>The intuitive approach: split on spaces, and each word is its own token. "I love AI" becomes three tokens: <code>I</code>, <code>love</code>, <code>AI</code>.</p>
+
+<div class="rnn-diagram" aria-label="Word tokenization example">
+  Sentence:  "I love AI"
+
+  Tokens:   ['I', 'love', 'AI']
+             ↑ each word is one token
+
+  Vocabulary size:  massive — needs an entry for every word in the language
+  English alone: 170,000+ words in common use, millions including names &amp; technical terms
+
+  Unknown word: "tokenisation" (British spelling not seen in training) → [UNK]
+                 ↑ the model sees this as a blank — all meaning lost</div>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="tok-b">✓ What's good</span></div>
+    <div class="prose-kv-val">Short sequences — three words = three tokens. Each token carries the full meaning of a word. Easy for humans to understand what the model is "reading."</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="tok-e">✗ What's bad</span></div>
+    <div class="prose-kv-val">The vocabulary must be enormous to cover a language properly. And any word the model hasn't seen before — a new product name, a typo, a word from another language, a newly coined term — becomes a meaningless <code>[UNK]</code> token. The model is completely blind to it. Also, related words like "run", "running", and "ran" are treated as three completely unrelated entries, with nothing connecting them.</div>
+  </div>
+</div>
+
+<h3>Strategy 3 — Something In Between (Subword)</h3>
+
+<p>The modern solution, used by every major AI model today. The idea: common words get their own token, but rare or long words are split into smaller meaningful pieces. It's the best of both worlds.</p>
+
+<div class="rnn-diagram" aria-label="Subword tokenization example">
+  Common word:    "love"      → ['love']          1 token  ✓ has its own entry
+  Rare word:      "tokenization" → ['token', 'ization']   2 tokens
+  Brand new word: "GPT-4"     → ['G', 'PT', '-', '4']     4 tokens  ✓ no UNK
+  Any language:   "مرحبا"     → ['▁مر', 'حبا']            2 tokens  ✓ still works
+
+  The model always finds a way to represent any word — it just uses
+  smaller building blocks when it doesn't have a full word entry.</div>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">💡 Why this is the right answer</span>
+  <p>Think of it like a language with prefixes and suffixes. The model knows <strong>"token"</strong> as a concept and <strong>"ization"</strong> as a suffix meaning "the process of." So "tokenization" is immediately understood as "the process of making tokens" — without ever having a specific entry for it. New words are no longer a problem: they're just combinations of known building blocks. And the vocabulary stays a manageable size — typically 32,000 to 128,000 entries — instead of needing millions of word entries.</p>
+</div>
+
+<h3>The Tradeoff at a Glance</h3>
+
+<table class="prose-table">
+  <thead>
+    <tr><th>Strategy</th><th>Chunk Size</th><th>Vocab Size</th><th>Sequence Length</th><th>Unknown Words?</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Character</strong></td>
+      <td>One letter</td>
+      <td><span class="tick">Tiny (~256)</span></td>
+      <td><span class="cross">Very long</span></td>
+      <td><span class="tick">Never</span></td>
+    </tr>
+    <tr>
+      <td><strong>Word</strong></td>
+      <td>One word</td>
+      <td><span class="cross">Huge (100K+)</span></td>
+      <td><span class="tick">Short</span></td>
+      <td><span class="cross">Constantly</span></td>
+    </tr>
+    <tr>
+      <td><strong>Subword</strong></td>
+      <td>Word pieces</td>
+      <td><span class="tick">Balanced (32K–128K)</span></td>
+      <td><span class="tick">Moderate</span></td>
+      <td><span class="tick">Never</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This is why every modern language model — GPT, BERT, LLaMA, Gemma — uses subword tokenization. The exact algorithm used to decide <em>which</em> word pieces to include in the vocabulary differs between models, and that's the topic of <strong>Day 24: Tokenization Deep Dive</strong>.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §04 — SPECIAL TOKENS
+══════════════════════════════════════════ -->
+<h2>04 — Special Tokens: The Punctuation of AI Thought</h2>
+
+<p>Beyond the regular text tokens, every model reserves a small set of <strong>special tokens</strong> — entries in the vocabulary that don't represent any real word, but instead carry a structural instruction. Think of them as punctuation marks for the model's internal language.</p>
+
+<p>Here is what each one does, in plain terms:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>[CLS]</code> — "I am the summary"</div>
+    <div class="prose-kv-val">Placed at the very beginning of every input in BERT-style models. By the time the model finishes processing, this token's output vector is used to represent the meaning of the entire sentence — like a summary. If you ask "is this review positive or negative?", the answer comes from this token. Not used in GPT-style models.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>[SEP]</code> — "New section starts here"</div>
+    <div class="prose-kv-val">A divider placed between two pieces of text when the model needs to compare them — for example, a question and a document it needs to answer from. Tells the model: "everything before me is Part A; everything after me is Part B."</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>[PAD]</code> — "Ignore this"</div>
+    <div class="prose-kv-val">When processing multiple sentences at once, they all need to be the same length (so they can be processed as a batch). Shorter sentences are padded with this token to fill the gap. The model is told via an "attention mask" to ignore all padding tokens completely.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>[UNK]</code> — "I don't know this"</div>
+    <div class="prose-kv-val">A last-resort fallback for characters that don't exist anywhere in the vocabulary. Modern subword tokenizers almost never need this — they can always break any word into smaller known pieces. But older word-level models hit this constantly.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>&lt;|endoftext|&gt;</code> — "I'm done"</div>
+    <div class="prose-kv-val">GPT's stop signal. During training, it separates one document from the next. During generation, producing this token is the model's way of saying "my answer is complete." Without it, the model would keep generating forever.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><code>&lt;s&gt;</code> / <code>&lt;/s&gt;</code> — "Start / End"</div>
+    <div class="prose-kv-val">Used by LLaMA, T5, and most other models. <code>&lt;s&gt;</code> is placed at the beginning of every input — it's the model's "ready" signal. <code>&lt;/s&gt;</code> is placed at the end — it means "stop here." They serve the same purpose as <code>[CLS]</code>/<code>[SEP]</code> and <code>&lt;|endoftext|&gt;</code> in other architectures.</div>
+  </div>
+</div>
+
+<div class="prose-callout warn">
+  <span class="prose-callout-label">⚠️ Never mix tokenizers and models</span>
+  <p>Special tokens are tied to specific model architectures. BERT's <code>[CLS]</code> is token ID 101. LLaMA's token ID 101 is something completely different. If you accidentally use BERT's tokenizer with LLaMA's weights, every single token ID maps to the wrong entry in the model's memory table — the model receives total gibberish and outputs total gibberish. The tokenizer and the model are inseparable. Always load them together from the same source.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §05 — WHY IT MATTERS IN PRACTICE
+══════════════════════════════════════════ -->
+<h2>05 — Why Tokenization Matters in the Real World</h2>
+
+<p>Tokenization isn't just a technical detail that happens behind the scenes — it has direct, visible consequences that affect every person who uses an AI model.</p>
+
+<h3>Token Limits Are Not Word Limits</h3>
+
+<p>When an AI service says "this model supports 128,000 tokens," many people assume that means 128,000 words. It doesn't. In English, one word is roughly 1.3 tokens on average — so 128,000 tokens ≈ 98,000 words. But more importantly, this ratio changes completely depending on the language you're writing in.</p>
+
+<div class="rnn-diagram" aria-label="Token counts for same sentence in different languages">
+  The same sentence — "The quick brown fox jumps over the lazy dog" —
+  in different languages, using GPT-4's tokenizer:
+
+  English:  9 words  →   9 tokens   (1.0 tokens/word)
+  French:   9 words  →  11 tokens   (1.2 tokens/word)
+  Arabic:   9 words  →  34 tokens   (3.8 tokens/word)  ← same meaning, 3.8× more tokens
+  Chinese:  9 words  →  15 tokens   (1.7 tokens/word)
+  Turkish:  9 words  →  27 tokens   (3.0 tokens/word)
+
+  A 128K context window holds ~98K English words
+  but only ~26K Arabic words — for the exact same price.</div>
+
+<p>This happens because the vocabulary of most early LLMs was built predominantly from English text. English words and word-pieces are well-represented; Arabic morphemes and Chinese characters are not. The model has to use many more small pieces to express the same idea in Arabic.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 The deeper consequence</span>
+  <p>This isn't just a cost issue — it affects quality too. When Arabic text is represented as 4× more tokens than equivalent English text, the model's "attention" is spread thinner. Relationships between words that are conceptually close may end up far apart in the token sequence. This is one of the real, measurable reasons why AI models tend to perform better on English than on other languages — and it starts here, at tokenization. Day 24 covers exactly how modern models like LLaMA 3 have addressed this with larger, more multilingual vocabularies.</p>
+</div>
+
+<h3>Why "ChatGPT Can't Count Letters"</h3>
+
+<p>You may have seen the famous example: ask ChatGPT "how many R's are in the word STRAWBERRY?" and it sometimes says 2. There are 3. This isn't the model being stupid — it's a tokenization consequence.</p>
+
+<div class="rnn-diagram" aria-label="Strawberry token example">
+  "STRAWBERRY" is not one token. It gets split into pieces, for example:
+  ['STR', 'AW', 'BERRY']
+
+  The model never sees individual letters — it sees chunks.
+  To count the letter R, it would need to look inside those chunks.
+  But the model has no mechanism to inspect the internals of a token.
+
+  It's like asking someone to count the number of times the letter "e"
+  appears in a word — but showing them only stamped coins with groups
+  of letters, not individual letters. They can read the coins,
+  but they can't easily look inside them.</div>
+
+<p>This also explains why LLMs struggle with certain spelling tasks, rhyming, and letter-by-letter manipulation — the token is the atom of the model's perception, and what's inside an atom is invisible to it.</p>
+
+<h3>Counting Tokens Before You Pay</h3>
+
+<p>Most AI APIs charge per token. Knowing this, a few practical habits save real money:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">Use a token counter before sending</div>
+    <div class="prose-kv-val">Tools like <a href="https://tiktokenizer.vercel.app/" target="_blank" rel="noopener">Tiktokenizer</a> show you exactly how many tokens your prompt will use before you make an API call. A prompt that looks like 200 words might be 280 tokens depending on punctuation and technical terms.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Technical content costs more tokens</div>
+    <div class="prose-kv-val">Code, URLs, JSON, and mathematical expressions tend to tokenize inefficiently — one URL might be 20+ tokens. If you're building a system that processes lots of structured data, this cost adds up quickly.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Multilingual apps need more budget</div>
+    <div class="prose-kv-val">If your application serves Arabic, Turkish, or Thai users, budget for 3–5× more tokens per equivalent message compared to English. Or plan to use a model with a larger, more multilingual vocabulary.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     ATTACHMENTS
+══════════════════════════════════════════ -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+
+  <p>🔗 <a href="https://tiktokenizer.vercel.app/" target="_blank" rel="noopener">Tiktokenizer — Interactive tokenizer visualizer</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">Type any text and watch in real time how it gets split into tokens under GPT-4's tokenizer. Each token is colour-coded. The fastest way to build genuine intuition for what tokenization actually does to your words. Try "strawberry", then try the same word in Arabic.</em></p>
+
+  <p>🔗 <a href="https://platform.openai.com/tokenizer" target="_blank" rel="noopener">OpenAI Tokenizer — Official playground</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">OpenAI's own tool for visualising tokenization and counting tokens for GPT-3.5 and GPT-4. Useful for estimating API costs before building a production system.</em></p>
+
+  <p>📄 <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener">Neural Machine Translation of Rare Words with Subword Units — Sennrich et al. (2016)</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">The paper that brought subword tokenization into mainstream NLP. A short, readable read that clearly shows why breaking words into pieces beats treating each word as atomic — especially for rare and unseen words.</em></p>
+</div>
+
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. A friend says "I sent the AI a 500-word message, so it used about 500 tokens." Is this correct? What would you tell them?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Not quite — but close for English. The average English word is about 1.3 tokens, so a 500-word English message is closer to 650 tokens, not 500. But the real issue is that "words = tokens" breaks down quickly outside English. The same 500-word message in Arabic could easily be 1,800–2,500 tokens because the vocabulary of most LLMs was built around English text, so Arabic words and morphemes require many more small pieces to represent. Tokens also include punctuation, spaces, and special characters as their own entries — so a message full of URLs, code, or technical notation can have far more tokens than the word count suggests. The correct habit is to always use a token counter tool before estimating costs or context window usage.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. Why does the word-level tokenization strategy fail in practice, even though it seems the most natural approach?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Word-level tokenization has two fundamental problems. First, the vocabulary must be enormous — English alone has over 170,000 words in common use, and a real corpus adds millions more from names, technical terms, slang, and other languages. This makes the model's internal dictionary impractically large. Second, and more critically, any word not seen during training becomes [UNK] — a single "unknown" token that carries no meaning whatsoever. A new product name, a typo, a word from a different language, a freshly coined term — all become the same meaningless placeholder. The model has no way to even guess at what they mean. Subword tokenization solves this by breaking unknown words into smaller known pieces, ensuring the model can always make some sense of new input rather than going completely blind.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. Why does an AI sometimes fail to count how many times a specific letter appears in a word?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Because the model never sees individual letters — it sees tokens, which are chunks of text. A word like "STRAWBERRY" might be split into tokens like ["STR", "AW", "BERRY"]. The model processes these three chunks as atomic units; it has no mechanism to look inside a token and count its individual characters. To count the letter R in STRAWBERRY, you'd need to inspect the internals of each token — but from the model's perspective, a token is indivisible, like a single symbol. This is a fundamental limitation that comes directly from the tokenization design. It also explains why LLMs can struggle with rhyming, spelling corrections, anagrams, and other tasks that require letter-level awareness.</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Tokenization</div>
+  <ol>
+    <li><strong>Text must become numbers.</strong> Language models are mathematical functions — they can't process strings. Tokenization converts every word, punctuation mark, and space into a number (token ID) before the model ever sees it.</li>
+    <li><strong>The vocabulary is the model's dictionary.</strong> A fixed list of 32,000–128,000 entries, each with a unique ID. If something isn't in the vocabulary, it gets broken into smaller pieces that are — no word is ever truly "unknown" in a modern model.</li>
+    <li><strong>Three strategies: letter, word, or piece.</strong> Character-level (tiny vocab, very long sequences), word-level (short sequences, but fails on unknown words), and subword (the modern winner — compact vocabulary, no unknown words, handles any language).</li>
+    <li><strong>Special tokens are structural signals.</strong> [CLS] means "summarise this whole sequence," [PAD] means "ignore this slot," &lt;|endoftext|&gt; means "I'm done generating." They are architecture-specific — mixing a tokenizer from one model with another model's weights produces gibberish.</li>
+    <li><strong>Token counts ≠ word counts.</strong> English averages ~1.3 tokens per word, but Arabic can reach 4–6. The same context window holds far less non-English content — this has real cost and quality implications for multilingual applications.</li>
+    <li><strong>Tokens are atomic.</strong> The model cannot see inside a token. This is why LLMs sometimes fail at letter-counting, spelling, and other tasks that require character-level awareness — the token is the smallest unit the model perceives.</li>
+  </ol>
+</div>
+
+
+<!-- INTERVIEW -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is tokenization and why is it necessary?</strong><br>
+    <em>Tokenization is the process of converting raw text into a sequence of integer token IDs before it enters a language model. It is necessary because neural networks are mathematical functions — they compute dot products, matrix multiplications, and additions, none of which are defined on strings. Every character, word, and punctuation mark must be mapped to a number from a fixed vocabulary before the model can process it. The tokenizer bridges the gap between human language and machine math, and its design has direct downstream effects on sequence length, vocabulary coverage, multilingual capability, and even the types of tasks the model performs well or poorly on.</em></li>
+
+    <li><strong>Why is subword tokenization the dominant approach in modern LLMs?</strong><br>
+    <em>Subword tokenization solves the two main failures of the simpler strategies. Character-level tokenization requires no vocabulary but produces extremely long sequences — a short paragraph can become thousands of tokens, making processing slow and expensive. Word-level tokenization keeps sequences short but requires a massive vocabulary and fails completely on any unseen word, mapping it to a meaningless [UNK] token. Subword sits between both extremes: a vocabulary of 32K–128K word pieces can represent any string without unknown tokens (by breaking new words into known fragments), while keeping sequence lengths manageable. It also gives the model a natural sensitivity to morphology — "run", "running", and "runner" share the "run" token, providing a built-in signal that these words are related.</em></li>
+
+    <li><strong>What are special tokens, and what happens if you use the wrong tokenizer with a model?</strong><br>
+    <em>Special tokens are reserved vocabulary entries with structural meaning that are never generated by the tokenization algorithm itself — they are added manually. Examples include [CLS] (signals the model to produce a sequence-level summary for classification), [PAD] (fills shorter sequences in a batch to equal length), [SEP] (marks segment boundaries), and &lt;|endoftext|&gt; (GPT's stop signal). They are completely architecture-specific — BERT, GPT, and LLaMA each define different special tokens at different token IDs. If you use BERT's tokenizer with LLaMA's model weights, token ID 101 (which BERT uses for [CLS]) will be looked up in LLaMA's embedding table, where it points to a completely different, unrelated token. Every single token in the input is wrong from the model's perspective. The output is garbage. The tokenizer and model checkpoint are inseparable components of the same system and must always be loaded together.</em></li>
+  </ol>
+</div>
+
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#Tokenization</span><span class="tag">#Tokens</span><span class="tag">#Vocabulary</span><span class="tag">#Subword</span><span class="tag">#SpecialTokens</span><span class="tag">#NLP</span><span class="tag">#LLM</span><span class="tag">#Embeddings</span><span class="tag">#ContextWindow</span><span class="tag">#DeepLearning</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="gru-lstm.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 21</span>
+    <span class="post-nav-title">LSTM &amp; GRU</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

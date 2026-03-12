@@ -770,8 +770,9 @@ function copyPostLink(btn) {
     'object-detection.html',       // Day 18 - Mar 8
     'nlp-fundamentals.html',       // Day 19 - Mar 9
     'rnn.html',                    // Day 20 - Mar 10
-    'gru-lstm.html'                // Day 21 - Mar 11
-    ];
+    'gru-lstm.html',               // Day 21 - Mar 11
+    'tokenization.html'  
+  ];
 
   const TOTAL_POSTS = 30;
 
