@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 23 — Word Embeddings | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="king − man + woman ≈ queen. Word2Vec, GloVe, and sentence transformers — how language models turn words into geometric coordinates where meaning becomes math you can actually compute." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mw{color:#f85149;font-weight:600}
+    .math-block .mg{color:#3fb950;font-weight:600}
+    .math-block .my{color:#e3b341;font-weight:600}
+
+    .rnn-diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;overflow-x:auto;white-space:pre}
+
+    .emb-b{color:#3fb950;font-weight:700}
+    .emb-r{color:#f85149;font-weight:700}
+    .emb-y{color:#e3b341;font-weight:700}
+    .emb-a{color:#58a6ff;font-weight:700}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 23 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Foundation</span><span class="meta-sep">·</span>
+      <span>Mar 13, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">35 min read</span><span class="meta-sep">·</span>
+      <span>NLP · Representations</span>
+    </div>
+    <h1>Word Embeddings:<br>Word2Vec, GloVe &amp; Sentence Transformers</h1>
+    <p class="post-hero-lead">king − man + woman ≈ queen. This single equation broke people's intuitions about what AI could do with language — not because the machine "understands" anything, but because it learned to place words in a geometric space where meaning becomes arithmetic. This post explains how that space is built, what it means, and why it is the foundation every modern language model stands on.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>You shall know a word<br>
+  by the company it keeps.<br><br>
+  — J.R. Firth, 1957<br><br>
+  <em>This single sentence, written sixty-six years before ChatGPT,<br>
+  is the theoretical foundation of every embedding in existence.</em></p>
+</blockquote>
+
+
+<!-- ══════════════════════════════════════════
+     §01 — THE PROBLEM WITH TOKEN IDS
+══════════════════════════════════════════ -->
+<h2>01 — The Problem Token IDs Don't Solve</h2>
+
+<p>Yesterday we learned that tokenization converts text into numbers. Your message becomes a list of integers before the model ever processes it. "cat" → 9246. "dog" → 10077. "kitten" → 19772.</p>
+
+<p>But here is the problem: those numbers are arbitrary. 9246 and 10077 are just entries in a lookup table — they carry no relationship to each other. The number 9246 is no closer to 10077 than it is to 45,000. Yet "cat" and "dog" are very closely related — both are household pets, both are animals, both appear in similar sentences. "cat" and "kitten" are even more closely related: one is literally the younger form of the other.</p>
+
+<p>Raw token IDs are useless for capturing this. They are the equivalent of naming things with random serial numbers. So we need a different kind of representation — one where <em>similar words produce similar numbers</em>. Not a single number per word, but a <em>list</em> of hundreds of numbers — a vector — arranged so that words with similar meanings cluster together in space.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">💡 The core question</span>
+  <p>How do we represent words as numbers in a way that <strong>similar words produce similar numbers</strong>? So that the distance between "cat" and "dog" is small, the distance between "cat" and "politics" is large, and the direction from "king" to "queen" is the same direction as from "man" to "woman"? This is the problem <strong>word embeddings</strong> solve.</p>
+</div>
+
+<div class="math-block">
+  <span class="mh">Token ID (useless for similarity):</span><br>
+  <span class="mc">cat      → 9246      (just a serial number)</span><br>
+  <span class="mc">dog      → 10077     (no relationship to 9246)</span><br>
+  <span class="mc">politics → 45231     (equally "different" from cat as dog is)</span><br><br>
+  <span class="mh">Embedding vector (captures meaning):</span><br>
+  <span class="mg">cat      → [ 0.82, -0.13,  0.45,  0.71, -0.22, ... ]  (300 numbers)</span><br>
+  <span class="mg">dog      → [ 0.79, -0.17,  0.41,  0.68, -0.19, ... ]  (300 numbers — nearly identical!)</span><br>
+  <span class="mw">politics → [-0.12,  0.63, -0.38, -0.04,  0.77, ... ]  (very different direction)</span>
+</div>
+
+<p>The vector for "cat" and the vector for "dog" are nearly parallel — they point in almost the same direction in 300-dimensional space. "Politics" points in a completely different direction. Now similarity is measurable, and arithmetic on concepts becomes possible.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §02 — THE DISTRIBUTIONAL HYPOTHESIS
+══════════════════════════════════════════ -->
+<h2>02 — The Distributional Hypothesis: Meaning From Context</h2>
+
+<p>Before the algorithms, we need the theoretical foundation. Why should training on text co-occurrence produce vectors that capture meaning? The answer comes from linguistics, not computer science.</p>
+
+<p>In 1957, linguist J.R. Firth wrote: <em>"You shall know a word by the company it keeps."</em> This is the <strong>distributional hypothesis</strong> — the idea that words with similar meanings tend to appear in similar contexts.</p>
+
+<div class="rnn-diagram" aria-label="Distributional hypothesis example">
+  Consider sentences you might find in a large corpus:
+
+  "The [X] sat on the mat."
+  "The [X] purred quietly."
+  "She stroked the [X] behind its ears."
+  "The [X] chased the mouse across the floor."
+
+  If X = "cat"    → all sentences make perfect sense
+  If X = "kitten" → all sentences still make perfect sense
+  If X = "feline" → all sentences still make perfect sense
+
+  ∴ "cat", "kitten", "feline" appear in nearly identical contexts
+  ∴ They should have very similar embedding vectors
+
+  Now try X = "democracy" → none of the sentences make sense
+  ∴ "democracy" appears in completely different contexts
+  ∴ Its vector should be far away from "cat"</div>
+
+<p>This is the magic of large-scale text. You don't need a linguist to manually write that "cat" and "kitten" are related — you just need to observe that they appear in the same contexts millions of times. The mathematical structure of co-occurrence <em>is</em> the structure of meaning, at least to a very good first approximation.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 For Engineers</span>
+  <p>The distributional hypothesis is the theoretical justification for all count-based and prediction-based embedding methods. It doesn't capture everything — it conflates polysemous words ("bank" the institution vs "bank" the river), is sensitive to corpus domain, and misses logical operators like negation. But it captures an extraordinary amount of semantic structure from raw co-occurrence statistics alone, which is why every major embedding approach since 2013 has been built on some form of this idea.</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §03 — ONE-HOT: THE WRONG WAY
+══════════════════════════════════════════ -->
+<h2>03 — Why One-Hot Encoding Fails</h2>
+
+<p>Before Word2Vec, the dominant approach was one-hot encoding. Understanding why it fails makes the embedding solution much clearer.</p>
+
+<div class="math-block">
+  <span class="mh">One-hot encoding (vocabulary size = 5 for simplicity):</span><br><br>
+  <span class="mc">Vocabulary: [cat, dog, kitten, politics, run]</span><br><br>
+  <span class="mg">cat     → [1, 0, 0, 0, 0]</span><br>
+  <span class="mg">dog     → [0, 1, 0, 0, 0]</span><br>
+  <span class="mg">kitten  → [0, 0, 1, 0, 0]</span><br>
+  <span class="mg">politics→ [0, 0, 0, 1, 0]</span><br><br>
+  <span class="mh">Cosine similarity between any two different words:</span><br>
+  <span class="mw">cos(cat, dog)     = 0.0  ← orthogonal, no relationship captured</span><br>
+  <span class="mw">cos(cat, kitten)  = 0.0  ← same distance as cat↔politics!</span><br>
+  <span class="mw">cos(cat, politics) = 0.0 ← indistinguishable from all others</span>
+</div>
+
+<p>Every word is equally far from every other word. "cat" is as different from "dog" as it is from "galaxy." The representation carries zero semantic information.</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="emb-r">✗ No similarity signal</span></div>
+    <div class="prose-kv-val">All non-identical pairs have exactly the same cosine distance of 1.0. There is no way to ask "which words are similar to cat?" — they're all equally different. The representation is completely uninformative about semantic relationships.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="emb-r">✗ Dimensionality explosion</span></div>
+    <div class="prose-kv-val">For a vocabulary of 50,000 words, each vector has 50,000 dimensions — nearly all zeros. This is a <strong>sparse</strong> representation that wastes enormous memory and computation. Most operations are adding zeros together.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key"><span class="emb-r">✗ No generalisation</span></div>
+    <div class="prose-kv-val">Anything the model learns about "cat" — say, that it's an entity that can be stroked — doesn't transfer at all to "kitten." Every word must be learned from scratch, completely independently. Shared morphology ("run", "running", "runner") is invisible.</div>
+  </div>
+</div>
+
+<p>The solution is to learn <strong>dense, low-dimensional</strong> representations: vectors of 100–1000 numbers (not 50,000), where similar words have similar vectors. This is exactly what Word2Vec introduced in 2013.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §04 — WORD2VEC
+══════════════════════════════════════════ -->
+<h2>04 — Word2Vec: Learning Meaning From Prediction</h2>
+
+<p>In 2013, Tomas Mikolov and colleagues at Google published Word2Vec — a shockingly simple neural network that produced astonishingly good word representations. The central insight was counterintuitive: <em>don't try to count co-occurrences. Train a network to predict words from their context, and read off the learned weights as the embeddings.</em></p>
+
+<p>Word2Vec comes in two symmetric flavours:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">CBOW — Continuous Bag of Words</div>
+    <div class="prose-kv-val">Given the surrounding words, predict the centre word. "The ___ sat on the mat" → predict "cat". Context window typically ±5 words. Faster and works better on frequent words.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Skip-Gram</div>
+    <div class="prose-kv-val">Given the centre word, predict each surrounding word. "cat" → predict "the", "sat", "on", "the". Slower but captures rare words better — it squeezes more signal out of every occurrence by predicting multiple targets per centre word.</div>
+  </div>
+</div>
+
+<h3>The Architecture</h3>
+
+<p>The network is almost embarrassingly simple: input → one hidden layer (no activation) → output softmax. What matters is the task, not the architecture.</p>
+
+<div class="math-block">
+  <span class="mh">Skip-Gram network (vocabulary V, embedding dim d):</span><br><br>
+  <span class="mc">Input:   one-hot vector for centre word  → shape [V]</span><br>
+  <span class="mc">         (e.g. "cat" = [0,0,...,1,...,0])</span><br><br>
+  <span class="mc">Hidden:  W_in ∈ ℝ^(V×d)   ← THIS IS THE EMBEDDING MATRIX</span><br>
+  <span class="mg">         x = W_in[word_id]  ← just a row lookup, no multiplication</span><br>
+  <span class="mc">         shape: [d]         (e.g. d = 300)</span><br><br>
+  <span class="mc">Output:  W_out ∈ ℝ^(d×V)  → softmax over vocab → P(context word)</span><br><br>
+  <span class="mh">Loss: Cross-entropy between predicted distribution and actual context words</span><br>
+  <span class="mc">After training: W_out is discarded. W_in rows are the word embeddings.</span>
+</div>
+
+<p>By training to predict context words from a centre word, the hidden layer weights are forced to encode what contexts each word appears in. Two words that consistently appear in similar contexts will converge toward similar weight vectors — because similar vectors produce similar predictions, and similar predictions incur similar losses on similar training examples.</p>
+
+<h3>The Training Trick: Negative Sampling</h3>
+
+<p>Computing softmax over a 50,000-word vocabulary is expensive — you normalise over all 50,000 outputs for every training step. Word2Vec uses <strong>negative sampling</strong> to avoid this: instead of predicting the full distribution, train a binary classifier. For each (centre, context) pair, ask "is this a real pair or a randomly sampled fake?"</p>
+
+<div class="math-block">
+  <span class="mh">Negative sampling objective (simplified):</span><br><br>
+  <span class="mg">Maximise: log σ(v_centre · v_context)         ← real pair scores high</span><br>
+  <span class="mw">        + Σ log σ(−v_centre · v_noise_k)     ← k random words score low</span><br><br>
+  <span class="mc">σ = sigmoid:  σ(x) = 1/(1+e^−x)</span><br>
+  <span class="mc">k = noise samples per real pair (typically 5–20)</span><br><br>
+  <span class="my">Instead of normalising over 50,000 words → only 1+k comparisons per step</span><br>
+  <span class="mg">Speedup: 1,000–10,000× for large vocabularies</span>
+</div>
+
+<h3>The Famous Analogy Arithmetic</h3>
+
+<p>Once trained on a large corpus, something remarkable emerges. You can do <em>arithmetic on meaning</em>:</p>
+
+<div class="rnn-diagram" aria-label="Word2Vec analogy arithmetic">
+  v("king")  ≈ [ 0.50,  0.69,  0.32, -0.17,  0.81, ... ]
+  v("man")   ≈ [ 0.45,  0.39,  0.21, -0.35,  0.52, ... ]
+  v("woman") ≈ [ 0.39,  0.37,  0.19, -0.34,  0.48, ... ]
+
+  king - man + woman
+             ≈ [ 0.44,  0.67,  0.30, -0.16,  0.77, ... ]
+
+  Nearest vector in embedding space → v("queen") ✓
+
+  Other analogies that emerge naturally:
+  Paris  − France + Italy  ≈ Rome
+  Doctor − man    + woman  ≈ Nurse   (also reveals training corpus bias!)
+  Tokyo  − Japan  + China  ≈ Beijing
+  Good   − better + bad    ≈ worse</div>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">💡 Why does this work?</span>
+  <p>The direction from "man" to "woman" in embedding space consistently encodes the concept of gender — because gender-correlated contexts are consistent across the corpus. The direction from "France" to "Paris" consistently encodes "capital city of" — because capital city naming patterns are consistent across thousands of sentences. Arithmetic on vectors captures arithmetic on the underlying conceptual relationships. The same mechanism that reveals the king→queen relationship also reveals the doctor→nurse gender bias, which is a direct mirror of the bias in the training text.</p>
+</div>
+
+<h3>What Word2Vec Gets Wrong</h3>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">One vector per word — polysemy ignored</div>
+    <div class="prose-kv-val">"bank" gets a single embedding vector, even though it means a financial institution in one sentence and a river bank in another. The vector ends up as an average of both meanings, which is accurate for neither use. This is the <strong>polysemy problem</strong> — and it motivates everything after Word2Vec.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">No subword understanding</div>
+    <div class="prose-kv-val">"tokenization" and "tokenize" get completely separate vectors with no built-in connection. Words not seen during training have no embedding at all — they become [UNK], losing all information. FastText (Facebook, 2016) fixed this by learning embeddings for character n-grams and composing word vectors from subword pieces.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Shallow, symmetric context window</div>
+    <div class="prose-kv-val">"Not good" pushes "not" and "good" together — the model has no understanding of negation or long-range dependencies. The context window is fixed-size and treats all positions equally, missing the syntactic structure of language.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Reflects corpus biases faithfully</div>
+    <div class="prose-kv-val">"Doctor − man + woman ≈ Nurse" is not a quirk — it is the gender occupational bias of the training corpus rendered in geometry. Embeddings learn whatever the data contains, including social stereotypes encoded in who appears in what roles in news articles and books.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §05 — GLOVE
+══════════════════════════════════════════ -->
+<h2>05 — GloVe: Global Vectors for Word Representation</h2>
+
+<p>Word2Vec is trained locally — it looks at one (centre, context) pair at a time. Stanford researchers Pennington, Socher, and Manning argued in 2014 that this throws away global statistical information available in the full corpus. Their approach: start from the full co-occurrence matrix and factorize it directly.</p>
+
+<h3>The Co-Occurrence Matrix</h3>
+
+<p>Before training, GloVe counts how often every word pair appears within a fixed window across the entire corpus, building a matrix X where X[i][j] = times word j appears in the context of word i.</p>
+
+<div class="rnn-diagram" aria-label="GloVe co-occurrence matrix">
+  Mini corpus (window = 1):
+  "ice is cold"  /  "steam is hot"  /  "ice and steam are both water"
+
+  Co-occurrence matrix X (partial counts):
+              ice   steam  solid  gas    water  cold   hot
+  ice        [ 0,    0,     1,     0,     1,     1,     0  ]
+  steam      [ 0,    0,     0,     1,     1,     0,     1  ]
+  water      [ 1,    1,     0,     0,     0,     0,     0  ]
+
+  Key ratio:
+  P(solid|ice)  / P(solid|steam) ≈ 8.9   ← ice IS solid, steam is NOT
+  P(gas|ice)    / P(gas|steam)   ≈ 0.085 ← gas describes steam, not ice
+  P(water|ice)  / P(water|steam) ≈ 1.36  ← both are water (ratio near 1)
+
+  These ratios discriminate context much better than raw counts alone.</div>
+
+<h3>The GloVe Objective</h3>
+
+<div class="math-block">
+  <span class="mh">GloVe loss function:</span><br><br>
+  <span class="mg">J = Σᵢⱼ f(Xᵢⱼ) · (vᵢᵀ vⱼ + bᵢ + bⱼ − log Xᵢⱼ)²</span><br><br>
+  <span class="mc">vᵢ, vⱼ = embedding vectors for words i and j</span><br>
+  <span class="mc">bᵢ, bⱼ = scalar bias terms per word</span><br>
+  <span class="mc">Xᵢⱼ    = co-occurrence count of words i and j</span><br>
+  <span class="mc">f(Xᵢⱼ) = weighting function — down-weights very frequent pairs</span><br><br>
+  <span class="my">Goal: make the dot product of two word vectors ≈ log(co-occurrence count)</span><br><br>
+  <span class="mh">Weighting function (prevents "the", "is", "a" from dominating):</span><br>
+  <span class="mc">f(x) = (x/x_max)^α  if x &lt; x_max,  else 1.0</span><br>
+  <span class="mc">α = 0.75,  x_max = 100  (empirically tuned in the paper)</span>
+</div>
+
+<h3>GloVe vs Word2Vec</h3>
+
+<table class="prose-table">
+  <thead>
+    <tr><th>Property</th><th>Word2Vec</th><th>GloVe</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Learning approach</strong></td>
+      <td>Prediction (local windows)</td>
+      <td>Matrix factorisation (global stats)</td>
+    </tr>
+    <tr>
+      <td><strong>Statistical scope</strong></td>
+      <td>Local — one window at a time</td>
+      <td>Global — full corpus co-occurrence</td>
+    </tr>
+    <tr>
+      <td><strong>Memory during training</strong></td>
+      <td><span class="tick">Low — streams one window</span></td>
+      <td><span class="mid">Higher — stores V×V matrix (sparse)</span></td>
+    </tr>
+    <tr>
+      <td><strong>Analogy quality</strong></td>
+      <td><span class="tick">✓ Excellent</span></td>
+      <td><span class="tick">✓ Excellent (often slightly better)</span></td>
+    </tr>
+    <tr>
+      <td><strong>Loss interpretability</strong></td>
+      <td>Prediction probability</td>
+      <td>Dot product ≈ log co-occurrence</td>
+    </tr>
+    <tr>
+      <td><strong>Polysemy</strong></td>
+      <td><span class="cross">✗ One vector per word</span></td>
+      <td><span class="cross">✗ One vector per word</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>In practice, both produce embeddings of comparable quality for most downstream tasks. Many practitioners simply try both and pick whichever works better for their specific use case. The shared limitation — one vector per word regardless of context — is what both leave for the next generation to solve.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §06 — POLYSEMY & CONTEXTUAL EMBEDDINGS
+══════════════════════════════════════════ -->
+<h2>06 — The Polysemy Problem and Contextual Embeddings</h2>
+
+<p>Both Word2Vec and GloVe assign one fixed vector to each word type, regardless of context. But many words have completely different meanings in different sentences.</p>
+
+<div class="rnn-diagram" aria-label="Polysemy problem examples">
+  "bank" — two completely different meanings:
+  "I deposited money at the bank."     ← financial institution
+  "We sat on the bank of the river."   ← edge of a waterway
+
+  With static embeddings:
+  v("bank") = some average of both meanings → useful for neither
+
+  "light" — three distinct meanings:
+  "Turn on the light."                 ← electromagnetic radiation
+  "The bag is very light."             ← low mass
+  "Let me light the candle."           ← to ignite
+
+  "model" — also multiple:
+  "She works as a fashion model."      ← person
+  "Train the model on your data."      ← machine learning model
+  "This is the 2026 model of the car." ← product version</div>
+
+<p>The solution is context-dependent embeddings: instead of one fixed vector per word type, compute a different vector for each word <em>occurrence</em> based on the surrounding sentence. This is what contextual embeddings do — and it's the bridge from Word2Vec/GloVe to the modern transformer era.</p>
+
+<h3>ELMo: The First Contextual Embeddings (2018)</h3>
+
+<p>ELMo (Embeddings from Language Models, AllenNLP 2018) was the first widely adopted contextual approach. It runs each sentence through a bidirectional LSTM and uses the resulting hidden states as word representations. The same word "bank" in two different sentences produces two different ELMo vectors — because the hidden states encode the sentence history.</p>
+
+<div class="math-block">
+  <span class="mh">ELMo — contextual embedding for word at position k:</span><br><br>
+  <span class="mc">Forward LSTM:  h→ₖ = context of words 1 ... k  (left context)</span><br>
+  <span class="mc">Backward LSTM: h←ₖ = context of words k ... N  (right context)</span><br><br>
+  <span class="mg">ELMo(wₖ) = γ · Σⱼ sⱼ · hⱼₖ</span><br>
+  <span class="mc">           sⱼ = learned weights per LSTM layer (sum to 1)</span><br>
+  <span class="mc">           γ  = task-specific scaling factor</span><br><br>
+  <span class="my">"bank" in a financial sentence → different hidden states → different vector</span><br>
+  <span class="mg">than "bank" in a river sentence ✓ — polysemy finally handled</span>
+</div>
+
+<p>ELMo was a major advance, but was quickly superseded by BERT (2018), which replaces LSTMs with transformers — attending to the full sentence simultaneously at every layer rather than processing left-to-right and right-to-left in two separate passes. Day 26 covers BERT and GPT in depth.</p>
+
+
+<!-- ══════════════════════════════════════════
+     §07 — SENTENCE TRANSFORMERS
+══════════════════════════════════════════ -->
+<h2>07 — Sentence Transformers: Embedding Whole Sentences</h2>
+
+<p>Word-level embeddings answer "what does this word mean here?" But many real applications need a different answer: "how similar is the meaning of sentence A to sentence B?" — and they need it to be fast enough to search millions of documents.</p>
+
+<p>This is the problem <strong>sentence transformers</strong> solve, and it's the core technology behind semantic search, RAG retrieval, duplicate detection, and recommendation systems.</p>
+
+<h3>The Naive Approach and Why It Fails</h3>
+
+<div class="math-block">
+  <span class="mh">Mean pooling of word embeddings (naive):</span><br><br>
+  <span class="mc">sentence_vec = (1/N) · Σᵢ word_vec(wᵢ)</span><br><br>
+  <span class="mw">Problem 1: "A dog bit a man" ≈ "A man bit a dog"</span><br>
+  <span class="mc">           Same words → same average → identical vector</span><br>
+  <span class="mc">           Completely different meaning — invisible to mean pooling</span><br><br>
+  <span class="mw">Problem 2: "Not good" → vector ≈ average(not, good)</span><br>
+  <span class="mc">           Negation is completely lost — the result sits between positive and negative</span><br><br>
+  <span class="mw">Problem 3: Stopwords dominate long texts</span><br>
+  <span class="mc">           "the", "a", "is" appear so often they dilute semantically rich words</span>
+</div>
+
+<h3>Why Raw BERT Doesn't Scale to Semantic Search</h3>
+
+<div class="prose-callout warn">
+  <span class="prose-callout-label">⚠️ The cross-encoder bottleneck</span>
+  <p>BERT produces its best sentence representation by reading two texts <em>jointly</em> — the query and the document are concatenated and passed through together, so attention flows between them inside the model. This is called a cross-encoder. But it means you can't pre-compute document embeddings: every time a new query arrives, you must run BERT on every (query, document) pair. For 10,000 documents at ~50ms per pass → <strong>8 minutes per query</strong>. Completely unusable in production.</p>
+</div>
+
+<h3>Sentence-BERT: The Siamese Solution (2019)</h3>
+
+<p>Nils Reimers and Iryna Gurevych (UKP Lab) published Sentence-BERT (SBERT) in 2019. The solution: fine-tune BERT with a <strong>siamese network</strong> architecture using sentence pair similarity tasks, so the resulting embeddings are directly comparable by cosine similarity — without joint encoding.</p>
+
+<div class="math-block">
+  <span class="mh">SBERT — Siamese training setup:</span><br><br>
+  <span class="mc">Training data: sentence pairs with similarity labels</span><br>
+  <span class="mc">  "A cat sits on a mat."  ↔  "A kitten rests on a rug."   → similar (1)</span><br>
+  <span class="mc">  "A cat sits on a mat."  ↔  "The market crashed today."  → different (0)</span><br><br>
+  <span class="mg">BERT(sentence_A) → mean_pool(hidden states) → u  ∈ ℝ^768</span><br>
+  <span class="mg">BERT(sentence_B) → mean_pool(hidden states) → v  ∈ ℝ^768</span><br><br>
+  <span class="mh">Training loss (classification variant):</span><br>
+  <span class="mc">concat(u, v, |u−v|) → linear → softmax → similarity label</span><br><br>
+  <span class="mh">At inference:</span><br>
+  <span class="mg">similarity(A, B) = cosine(u, v) = (u·v) / (||u|| · ||v||)</span><br><br>
+  <span class="my">Pre-compute all document embeddings once → store in vector DB</span><br>
+  <span class="mg">Query: embed once → single dot-product search over all documents</span><br>
+  <span class="mg">Speedup vs raw BERT cross-encoder: ~9,000× for 10,000 documents</span>
+</div>
+
+<h3>How This Powers RAG (Day 29 Preview)</h3>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 1 — Offline indexing (once)</div>
+    <div class="prose-kv-val">Every document in your knowledge base is passed through a sentence transformer. The resulting embedding vector (384–1024 dimensions) is stored in a vector database alongside the document text. This is a one-time upfront cost.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 2 — Query encoding (per request)</div>
+    <div class="prose-kv-val">When a user asks a question, it is passed through the same sentence transformer to produce an embedding of identical dimension. Same model, same dimensionality — the query and documents live in the same geometric space.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 3 — Semantic similarity search</div>
+    <div class="prose-kv-val">The query vector is compared against all document vectors using cosine similarity (or approximate nearest-neighbour search via HNSW/IVF for large databases). The top-k most semantically similar documents are retrieved — no keyword matching required.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 4 — Grounded generation</div>
+    <div class="prose-kv-val">The retrieved documents are appended as context to the original question, and the full prompt is sent to the LLM. The model generates an answer grounded in the retrieved text, dramatically reducing hallucination compared to pure parametric memory.</div>
+  </div>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🔍 For Engineers — Popular Models in 2026</span>
+  <p>The most widely used sentence transformer families: <code>all-MiniLM-L6-v2</code> (80 MB, 384-dim, fast, great for English), <code>all-mpnet-base-v2</code> (slower, higher quality), <code>paraphrase-multilingual-mpnet-base-v2</code> (50 languages). For cutting-edge quality: <code>text-embedding-3-large</code> (OpenAI, 3072-dim) and <code>embed-english-v3.0</code> (Cohere). All available via the <code>sentence-transformers</code> Python library and HuggingFace Hub. For domain-specific work: BioBERT (medical), LegalBERT (legal), FinBERT (financial).</p>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §08 — COSINE SIMILARITY
+══════════════════════════════════════════ -->
+<h2>08 — Cosine Similarity: Measuring Meaning With Angles</h2>
+
+<p>Throughout this post we've talked about "similar vectors" without precisely defining similarity. The standard measure in embedding space is <strong>cosine similarity</strong>.</p>
+
+<div class="math-block">
+  <span class="mh">Cosine similarity between vectors u and v:</span><br><br>
+  <span class="mg">cos(u, v) = (u · v) / (||u|| × ||v||)</span><br><br>
+  <span class="mc">u · v  = Σᵢ uᵢvᵢ        ← dot product</span><br>
+  <span class="mc">||u||  = √(Σᵢ uᵢ²)      ← L2 norm of u</span><br>
+  <span class="mc">||v||  = √(Σᵢ vᵢ²)      ← L2 norm of v</span><br><br>
+  <span class="mh">Range and interpretation:</span><br>
+  <span class="mg">cos = +1.0  → identical direction → maximum similarity  (e.g. "cat" vs "cat")</span><br>
+  <span class="my">cos =  0.0  → perpendicular → no semantic relationship  (e.g. "cat" vs "politics")</span><br>
+  <span class="mw">cos = −1.0  → opposite directions → antonyms           (e.g. "love" vs "hate")</span>
+</div>
+
+<p>Why cosine and not Euclidean distance? Because cosine is <em>magnitude-invariant</em>. A 500-word document will have a larger embedding magnitude than a 5-word query (more vectors were pooled together), but their cosine similarity still correctly captures semantic closeness. Euclidean distance would be dominated by the length difference, not the meaning difference.</p>
+
+<div class="rnn-diagram" aria-label="Cosine similarity worked example">
+  Worked example (3D for clarity):
+
+  u = v("cat")  = [0.9, 0.2, 0.1]
+  v = v("dog")  = [0.8, 0.3, 0.0]
+  w = v("code") = [-0.1, 0.8, 0.9]
+
+  cos(cat, dog):
+    u·v  = (0.9×0.8) + (0.2×0.3) + (0.1×0.0) = 0.72+0.06+0.0 = 0.78
+    ||u|| = √(0.81+0.04+0.01) = 0.927
+    ||v|| = √(0.64+0.09+0.00) = 0.854
+    cos   = 0.78 / (0.927 × 0.854) ≈ 0.985  ← very similar ✓
+
+  cos(cat, code):
+    u·w  = (0.9×-0.1) + (0.2×0.8) + (0.1×0.9) = -0.09+0.16+0.09 = 0.16
+    ||w|| = √(0.01+0.64+0.81) = 1.208
+    cos   = 0.16 / (0.927 × 1.208) ≈ 0.143  ← not similar ✓</div>
+
+
+<!-- ══════════════════════════════════════════
+     §09 — CODE
+══════════════════════════════════════════ -->
+<h2>09 — Code: From Token IDs to Semantic Search</h2>
+
+<pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# PART 1: The problem with raw token IDs
+# ─────────────────────────────────────────────────────────────────────
+import numpy as np
+
+vocab = {"cat": 0, "dog": 1, "kitten": 2, "politics": 3, "democracy": 4}
+V = len(vocab)
+
+def one_hot(word_id, vocab_size):
+    v = np.zeros(vocab_size)
+    v[word_id] = 1.0
+    return v
+
+def cosine(u, v):
+    return np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v) + 1e-10)
+
+cat_oh    = one_hot(vocab["cat"],    V)
+dog_oh    = one_hot(vocab["dog"],    V)
+kitten_oh = one_hot(vocab["kitten"], V)
+
+print(f"cos(cat, dog)    = {cosine(cat_oh, dog_oh):.3f}")    # 0.000
+print(f"cos(cat, kitten) = {cosine(cat_oh, kitten_oh):.3f}") # 0.000
+# All pairs are equally "different" — one-hot encodes nothing about meaning</code></pre>
+
+<pre><code class="language-python">import numpy as np
+import os
+
+# Download: https://nlp.stanford.edu/projects/glove/ (wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt)
+
+def load_glove(path, max_words=50_000):
+    """
+    Optimized loader for GloVe/Word2Vec style text files.
+    Handles 'noisy' lines and prevents crashes from non-numeric data.
+    """
+    embeddings = {}
+
+    if not os.path.exists(path):
+        print(f"Error: File '{path}' not found.")
+        return {}
+
+    print(f"Loading up to {max_words} words from {path}...")
+
+    with open(path, encoding="utf-8") as f:
+        for i, line in enumerate(f):
+            if len(embeddings) >= max_words:
+                break
+
+            parts = line.strip().split()
+
+            # Skip empty lines or header lines (some files start with 'count size')
+            if len(parts) < 2:
+                continue
+
+            word = parts[0]
+            try:
+                # Direct conversion is faster than manual loops
+                vector = np.array(parts[1:], dtype=np.float32)
+
+                # Basic validation: Skip words that don't have enough dimensions
+                if vector.size > 1:
+                    embeddings[word] = vector
+            except ValueError:
+                # Silently skip 'noisy' characters like '.', '2', etc.
+                continue
+
+    print(f"Successfully loaded {len(embeddings)} valid word vectors.")
+    return embeddings
+
+
+def analogy(glove, a, b, c, topk=5):
+    """
+    Finds word d such that a:b :: c:d (d ≈ b - a + c).
+    Uses vectorized operations for speed.
+    """
+    # Check if all base words exist in our dictionary
+    missing = [w for w in [a, b, c] if w not in glove]
+    if missing:
+        return f"Error: Words {missing} not found in the loaded dictionary."
+
+    # Perform the vector arithmetic: d = king - man + woman
+    target = glove[b] - glove[a] + glove[c]
+
+    # Normalize the target vector to unit length
+    target_norm = target / (np.linalg.norm(target) + 1e-10)
+
+    # Pre-calculate similarity scores
+    exclude = {a, b, c}
+    results = []
+
+    for word, vec in glove.items():
+        if word not in exclude:
+            # Cosine similarity calculation
+            vec_norm = vec / (np.linalg.norm(vec) + 1e-10)
+            score = np.dot(target_norm, vec_norm)
+            results.append((word, float(score)))
+
+    # Sort and return the top K results
+    return sorted(results, key=lambda x: x[1], reverse=True)[:topk]
+
+
+# --- Execution ---
+FILE_NAME = "wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt"
+glove_dict = load_glove(FILE_NAME)
+
+if glove_dict:
+    print("\n--- Analogy Results ---")
+    print("Man    : King   -> Woman : ", analogy(glove_dict, "man", "king", "woman"))
+    print("France : Paris  -> Egypt : ", analogy(glove_dict, "france", "paris", "egypt"))
+    print("Good   : Better -> Bad   : ", analogy(glove_dict, "good", "better", "bad"))
+
+# C:\miniconda3\python.exe "C:\Users\Mohamed Abdalkader\AnacondaProjects\30 days ramadan 2026 series\23..py" 
+# Loading up to 50000 words from wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt...
+# Successfully loaded 50000 valid word vectors.
+
+# --- Analogy Results ---
+# Man    : King   -> Woman :  [('queen', 0.8715485334396362), ('daughter', 0.8064809441566467), ('throne', 0.7852033972740173), ('eldest', 0.7805679440498352), ('elizabeth', 0.7787423133850098)]
+# France : Paris  -> Egypt :  [('cairo', 0.933250904083252), ('amman', 0.8323947787284851), ('egyptian', 0.7899693846702576), ('tunis', 0.7548093795776367), ('istanbul', 0.751278817653656)]
+# Good   : Better -> Bad   :  [('worse', 0.8991474509239197), ('too', 0.8325068950653076), ('because', 0.8175745606422424), ('hurt', 0.8158162236213684), ('unfortunately', 0.8107208013534546)]
+
+# Process finished with exit code 0
+
+</code></pre>
+
+<pre><code class="language-python">
+# ─────────────────────────────────────────────────────────────────────
+# PART 3: Sentence transformers for semantic search
+# ─────────────────────────────────────────────────────────────────────
+# pip install sentence-transformers
+
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
+model = SentenceTransformer("all-MiniLM-L6-v2")  # 80 MB, 384-dim, fast
+
+# Knowledge base
+documents = [
+    "The Eiffel Tower is located in Paris, France.",
+    "Photosynthesis converts sunlight into chemical energy in plants.",
+    "Python is a high-level programming language known for readability.",
+    "The mitochondria is the powerhouse of the cell.",
+    "Gradient descent is an optimization algorithm used in machine learning.",
+    "The Great Wall of China stretches over 21,000 kilometres.",
+    "Transformers use self-attention to process sequences in parallel.",
+]
+
+# Offline indexing (done once)
+doc_embeddings = model.encode(documents, normalize_embeddings=True)
+# Shape: (7, 384) — one unit vector per document
+
+# Runtime query
+query = "What optimization algorithm is used in deep learning?"
+q_emb = model.encode([query], normalize_embeddings=True)[0]
+
+# Cosine search (dot product of unit vectors = cosine similarity)
+scores = doc_embeddings @ q_emb
+ranked = np.argsort(scores)[::-1]
+
+print(f"\nQuery: {query}\n")
+for rank, idx in enumerate(ranked[:3]):
+    print(f"  {rank+1}. [score={scores[idx]:.3f}]  {documents[idx]}")
+
+# Output:
+# 1. [score=0.689]  Gradient descent is an optimization algorithm used in ML.
+# 2. [score=0.168]  Transformers use self-attention to process sequences.
+# 3. [score=0.145]  Python is a high-level programming language...</code></pre>
+
+<pre><code class="language-python">
+# ─────────────────────────────────────────────────────────────────────
+# PART 4: FAISS for production-scale vector search
+# ─────────────────────────────────────────────────────────────────────
+import numpy as np
+import faiss
+from sentence_transformers import SentenceTransformer
+
+# 1. SETUP: Initialize the model (all-MiniLM-L6-v2 is standard for 384 dimensions)
+print("Loading Embedding Model...")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+dim = 384
+
+# 2. DATA: Your "Database" of documents
+# In a real scenario, these would be lines extracted from your PDFs
+documents = [
+    "The capital of France is Paris.",
+    "Python is a popular programming language for data science.",
+    "The Pyramids of Giza are located in Egypt.",
+    "Artificial Intelligence is transforming the tech industry.",
+    "FastAPI is a modern web framework for building APIs with Python.",
+    "The Eiffel Tower was completed in 1889."
+]
+
+# 3. EMBEDDING: Convert text documents into vectors
+print(f"Encoding {len(documents)} documents...")
+doc_embeddings = model.encode(documents)
+
+# 4. FAISS: Create and build the index
+# We use IndexFlatIP + L2 Normalization to get Cosine Similarity
+docs_vectors = doc_embeddings.astype("float32")
+faiss.normalize_L2(docs_vectors) # Normalize for Cosine Similarity
+
+index = faiss.IndexFlatIP(dim)
+index.add(docs_vectors)
+print(f"FAISS Index built. Size: {index.ntotal}")
+
+# 5. SEARCH: Define a query and find matches
+query_text = "Tell me about French landmarks or cities"
+print(f"\nUser Query: '{query_text}'")
+
+# Encode and normalize the query
+q_emb = model.encode([query_text]).astype("float32")
+faiss.normalize_L2(q_emb)
+
+# Search for Top-3 results
+k = 3
+distances, indices = index.search(q_emb, k)
+
+# 6. RESULTS: Display the findings
+print("\n--- Top Search Results ---")
+for score, doc_idx in zip(distances[0], indices[0]):
+    if doc_idx != -1:
+        print(f"  [Similarity: {score:.4f}] {documents[doc_idx]}")
+
+# 7. OPTIONAL: Save the index to a file for later use
+# faiss.write_index(index, "my_vector_database.index")
+# print("\nIndex saved to disk.")
+
+# ------------------------[Output]-----------------------------
+# Encoding 6 documents...
+# FAISS Index built. Size: 6
+
+# User Query: 'Tell me about French landmarks or cities'
+
+# --- Top Search Results ---
+#   [Similarity: 0.6436] The capital of France is Paris.
+#   [Similarity: 0.2583] The Eiffel Tower was completed in 1889.
+#   [Similarity: 0.1773] The Pyramids of Giza are located in Egypt.
+
+</code></pre>
+
+<pre><code class="language-python">
+# ─────────────────────────────────────────────────────────────────────
+# PART 5: Visualising embedding clusters with t-SNE
+# ─────────────────────────────────────────────────────────────────────
+
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.manifold import TSNE
+from sentence_transformers import SentenceTransformer
+
+# 1. SETUP: Initialize the model (ensure this matches Part 4)
+print("Initializing model for visualization...")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# 2. DATA: Grouped words to demonstrate clustering
+words = [
+    "cat", "dog", "kitten", "puppy", "feline", "canine",  # Animals (Green)
+    "king", "queen", "prince", "princess", "royal", "throne",  # Royalty (Yellow)
+    "python", "java", "code", "program", "function", "debug",  # Programming (Blue)
+]
+
+# 3. EMBEDDING: Get vectors and normalize them for better clustering
+print(f"Encoding {len(words)} words...")
+word_vecs = model.encode(words, normalize_embeddings=True)
+
+# 4. DIMENSIONALITY REDUCTION: t-SNE
+# Perplexity should be smaller than the number of points (18)
+tsne = TSNE(
+    n_components=2,
+    perplexity=5,
+    random_state=42,
+    init='pca',
+    learning_rate='auto'
+)
+coords = tsne.fit_transform(word_vecs)
+
+# 5. VISUALIZATION: Plotting with Matplotlib
+plt.figure(figsize=(12, 8), facecolor='white')
+colors = ["#3fb950"] * 6 + ["#e3b341"] * 6 + ["#58a6ff"] * 6
+
+for i, word in enumerate(words):
+    # Plot the point
+    plt.scatter(coords[i, 0], coords[i, 1], color=colors[i], s=150, edgecolors='black', alpha=0.8)
+
+    # Annotate with a slight offset so text doesn't sit exactly on the dot
+    plt.annotate(
+        word,
+        (coords[i, 0], coords[i, 1]),
+        textcoords="offset points",
+        xytext=(5, 5),
+        fontsize=10,
+        fontweight='bold'
+    )
+
+# Aesthetic adjustments
+plt.title("2D Projection of Word Embeddings (t-SNE)", fontsize=15, pad=20)
+plt.axis("off")
+plt.tight_layout()
+
+# Save and Show
+plt.savefig("embeddings_tsne.png", dpi=200)
+print("Visualization saved as 'embeddings_tsne.png'.")
+plt.show() 
+</code></pre>
+
+
+<!-- ══════════════════════════════════════════
+     §10 — EVOLUTION TIMELINE
+══════════════════════════════════════════ -->
+<h2>10 — The Embedding Evolution: 1950s to 2026</h2>
+
+<div class="rnn-diagram" aria-label="Embedding evolution timeline">
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  THE ROAD FROM CO-OCCURRENCE TABLES TO FOUNDATION EMBEDDINGS
+  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1950s–2000s  LSA / LSI (Latent Semantic Analysis)
+               ↳ SVD decomposition of term-document co-occurrence matrix
+               ↳ First proof that geometry can capture meaning
+               ↳ Limitation: expensive to compute, no prediction signal
+
+  2013         Word2Vec  (Mikolov et al., Google)
+               ↳ Prediction-based embeddings via CBOW and skip-gram
+               ↳ king − man + woman ≈ queen — analogy arithmetic emerges
+               ↳ Negative sampling makes training on billions of words practical
+               ↳ Limitation: one static vector per word — polysemy invisible
+
+  2014         GloVe  (Pennington, Socher, Manning — Stanford)
+               ↳ Matrix factorisation on global co-occurrence counts
+               ↳ Slightly cleaner linear geometry, very similar downstream quality
+               ↳ Same polysemy limitation
+
+  2016         FastText  (Bojanowski et al., Facebook)
+               ↳ Embeddings built from character n-gram subwords
+               ↳ Handles morphology: "running" shares pieces with "run", "runner"
+               ↳ Works for languages without explicit word boundaries (Thai, Chinese)
+               ↳ Still static — one vector per surface form
+
+  2018         ELMo  (Peters et al., AllenNLP)
+               ↳ Contextual embeddings from bidirectional LSTM language model
+               ↳ "bank" finally gets different vectors in different sentences
+               ↳ Pre-trained once, fine-tuned by adding task-specific layers
+
+  2018         BERT  (Devlin et al., Google)
+               ↳ Deep contextual embeddings via transformer self-attention
+               ↳ Full bidirectionality at every layer simultaneously
+               ↳ Pre-train → fine-tune paradigm becomes universal
+               ↳ [CLS] token output usable as sentence embedding (crude but works)
+
+  2019         Sentence-BERT  (Reimers & Gurevych, UKP Lab)
+               ↳ BERT fine-tuned for sentence-pair similarity via siamese training
+               ↳ Sentence embeddings pre-computable and comparable by cosine
+               ↳ 9,000× faster than BERT cross-encoder for pairwise search
+               ↳ Enables semantic search at production scale → powers modern RAG
+
+  2022–2026    Foundation model embeddings
+               ↳ Billion-parameter models trained specifically for embedding
+               ↳ text-embedding-3-large (OpenAI, 3072-dim)
+               ↳ embed-english-v3.0 (Cohere), E5-large, GTE-Qwen2
+               ↳ Multilingual, multi-modal (text + image in same geometric space)
+               ↳ Trained on massive curated datasets with hard negative mining</div>
+
+
+<!-- ══════════════════════════════════════════
+     §11 — LIMITATIONS
+══════════════════════════════════════════ -->
+<h2>11 — What Embeddings Still Can't Do</h2>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">Negation</div>
+    <div class="prose-kv-val">"The product is <strong>not</strong> good" often embeds close to "The product is good." Negation modifies meaning fundamentally, but word-level embeddings average the tokens — "not" doesn't flip the polarity in embedding space. This is why RAG systems sometimes retrieve documents that say the opposite of what was asked.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Domain shift</div>
+    <div class="prose-kv-val">Embeddings trained on general web text don't transfer perfectly to medical, legal, or financial language. "Discharge" means something very different in cardiology vs. military vs. electronics. Domain-specific models (BioBERT, LegalBERT, FinBERT) often dramatically outperform general embeddings in specialist applications.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Exact keyword matching</div>
+    <div class="prose-kv-val">Semantic similarity and string matching address different needs. "What is article 7 of the GDPR?" needs the exact article, not semantically similar legal text. Production systems combine dense semantic search with sparse keyword search (BM25/TF-IDF) — <strong>hybrid search</strong> — to handle both requirements.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Reasoning and compositionality</div>
+    <div class="prose-kv-val">"If the bank had failed, the depositors would have lost their savings" requires logical reasoning about conditionals. Embedding similarity captures topical closeness, not logical structure. Embeddings are excellent similarity measures — they are not reasoning engines.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     §12 — THOUGHT TO SIT WITH
+══════════════════════════════════════════ -->
+<h2>12 — A Thought to Sit With</h2>
+
+<blockquote>
+  <p>Every word you have ever spoken lives — in some representation — inside these models.<br><br>
+  Not as a sound, not as ink, not as memory.<br>
+  As coordinates in a space of three hundred dimensions.<br><br>
+  The question isn't whether that's impressive.<br>
+  The question is: what gets lost in translation to geometry?<br><br>
+  What parts of human language refuse to be a point in space?</p>
+</blockquote>
+
+
+<!-- COMING NEXT -->
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📅 Coming up — Day 24</span>
+  <p>We have the embeddings. Now we need a model that can actually read a sequence of them and generate language. <strong>Day 24: Attention &amp; the Transformer Architecture</strong> — how "Attention Is All You Need" replaced recurrence entirely with a single elegant mechanism, and why that mechanism became the backbone of every language model from GPT to Gemini to Claude.</p>
+</div>
+
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+
+  <p>🔗 <a href="https://projector.tensorflow.org/" target="_blank" rel="noopener">TensorFlow Embedding Projector — Interactive 3D visualisation</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">The single best tool for building embedding intuition. Type any word and watch its nearest neighbours appear in a rotatable 3D word cloud. Run PCA or t-SNE on Word2Vec, GloVe, or your own custom embeddings. Fifteen minutes here makes the "words close in meaning are close in space" concept completely concrete and unforgettable.</em></p>
+
+  <p>📄 <a href="https://arxiv.org/abs/1301.3781" target="_blank" rel="noopener">Efficient Estimation of Word Representations in Vector Space — Mikolov et al. (2013)</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">The original Word2Vec paper. Surprisingly readable — the CBOW and skip-gram architectures are described in under four pages. The analogy evaluation results at the end remain striking even knowing the punchline. Essential reading for understanding why prediction-based embeddings work.</em></p>
+
+  <p>📄 <a href="https://nlp.stanford.edu/pubs/glove.pdf" target="_blank" rel="noopener">GloVe: Global Vectors for Word Representation — Pennington et al. (2014)</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">Exceptionally well-written. The section explaining why co-occurrence ratios (not raw counts) encode meaning is one of the clearest pieces of mathematical intuition-building in NLP literature. The connection between the objective and the analogy arithmetic is made explicit and elegant.</em></p>
+
+  <p>📄 <a href="https://arxiv.org/abs/1908.10084" target="_blank" rel="noopener">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks — Reimers &amp; Gurevych (2019)</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">The paper that made large-scale semantic search practical. The benchmark comparing BERT cross-encoding vs SBERT sentence encoding (65 hours vs 5 seconds for 10,000 pairs) makes the engineering motivation immediately obvious and the solution feel inevitable.</em></p>
+
+  <p>🔗 <a href="https://www.sbert.net/" target="_blank" rel="noopener">SBERT.net — Official sentence-transformers documentation</a><br>
+  <em style="font-size:.875rem;color:var(--text-muted)">Model comparisons, benchmark leaderboards, training tutorials, and integration guides for FAISS, Pinecone, Weaviate, and other vector databases. The model selection guide alone is worth bookmarking before any RAG project.</em></p>
+</div>
+
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. You're told that cos(v("happy"), v("joyful")) = 0.91 and cos(v("happy"), v("miserable")) = −0.74. What does each value mean, and why is the second value negative?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The value 0.91 tells you that "happy" and "joyful" are nearly synonymous — their embedding vectors point in almost the same direction in high-dimensional space, which reflects the fact that they appear in nearly identical contexts across a large corpus ("She felt happy/joyful about the news."). A cosine of 0.91 is close to the maximum of 1.0, indicating very strong semantic similarity.
+
+The value −0.74 tells you that "happy" and "miserable" are antonyms — their vectors point in roughly opposite directions. This happens because opposites are used in contrastive contexts that mirror each other. In a large corpus, "happy" and "miserable" will appear in sentences with opposite sentiment markers, opposite emotional framings, and often in the same contrastive constructions ("She was happy; he was miserable"). Over millions of examples, this pushes their vectors toward opposing regions of the space. The negative cosine is geometrically meaningful: to find the direction of "miserable," you travel roughly opposite to the direction of "happy." This property is also what makes analogy arithmetic work — the direction from "good" to "bad" is consistently the negation direction, so good − bad ≈ positive_sentiment_direction.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. A colleague plans to use Word2Vec embeddings for a medical chatbot handling terms like "acute myocardial infarction" and "left ventricular dysfunction." What are the two main problems with this plan?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Problem one is domain mismatch. Word2Vec trained on general web text (Wikipedia, news articles) will have encountered medical terms rarely and in lay contexts. Words like "infarction", "ventricular", and "myocardial" may not even appear in the vocabulary of a standard general-purpose model — they'll be mapped to [UNK] and lose all meaning. Even if they appear, the embeddings will reflect their general-language contexts (occasional newspaper headlines) rather than their precise clinical relationships. Domain-specific models like BioBERT or PubMedBERT, pre-trained on medical literature (PubMed abstracts, clinical notes), produce dramatically better embeddings for medical terminology because the training distribution matches the target domain.
+
+Problem two is multi-word expressions. "Acute myocardial infarction" is a four-token clinical concept whose meaning is not the sum of individual word meanings — "acute" in medicine means "sudden onset and severe", which is different from the everyday meaning. Word2Vec produces separate vectors for "acute", "myocardial", and "infarction" — the compound clinical concept has no single representation. Sentence-level or phrase-level embeddings (from a sentence transformer fine-tuned on medical data) would represent "acute myocardial infarction" as a single vector encoding the full clinical concept, which is what a medical search system actually needs to match queries like "heart attack treatment" to relevant documents.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. You're building a customer support search system. A user queries "my order hasn't arrived yet." Your database contains: (A) "Package delivery delayed", (B) "Order not received by customer", (C) "Shipping label created", (D) "Refund policy for late deliveries." Rank by expected semantic similarity and explain.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Expected ranking: B &gt; A &gt; D &gt; C.
+
+B ("Order not received by customer") scores highest. It is the same situation described from the agent's perspective — an order that has not been received. The key semantic content (order, not received, customer) directly mirrors the query. A sentence transformer trained on semantic similarity will align these because they describe identical real-world states, even though the phrasing differs.
+
+A ("Package delivery delayed") is second. "Package" and "order" refer to the same physical item; "delivery delayed" maps to "hasn't arrived yet" — both describe a late arrival. Strong topical and semantic overlap despite no exact word matches. This is exactly the kind of match keyword search would miss that semantic search excels at.
+
+D ("Refund policy for late deliveries") is third. It is topically related — a natural follow-up to a missing order — but describes a policy document rather than the customer's current situation. The semantic overlap exists but is indirect. A retrieval system might surface this as a useful next step even though it doesn't directly answer the immediate concern.
+
+C ("Shipping label created") is furthest. It describes an early stage of the shipping process — the package is still with the sender or just entered the courier system. This is nearly the opposite of the problem (order not arrived); it could even be misleading by implying the order is in progress when the customer believes it's lost. Semantic similarity should be low.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. What is the fundamental difference between static embeddings and contextual embeddings? Give a concrete scenario where static embeddings fail but contextual embeddings succeed.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Static embeddings (Word2Vec, GloVe) assign one fixed vector to each word type, computed once during training and stored in a lookup table. At inference time, "bank" always returns the exact same vector, regardless of whether it appears in a financial or geographic context.
+
+Contextual embeddings (ELMo, BERT, SBERT) compute a different vector for each word occurrence based on the full surrounding sentence. BERT runs the entire sentence through multiple transformer layers before producing any token's embedding — so "bank" in "I withdrew money from the bank" activates different attention patterns and produces a different output vector than "bank" in "the trout swam along the river bank."
+
+Concrete failure scenario: you're building a document retrieval system for a geography and finance company. A query arrives: "flood risk near the bank." With static embeddings, v("bank") is an average of financial and geographic senses. The retrieval will return a mix of documents about financial institutions and river banks — probably with financial documents dominating because finance-related text is more common in most training corpora. The geographic meaning gets diluted.
+
+With contextual embeddings, v("bank") in the query "flood risk near the bank" is computed in the context of "flood risk" and "near" — these neighbouring tokens strongly activate the geographic sense of bank (floods are near rivers, not financial buildings). The retrieval system finds geographically relevant documents. The same query sent through a cross-encoder re-ranker (like BERT reading the full query + document pair) makes this disambiguation even more reliable, because the model can attend to the full context when scoring each candidate document.</div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Word Embeddings</div>
+  <ol>
+    <li><strong>Token IDs encode nothing about meaning.</strong> Raw integers are arbitrary serial numbers. We need dense vectors where similar words have similar vectors — that's what embeddings are: lists of ~300 numbers representing a word's position in a learned semantic space.</li>
+    <li><strong>The distributional hypothesis is the foundation.</strong> "You shall know a word by the company it keeps." Words appearing in similar contexts have similar meanings. Measuring co-occurrence at scale extracts semantic structure automatically from raw text — no manual labelling needed.</li>
+    <li><strong>One-hot encoding fails for three reasons.</strong> All non-identical pairs have the same distance (no similarity signal), vectors have V dimensions (sparse and huge), and nothing learned about one word transfers to related words (no generalisation).</li>
+    <li><strong>Word2Vec learns by predicting context.</strong> Train a network to predict surrounding words from a centre word (skip-gram) or the centre from surrounding words (CBOW). The hidden layer weights that emerge encode what contexts each word appears in — similar contexts → similar weights → similar vectors. Negative sampling makes this practical at scale.</li>
+    <li><strong>GloVe factorises global co-occurrence statistics.</strong> Rather than local prediction windows, it minimises the difference between the dot product of two word vectors and the log of their co-occurrence count. Slightly different optimisation, very similar results — both produce analogy arithmetic.</li>
+    <li><strong>Static embeddings have one vector per word — polysemy invisible.</strong> "Bank" gets an averaged vector across all its senses. ELMo (BiLSTM) and BERT (transformer) solve this by computing context-dependent embeddings where the same word gets a different vector in each sentence.</li>
+    <li><strong>Sentence-BERT makes semantic search practical.</strong> Fine-tunes BERT with a siamese architecture so sentence embeddings are directly comparable by cosine similarity — no joint encoding needed. Pre-compute all document embeddings once, search in milliseconds. 9,000× faster than raw BERT cross-encoding.</li>
+    <li><strong>Cosine similarity measures angles, not lengths.</strong> Magnitude-invariant: a 500-word document and a 10-word query can be compared fairly even though they'd have very different vector magnitudes. Values in [−1, +1]: 1.0 = identical direction, 0.0 = orthogonal (unrelated), −1.0 = opposite direction (antonyms).</li>
+    <li><strong>Embeddings are the foundation of RAG.</strong> Every retrieval-augmented generation system relies on sentence embeddings to find relevant documents at query time. Offline index → online search → grounded generation. Understanding embeddings is understanding why RAG works and where it fails.</li>
+  </ol>
+</div>
+
+
+<!-- INTERVIEW -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>Explain Word2Vec, GloVe, and sentence transformers. When would you use each?</strong><br>
+    <em>Word2Vec and GloVe are both static word-level embeddings — one fixed vector per word, trained from corpus co-occurrence. Word2Vec learns by training a prediction task (skip-gram or CBOW); GloVe factorises the global co-occurrence matrix directly. Both produce vectors with analogy-arithmetic properties and similar downstream task quality. Use these for lightweight word-level representations: input features to a classical ML model, visualising word clusters, or quick semantic similarity between individual words where context is not critical. Their core limitation is polysemy: "bank" gets one vector regardless of whether it's financial or geographic. Sentence transformers solve a different problem: they encode entire sentences into single vectors directly comparable by cosine similarity. Use these for semantic search, RAG retrieval, duplicate detection, clustering documents, or any task where you need to compare the meaning of full sentences at scale. They require more compute than static embeddings but are the right tool for any retrieval-based application.</em></li>
+
+    <li><strong>Why is cosine similarity preferred over Euclidean distance for comparing embeddings?</strong><br>
+    <em>Cosine similarity measures the angle between two vectors, normalising out their magnitudes entirely. This is critical for embeddings because vector magnitude is not semantically meaningful — it's an artifact of aggregation. A 500-word document embedding will typically be larger in magnitude than a 10-word query embedding simply because more vectors were pooled, not because the document is "more" anything semantically. Euclidean distance is dominated by this magnitude difference and incorrectly ranks the longer text as "farther" from the short query. Cosine similarity removes this confound, comparing only the directional content — which is where the semantic information lives. Additionally, cosine produces normalised values in [−1, 1] that are easy to threshold across different queries, unlike Euclidean distances whose scale grows with embedding dimension. In practice, when using libraries like FAISS with L2-normalised embeddings, the inner product (dot product) equals cosine similarity, which is why normalised embeddings are the standard preprocessing step before vector database indexing.</em></li>
+
+    <li><strong>Your semantic search system returns irrelevant results for the query "not recommended." Why might this happen and how would you fix it?</strong><br>
+    <em>This is the negation problem. Most sentence embedding models will embed "not recommended" with a vector close to "recommended" — because the word "recommended" dominates the semantic signal, and "not" is a short function word that gets down-weighted. The model learned from paraphrase pairs where positive sentences are similar to other positive sentences; it was not specifically trained to represent negation as directional opposition. Mitigation strategies, in order of increasing effort: First, add a BM25/TF-IDF sparse retrieval layer in a hybrid search setup — keyword matching correctly distinguishes "recommended" from "not recommended" by exact string presence. Second, add a cross-encoder re-ranker (MS MARCO BERT) on the top-k retrieved candidates — cross-encoders read the query and document jointly and handle negation much better than bi-encoder semantic search. Third, fine-tune the embedding model on contrastive pairs that specifically include negation — ("not good", "bad") as a positive pair and ("not good", "good") as a hard negative. Production recommendation: hybrid search (dense + sparse) plus cross-encoder re-ranking is the standard architecture for precision-sensitive retrieval systems.</em></li>
+  </ol>
+</div>
+
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#WordEmbeddings</span><span class="tag">#Word2Vec</span><span class="tag">#GloVe</span><span class="tag">#SentenceTransformers</span><span class="tag">#SBERT</span><span class="tag">#SemanticSearch</span><span class="tag">#CosineSimilarity</span><span class="tag">#NLP</span><span class="tag">#Embeddings</span><span class="tag">#RAG</span><span class="tag">#FAISS</span><span class="tag">#DistributionalHypothesis</span><span class="tag">#ELMo</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="tokenization.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 22</span>
+    <span class="post-nav-title">Tokenization</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

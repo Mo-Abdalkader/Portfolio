@@ -749,30 +749,39 @@ function copyPostLink(btn) {
 
 (function() {
   // Master list of all 30 posts in the series (add slug when publishing each post)
-  const PUBLISHED_POSTS = [
-    'intro-to-ml.html',            // Day 1  - Feb 19
-    'ml-pipeline.html',            // Day 2  - Feb 20
-    'how-models-learn.html',       // Day 3  - Feb 21
-    'linear-regression.html',      // Day 4  - Feb 22
-    'logistic-regression.html',    // Day 5  - Feb 23
-    'knn.html',                    // Day 6  - Feb 24
-    'naive-bayes.html',            // Day 7  - Feb 25
-    'decision-tree.html',          // Day 8  - Feb 26
-    'bias-variance.html',          // Day 9  - Feb 27
-    'regularization.html',         // Day 10 - Feb 28
-    'random-forest.html',          // Day 11 - Mar 1
-    'boosting.html',               // Day 12 - Mar 2
-    'xgboost-lightgbm.html',       // Day 13 - Mar 3
-    'feature-engineering.html',    // Day 14 - Mar 4
-    'neural-networks.html',        // Day 15 - Mar 5
-    'cnn.html',                    // Day 16 - Mar 6
-    'transfer-learning.html',      // Day 17 - Mar 7
-    'object-detection.html',       // Day 18 - Mar 8
-    'nlp-fundamentals.html',       // Day 19 - Mar 9
-    'rnn.html',                    // Day 20 - Mar 10
-    'gru-lstm.html',               // Day 21 - Mar 11
-    'tokenization.html'  
-  ];
+const PUBLISHED_POSTS = [
+  'intro-to-ml.html',                // Day 1  - Feb 19
+  'ml-pipeline.html',                // Day 2  - Feb 20
+  'how-models-learn.html',           // Day 3  - Feb 21
+  'linear-regression.html',          // Day 4  - Feb 22
+  'logistic-regression.html',        // Day 5  - Feb 23
+  'knn.html',                        // Day 6  - Feb 24
+  'naive-bayes.html',                // Day 7  - Feb 25
+  'decision-tree.html',              // Day 8  - Feb 26
+  'bias-variance.html',              // Day 9  - Feb 27
+  'regularization.html',             // Day 10 - Feb 28
+  'random-forest.html',              // Day 11 - Mar 1
+  'boosting.html',                   // Day 12 - Mar 2
+  'xgboost-lightgbm.html',           // Day 13 - Mar 3
+  'feature-engineering.html',        // Day 14 - Mar 4
+  'neural-networks.html',            // Day 15 - Mar 5
+  'cnn.html',                        // Day 16 - Mar 6
+  'transfer-learning.html',          // Day 17 - Mar 7
+  'object-detection.html',           // Day 18 - Mar 8
+  'nlp-fundamentals.html',           // Day 19 - Mar 9
+  'rnn.html',                        // Day 20 - Mar 10
+  'gru-lstm.html',                   // Day 21 - Mar 11
+  'tokenization.html',               // Day 22 - Mar 12
+  'word-embeddings.html',            // Day 23 - Mar 13
+  // 'attention-transformer.html',      // Day 24 - Mar 14
+  // 'positional-encodings.html',       // Day 25 - Mar 15
+  // 'bert-vs-gpt.html',                // Day 26 - Mar 16
+  // 'tokenization-deep-dive.html',     // Day 27 - Mar 17
+  // 'fine-tuning.html',                // Day 28 - Mar 18
+  // 'rag-part1.html',                  // Day 29 - Mar 19
+  // 'prompt-engineering.html',         // Day 30 - Mar 20
+  // 'llm-limitations.html'             // Day 31 - Mar 21
+];
 
   const TOTAL_POSTS = 30;
 
