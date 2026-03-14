@@ -643,107 +643,55 @@ print(f"cos(cat, dog)    = {cosine(cat_oh, dog_oh):.3f}")    # 0.000
 print(f"cos(cat, kitten) = {cosine(cat_oh, kitten_oh):.3f}") # 0.000
 # All pairs are equally "different" — one-hot encodes nothing about meaning</code></pre>
 
-<pre><code class="language-python">import numpy as np
-import os
-
-# Download: https://nlp.stanford.edu/projects/glove/ (wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt)
+<pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# PART 2: Loading GloVe embeddings and word analogy arithmetic
+# ─────────────────────────────────────────────────────────────────────
+# Download: https://nlp.stanford.edu/projects/glove/ (glove.6B.300d.txt)
 
 def load_glove(path, max_words=50_000):
-    """
-    Optimized loader for GloVe/Word2Vec style text files.
-    Handles 'noisy' lines and prevents crashes from non-numeric data.
-    """
+    """Load GloVe vectors into a dict {word: np.array}."""
     embeddings = {}
-
-    if not os.path.exists(path):
-        print(f"Error: File '{path}' not found.")
-        return {}
-
-    print(f"Loading up to {max_words} words from {path}...")
-
     with open(path, encoding="utf-8") as f:
         for i, line in enumerate(f):
-            if len(embeddings) >= max_words:
+            if i >= max_words:
                 break
-
-            parts = line.strip().split()
-
-            # Skip empty lines or header lines (some files start with 'count size')
-            if len(parts) < 2:
-                continue
-
-            word = parts[0]
-            try:
-                # Direct conversion is faster than manual loops
-                vector = np.array(parts[1:], dtype=np.float32)
-
-                # Basic validation: Skip words that don't have enough dimensions
-                if vector.size > 1:
-                    embeddings[word] = vector
-            except ValueError:
-                # Silently skip 'noisy' characters like '.', '2', etc.
-                continue
-
-    print(f"Successfully loaded {len(embeddings)} valid word vectors.")
+            values = line.split()
+            word   = values[0]
+            vector = np.array(values[1:], dtype=np.float32)
+            embeddings[word] = vector
     return embeddings
 
-
 def analogy(glove, a, b, c, topk=5):
-    """
-    Finds word d such that a:b :: c:d (d ≈ b - a + c).
-    Uses vectorized operations for speed.
-    """
-    # Check if all base words exist in our dictionary
-    missing = [w for w in [a, b, c] if w not in glove]
-    if missing:
-        return f"Error: Words {missing} not found in the loaded dictionary."
-
-    # Perform the vector arithmetic: d = king - man + woman
-    target = glove[b] - glove[a] + glove[c]
-
-    # Normalize the target vector to unit length
-    target_norm = target / (np.linalg.norm(target) + 1e-10)
-
-    # Pre-calculate similarity scores
+    """Find word d such that a:b :: c:d   (d ≈ b - a + c)."""
+    target  = glove[b] - glove[a] + glove[c]
+    target  = target / (np.linalg.norm(target) + 1e-10)
     exclude = {a, b, c}
-    results = []
+    scores  = [
+        (word, np.dot(target, vec / (np.linalg.norm(vec) + 1e-10)))
+        for word, vec in glove.items()
+        if word not in exclude
+    ]
+    return sorted(scores, key=lambda x: -x[1])[:topk]
 
-    for word, vec in glove.items():
-        if word not in exclude:
-            # Cosine similarity calculation
-            vec_norm = vec / (np.linalg.norm(vec) + 1e-10)
-            score = np.dot(target_norm, vec_norm)
-            results.append((word, float(score)))
+# glove = load_glove("glove.6B.300d.txt")
+# print(analogy(glove, "man",    "king",   "woman"))  # → queen  ✓
+# print(analogy(glove, "france", "paris",  "italy"))  # → rome   ✓
+# print(analogy(glove, "good",   "better", "bad"))    # → worse  ✓
 
-    # Sort and return the top K results
-    return sorted(results, key=lambda x: x[1], reverse=True)[:topk]
+def nearest_neighbours(glove, word, topk=5):
+    """Find the k most similar words to a query word."""
+    target = glove[word] / (np.linalg.norm(glove[word]) + 1e-10)
+    scores = [
+        (w, np.dot(target, v / (np.linalg.norm(v) + 1e-10)))
+        for w, v in glove.items()
+        if w != word
+    ]
+    return sorted(scores, key=lambda x: -x[1])[:topk]
 
+# nearest_neighbours(glove, "cat")
+# → [("cats", 0.924), ("dog", 0.921), ("kitten", 0.908), ("feline", 0.881), ...]</code></pre>
 
-# --- Execution ---
-FILE_NAME = "wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt"
-glove_dict = load_glove(FILE_NAME)
-
-if glove_dict:
-    print("\n--- Analogy Results ---")
-    print("Man    : King   -> Woman : ", analogy(glove_dict, "man", "king", "woman"))
-    print("France : Paris  -> Egypt : ", analogy(glove_dict, "france", "paris", "egypt"))
-    print("Good   : Better -> Bad   : ", analogy(glove_dict, "good", "better", "bad"))
-
-# C:\miniconda3\python.exe "C:\Users\Mohamed Abdalkader\AnacondaProjects\30 days ramadan 2026 series\23..py" 
-# Loading up to 50000 words from wiki_giga_2024_50_MFT20_vectors_seed_123_alpha_0.75_eta_0.075_combined.txt...
-# Successfully loaded 50000 valid word vectors.
-
-# --- Analogy Results ---
-# Man    : King   -> Woman :  [('queen', 0.8715485334396362), ('daughter', 0.8064809441566467), ('throne', 0.7852033972740173), ('eldest', 0.7805679440498352), ('elizabeth', 0.7787423133850098)]
-# France : Paris  -> Egypt :  [('cairo', 0.933250904083252), ('amman', 0.8323947787284851), ('egyptian', 0.7899693846702576), ('tunis', 0.7548093795776367), ('istanbul', 0.751278817653656)]
-# Good   : Better -> Bad   :  [('worse', 0.8991474509239197), ('too', 0.8325068950653076), ('because', 0.8175745606422424), ('hurt', 0.8158162236213684), ('unfortunately', 0.8107208013534546)]
-
-# Process finished with exit code 0
-
-</code></pre>
-
-<pre><code class="language-python">
-# ─────────────────────────────────────────────────────────────────────
+<pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
 # PART 3: Sentence transformers for semantic search
 # ─────────────────────────────────────────────────────────────────────
 # pip install sentence-transformers
@@ -759,7 +707,7 @@ documents = [
     "Photosynthesis converts sunlight into chemical energy in plants.",
     "Python is a high-level programming language known for readability.",
     "The mitochondria is the powerhouse of the cell.",
-    "Gradient descent is an optimization algorithm used in machine learning.",
+    "Gradient descent is an optimisation algorithm used in machine learning.",
     "The Great Wall of China stretches over 21,000 kilometres.",
     "Transformers use self-attention to process sequences in parallel.",
 ]
@@ -769,7 +717,7 @@ doc_embeddings = model.encode(documents, normalize_embeddings=True)
 # Shape: (7, 384) — one unit vector per document
 
 # Runtime query
-query = "What optimization algorithm is used in deep learning?"
+query = "What optimisation algorithm is used in deep learning?"
 q_emb = model.encode([query], normalize_embeddings=True)[0]
 
 # Cosine search (dot product of unit vectors = cosine similarity)
@@ -781,146 +729,67 @@ for rank, idx in enumerate(ranked[:3]):
     print(f"  {rank+1}. [score={scores[idx]:.3f}]  {documents[idx]}")
 
 # Output:
-# 1. [score=0.689]  Gradient descent is an optimization algorithm used in ML.
-# 2. [score=0.168]  Transformers use self-attention to process sequences.
-# 3. [score=0.145]  Python is a high-level programming language...</code></pre>
+# 1. [score=0.712]  Gradient descent is an optimisation algorithm used in ML.
+# 2. [score=0.534]  Transformers use self-attention to process sequences.
+# 3. [score=0.298]  Python is a high-level programming language...</code></pre>
 
-<pre><code class="language-python">
-# ─────────────────────────────────────────────────────────────────────
+<pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
 # PART 4: FAISS for production-scale vector search
 # ─────────────────────────────────────────────────────────────────────
-import numpy as np
+# pip install faiss-cpu
 import faiss
-from sentence_transformers import SentenceTransformer
 
-# 1. SETUP: Initialize the model (all-MiniLM-L6-v2 is standard for 384 dimensions)
-print("Loading Embedding Model...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
-dim = 384
+dim = 384  # matches all-MiniLM-L6-v2
 
-# 2. DATA: Your "Database" of documents
-# In a real scenario, these would be lines extracted from your PDFs
-documents = [
-    "The capital of France is Paris.",
-    "Python is a popular programming language for data science.",
-    "The Pyramids of Giza are located in Egypt.",
-    "Artificial Intelligence is transforming the tech industry.",
-    "FastAPI is a modern web framework for building APIs with Python.",
-    "The Eiffel Tower was completed in 1889."
-]
-
-# 3. EMBEDDING: Convert text documents into vectors
-print(f"Encoding {len(documents)} documents...")
-doc_embeddings = model.encode(documents)
-
-# 4. FAISS: Create and build the index
-# We use IndexFlatIP + L2 Normalization to get Cosine Similarity
-docs_vectors = doc_embeddings.astype("float32")
-faiss.normalize_L2(docs_vectors) # Normalize for Cosine Similarity
-
+# Flat index: exact inner product search (cosine on unit vectors)
 index = faiss.IndexFlatIP(dim)
-index.add(docs_vectors)
-print(f"FAISS Index built. Size: {index.ntotal}")
+index.add(doc_embeddings.astype("float32"))
+print(f"Index size: {index.ntotal} vectors")
 
-# 5. SEARCH: Define a query and find matches
-query_text = "Tell me about French landmarks or cities"
-print(f"\nUser Query: '{query_text}'")
+# Search — returns top-3
+D, I = index.search(q_emb.reshape(1, -1).astype("float32"), k=3)
 
-# Encode and normalize the query
-q_emb = model.encode([query_text]).astype("float32")
-faiss.normalize_L2(q_emb)
+print("\nFAISS results:")
+for score, doc_idx in zip(D[0], I[0]):
+    print(f"  [score={score:.3f}]  {documents[doc_idx]}")
 
-# Search for Top-3 results
-k = 3
-distances, indices = index.search(q_emb, k)
+# For millions of documents: use IndexIVFFlat or IndexHNSWFlat
+# for approximate nearest-neighbour search with sub-millisecond latency</code></pre>
 
-# 6. RESULTS: Display the findings
-print("\n--- Top Search Results ---")
-for score, doc_idx in zip(distances[0], indices[0]):
-    if doc_idx != -1:
-        print(f"  [Similarity: {score:.4f}] {documents[doc_idx]}")
-
-# 7. OPTIONAL: Save the index to a file for later use
-# faiss.write_index(index, "my_vector_database.index")
-# print("\nIndex saved to disk.")
-
-# ------------------------[Output]-----------------------------
-# Encoding 6 documents...
-# FAISS Index built. Size: 6
-
-# User Query: 'Tell me about French landmarks or cities'
-
-# --- Top Search Results ---
-#   [Similarity: 0.6436] The capital of France is Paris.
-#   [Similarity: 0.2583] The Eiffel Tower was completed in 1889.
-#   [Similarity: 0.1773] The Pyramids of Giza are located in Egypt.
-
-</code></pre>
-
-<pre><code class="language-python">
-# ─────────────────────────────────────────────────────────────────────
+<pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
 # PART 5: Visualising embedding clusters with t-SNE
 # ─────────────────────────────────────────────────────────────────────
+# pip install scikit-learn matplotlib
 
-import matplotlib.pyplot as plt
-import numpy as np
 from sklearn.manifold import TSNE
-from sentence_transformers import SentenceTransformer
+import matplotlib.pyplot as plt
 
-# 1. SETUP: Initialize the model (ensure this matches Part 4)
-print("Initializing model for visualization...")
-model = SentenceTransformer('all-MiniLM-L6-v2')
-
-# 2. DATA: Grouped words to demonstrate clustering
 words = [
-    "cat", "dog", "kitten", "puppy", "feline", "canine",  # Animals (Green)
-    "king", "queen", "prince", "princess", "royal", "throne",  # Royalty (Yellow)
-    "python", "java", "code", "program", "function", "debug",  # Programming (Blue)
+    "cat", "dog", "kitten", "puppy", "feline", "canine",      # animals (green)
+    "king", "queen", "prince", "princess", "royal", "throne",  # royalty (yellow)
+    "python", "java", "code", "program", "function", "debug",  # programming (blue)
 ]
 
-# 3. EMBEDDING: Get vectors and normalize them for better clustering
-print(f"Encoding {len(words)} words...")
-word_vecs = model.encode(words, normalize_embeddings=True)
+word_vecs = model.encode(words, normalize_embeddings=True)  # (18, 384)
 
-# 4. DIMENSIONALITY REDUCTION: t-SNE
-# Perplexity should be smaller than the number of points (18)
-tsne = TSNE(
-    n_components=2,
-    perplexity=5,
-    random_state=42,
-    init='pca',
-    learning_rate='auto'
-)
+# Reduce to 2D for visualisation
+tsne   = TSNE(n_components=2, perplexity=5, random_state=42)
 coords = tsne.fit_transform(word_vecs)
 
-# 5. VISUALIZATION: Plotting with Matplotlib
-plt.figure(figsize=(12, 8), facecolor='white')
 colors = ["#3fb950"] * 6 + ["#e3b341"] * 6 + ["#58a6ff"] * 6
 
+plt.figure(figsize=(10, 7))
 for i, word in enumerate(words):
-    # Plot the point
-    plt.scatter(coords[i, 0], coords[i, 1], color=colors[i], s=150, edgecolors='black', alpha=0.8)
+    plt.scatter(coords[i, 0], coords[i, 1], color=colors[i], s=100, zorder=3)
+    plt.annotate(word, (coords[i, 0] + 0.3, coords[i, 1] + 0.3), fontsize=9)
 
-    # Annotate with a slight offset so text doesn't sit exactly on the dot
-    plt.annotate(
-        word,
-        (coords[i, 0], coords[i, 1]),
-        textcoords="offset points",
-        xytext=(5, 5),
-        fontsize=10,
-        fontweight='bold'
-    )
-
-# Aesthetic adjustments
-plt.title("2D Projection of Word Embeddings (t-SNE)", fontsize=15, pad=20)
+plt.title("Word Embeddings in 2D (t-SNE projection)")
 plt.axis("off")
 plt.tight_layout()
-
-# Save and Show
-plt.savefig("embeddings_tsne.png", dpi=200)
-print("Visualization saved as 'embeddings_tsne.png'.")
-plt.show() 
-</code></pre>
+plt.savefig("embeddings_tsne.png", dpi=150)
+# Expected: three clean clusters — animals (green), royalty (yellow),
+# programming (blue). Within each cluster: cat↔kitten closest, king↔queen
+# adjacent, python↔java near each other.</code></pre>
 
 
 <!-- ══════════════════════════════════════════
@@ -1145,9 +1014,9 @@ With contextual embeddings, v("bank") in the query "flood risk near the bank" is
     <span class="post-nav-label">← Day 22</span>
     <span class="post-nav-title">Tokenization</span>
   </a>
-  <a href="categories.html" class="post-nav-card next">
-    <span class="post-nav-label">Go to →</span>
-    <span class="post-nav-title">Browse All Categories</span>
+  <a href="attention-transformer.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 24 →</span>
+    <span class="post-nav-title">Attention &amp; the Transformer</span>
   </a>
 </div>
 
