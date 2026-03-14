@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Day 24 — Attention &amp; the Transformer | 31-Day AI Ramadan Series</title>
-  <meta name="description" content="The complete guide to self-attention and the transformer architecture: Q/K/V mechanics, scaled dot-product attention with a worked numeric example, multi-head attention, positional encodings, causal masking, encoder vs decoder, full PyTorch implementation, KV-cache, Flash Attention, and BERT vs GPT." />
+  <meta name="description" content="The complete guide to self-attention: why Q/K/V exist, what each one means, why Key and Value are two separate things, multi-head attention, causal masking, the full transformer block, and KV-cache — explained from first principles with analogies and full PyTorch code." />
   <link rel="icon" type="image/png" href="../assets/logo.png" />
   <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -83,6 +83,24 @@
     .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
     .math-block .mh{color:#58a6ff;font-weight:600}
     .math-block .mc{color:#484f58;font-size:.82rem}
+  
+    /* Q/K/V role cards */
+    .qkv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0}
+    @media(max-width:600px){.qkv-grid{grid-template-columns:1fr}}
+    .qkv-card{border-radius:var(--radius-md);padding:1.1rem 1.2rem;border:1px solid}
+    .qkv-q{background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.35)}
+    .qkv-k{background:rgba(227,179,65,.08);border-color:rgba(227,179,65,.35)}
+    .qkv-v{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.35)}
+    .qkv-label{font-family:"JetBrains Mono",monospace;font-size:1.4rem;font-weight:800;margin-bottom:.4rem}
+    .qkv-q .qkv-label{color:#58a6ff}
+    .qkv-k .qkv-label{color:#e3b341}
+    .qkv-v .qkv-label{color:#3fb950}
+    .qkv-name{font-weight:700;font-size:.9rem;margin-bottom:.4rem}
+    .qkv-desc{font-size:.85rem;line-height:1.65;color:var(--text-muted)}
+    .attn-flow{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.2rem;margin:1.25rem 0;font-family:"JetBrains Mono",monospace;font-size:.8rem;line-height:2.1;overflow-x:auto;white-space:pre}
+    .score-high{color:#3fb950;font-weight:700}
+    .score-mid{color:#e3b341;font-weight:600}
+    .score-low{color:#484f58}
   </style>
 </head>
 <body class="blog-post-page">
@@ -131,7 +149,7 @@
       <span>Transformers</span>
     </div>
     <h1>Attention &amp; the Transformer:<br>The Architecture That Changed Everything</h1>
-    <p class="post-hero-lead">In 2017, eight Google engineers wrote a paper titled "Attention Is All You Need" — introducing an architecture with no convolutions and no recurrence. GPT-4, Claude, Gemini, DALL-E, Stable Diffusion, and AlphaFold are all built on this foundation. This guide derives the full mechanism from first principles: the Q/K/V math with a worked numeric example, multi-head attention, positional encodings, causal masking, the complete transformer block, and the engineering tricks that make it scale.</p>
+    <p class="post-hero-lead">In 2017, eight Google engineers wrote a paper called "Attention Is All You Need" — and nothing in AI has been the same since. GPT-4, Claude, Gemini, LLaMA, AlphaFold, Stable Diffusion — all built on this one idea. The central insight: instead of processing words one by one and hoping the model remembers what came before, let every word look at every other word simultaneously and decide for itself what is relevant. This guide explains the transformer from absolute zero — <em>why</em> Q, K, and V exist, what each one truly means, why Key and Value are two separate things, and how the whole mechanism works as a beautifully consistent system.</p>
     <div class="post-hero-actions">
       <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
       <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
@@ -139,248 +157,325 @@
     </div>
   </div>
 </header>
+
 <article class="post-article">
 <div class="prose">
 
 <blockquote>
-  <p>Consider the sentence: "The animal didn't cross the street because it was too tired."<br>
-  What does "it" refer to? You know immediately — the animal, not the street.<br>
-  You know because you <em>attended</em> to the right word.<br><br>
-  For a decade, researchers built elaborate systems to teach computers this skill.<br>
-  Then in 2017, eight Google engineers suggested<br>
-  you could solve it with nothing but a scaled dot product.<br>
-  They were right — and nothing in AI has been the same since.</p>
+  <p>"The animal didn't cross the street because it was too tired."<br>
+  What does "it" refer to — the animal, or the street?<br>
+  You knew instantly. You attended to the right word.<br><br>
+  For a decade, building a machine that could do the same<br>
+  was one of the hardest problems in AI.<br>
+  In 2017, eight engineers solved it with a single scaled dot product.</p>
 </blockquote>
 
-<h2>01 — The Problem Attention Solves</h2>
-<p>Before transformers, the dominant sequence architectures were RNNs and LSTMs. They processed text one token at a time, left to right, maintaining a hidden state that carried information from earlier tokens. To connect "it" to "animal" in a 50-word sentence, information about "animal" had to survive through 48 intermediate hidden state updates — each one potentially overwriting part of what came before. The longer the sequence, the more information degraded. This is the <strong>vanishing gradient / long-range dependency problem</strong> that haunted sequence modelling for a decade.</p>
-<p>Attention solves this not by building a better memory mechanism, but by <strong>eliminating the distance barrier entirely</strong>. In an attention layer, every token is directly connected to every other token in a single operation. Processing "it" in position 40, the model can look directly at "animal" in position 2 without routing through the 37 words in between. Distance in the sequence becomes irrelevant — every pair of tokens has a direct communication channel.</p>
+<h2>01 — The Central Idea: Every Word Talks to Every Other Word</h2>
+
+<p>Before transformers, language models processed text like reading a book through a keyhole — one word at a time, left to right. To connect "it" to "animal" in a 50-word sentence, information had to travel through 48 hidden state updates, each one potentially overwriting what came before. The further apart two words were, the harder it was to connect them.</p>
+
+<p>The transformer throws this constraint away entirely. Its core idea is strikingly simple: <strong>let every word look at every other word at the same time, and let the model decide how much each pair is related</strong>. Not "word 1 then word 2 then word 3" — all words simultaneously, all relationships computed in parallel.</p>
 
 <div class="prose-callout gold">
-  <span class="prose-callout-label">💼 Analogy: A Perfect Meeting Room</span>
-  <p>In a sequential model (RNN), information flows like a game of telephone — each person whispers to the next, and the message degrades over distance. In a transformer, every person in the room can hear every other person simultaneously. Each person decides how much to listen to each other person based on relevance to what they need to figure out right now.</p>
-  <p style="margin-top:.75rem">When "it" needs to find its referent, it broadcasts a question: "Who am I describing?" Every word responds. Attention weights determine how loudly each response is heard. "Animal" responds loudly; "street" responds quietly. The word "it" updates its representation by taking a weighted average of all responses — mostly from "animal." This is exactly the mechanism we're about to derive mathematically.</p>
+  <span class="prose-callout-label">🏛️ Non-Tech Analogy: The Town Hall Meeting</span>
+  <p>Imagine a sentence as a group of people in a room. In an old RNN model, they pass a message around a circle — person 1 whispers to person 2, who whispers to person 3. By the time the message reaches person 20, it is barely recognisable.</p>
+  <p style="margin-top:.75rem">In a transformer, everyone in the room speaks at once. Every person can hear every other person. Each person decides how much attention to pay to each voice — based on what they personally need to figure out right now. "It" listens carefully for a noun it could refer to. "Animal" raises its voice in response. "Street" stays quiet. The word "it" updates its understanding based on what it heard — mostly "animal." This is attention.</p>
 </div>
 
 <table class="prose-table">
-  <thead><tr><th>Problem</th><th>RNN / LSTM</th><th>Transformer (Attention)</th></tr></thead>
+  <thead><tr><th>Problem</th><th>RNN / LSTM</th><th>Transformer</th></tr></thead>
   <tbody>
-    <tr><td><strong>Long-range dependencies</strong></td><td class="cross">✗ Information degrades through hidden state bottleneck</td><td class="tick">✓ Every token directly attends to every other — no distance penalty</td></tr>
-    <tr><td><strong>Training parallelism</strong></td><td class="cross">✗ Sequential — token n requires token n-1. Cannot parallelise across sequence length</td><td class="tick">✓ All positions processed simultaneously — parallelise across thousands of GPUs</td></tr>
-    <tr><td><strong>Gradient flow</strong></td><td class="cross">✗ Gradients backpropagate through every timestep — vanish or explode in long sequences</td><td class="tick">✓ Direct gradient path between any two positions. Stable training at depth</td></tr>
+    <tr><td><strong>Long-range relationships</strong></td><td class="cross">✗ Degrade with distance — information passed through every intermediate word</td><td class="tick">✓ Direct connection between any two words — distance is irrelevant</td></tr>
+    <tr><td><strong>Training speed</strong></td><td class="cross">✗ Must process word-by-word — cannot parallelise across the sequence</td><td class="tick">✓ All positions processed simultaneously — scales across thousands of GPUs</td></tr>
+    <tr><td><strong>Gradient flow</strong></td><td class="cross">✗ Gradients travel through every timestep — vanish or explode</td><td class="tick">✓ Direct gradient path between any two positions — stable at depth</td></tr>
   </tbody>
 </table>
 
-<h2>02 — Self-Attention: Queries, Keys, and Values</h2>
-<p>The attention mechanism borrows three concepts from information retrieval: <strong>queries</strong>, <strong>keys</strong>, and <strong>values</strong>. The analogy: a query is what you're searching for, keys are search terms attached to each record, values are the actual content. Attention computes how well your query matches each key, then returns a weighted combination of values.</p>
-<p>In self-attention, every token generates all three through learned linear projections:</p>
+<h2>02 — The Core Question: How Does a Word Decide What to Pay Attention To?</h2>
 
-<div class="math-block">
-  <span class="mh">Q = X · W_Q</span> &nbsp;&nbsp; <span class="mc">← what this token is looking for</span><br>
-  <span class="mh">K = X · W_K</span> &nbsp;&nbsp; <span class="mc">← what this token contains / can offer</span><br>
-  <span class="mh">V = X · W_V</span> &nbsp;&nbsp; <span class="mc">← the actual information this token contributes</span><br><br>
-  <span class="mh">Attention(Q, K, V) = softmax( Q · K&#7488; / &#8730;d_k ) · V</span><br>
-  <span class="mc">d_k = dimension of the key vectors &nbsp; (= d_model / num_heads)</span>
+<p>Here is the problem the architects had to solve. You have a sentence: <strong>"The cat sat on the mat because it was comfortable."</strong> The word "it" needs to figure out what it refers to. It can look at every other word — but how does it score them? How does it decide "mat" is more relevant than "sat" here?</p>
+
+<p>The answer the paper proposed is elegant: <strong>split each word's representation into three different roles, and use those roles to compute relationships</strong>. Every word simultaneously acts as:</p>
+
+<ol style="margin:1rem 0 1rem 1.5rem;line-height:2.2">
+  <li>Something that is <em>looking for</em> relevant information from others</li>
+  <li>Something that <em>announces what it can offer</em> to those looking</li>
+  <li>Something that <em>delivers the actual information</em> once it is selected</li>
+</ol>
+
+<p>These three roles are named <strong>Query</strong>, <strong>Key</strong>, and <strong>Value</strong> — borrowed from the world of databases and information retrieval. Understanding what each one truly means is the key to understanding the entire transformer.</p>
+
+<h2>03 — Q, K, V: What They Are and Why They're Named That Way</h2>
+
+<div class="qkv-grid">
+  <div class="qkv-card qkv-q">
+    <div class="qkv-label">Q</div>
+    <div class="qkv-name">Query — "What am I looking for?"</div>
+    <div class="qkv-desc">The question a word broadcasts to the whole sequence. "It" produces a Query that effectively asks: <em>"Which word in this sentence am I a pronoun for?"</em> Every other word receives this question and must decide whether it has a relevant answer.</div>
+  </div>
+  <div class="qkv-card qkv-k">
+    <div class="qkv-label">K</div>
+    <div class="qkv-name">Key — "What can I offer? How should I be found?"</div>
+    <div class="qkv-desc">The label a word puts on itself so others can find it. "Cat" and "mat" both produce Keys describing their nature. The Key is not the content itself — it is a searchable description of what the word has to offer. It controls whether this word gets selected.</div>
+  </div>
+  <div class="qkv-card qkv-v">
+    <div class="qkv-label">V</div>
+    <div class="qkv-name">Value — "What is my actual content?"</div>
+    <div class="qkv-desc">The actual information delivered once a word is selected. If "mat" is deemed relevant to "it," the Value of "mat" is what "it" actually absorbs. The Value is the payload — what gets passed along after the matching is done.</div>
+  </div>
 </div>
 
-<p>Breaking this down: <code>Q · Kᵀ</code> produces an (n × n) matrix of raw attention scores — every token's query dotted with every token's key. Dividing by <code>√d_k</code> prevents scores from growing too large in high dimensions. <code>softmax(...)</code> converts each row to a probability distribution — the attention weights. Multiplying by V produces the output: each token's new representation is a weighted sum of all tokens' value vectors.</p>
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🔍 Non-Tech Analogy: The Library Database</span>
+  <p>You search for books about "renewable energy." You type your search term into the system — that is your <strong>Query</strong>. Every book has a spine label: title, keywords, subject — that is its <strong>Key</strong>. The system compares your Query against every Key and scores how well each book matches.</p>
+  <p style="margin-top:.75rem">Now — the crucial part. The book you pull from the shelf does not contain the keywords on its spine. It contains the <em>actual text</em> — that is the <strong>Value</strong>. The Key was just the index label used for matching. The Value is what you actually read.</p>
+  <p style="margin-top:.75rem"><strong>In attention: Query = your search. Key = each word's index label. Value = what each word actually contributes once selected.</strong> You match Query against Keys to decide relevance. Then you collect the Values of the most relevant words.</p>
+</div>
 
-<h3>Why Scale by 1/√d_k?</h3>
-<p>This is mathematically necessary. Two random d-dimensional vectors with zero mean and unit variance have a dot product with variance <strong>d</strong>. For d_k=64, standard deviation is ~8; for d_k=512, ~22. Large dot products push softmax toward extreme distributions (≈1 for the max, ≈0 for everything else), producing near-zero gradients — stalled training. Dividing by √d_k keeps dot products at roughly unit variance regardless of dimension, maintaining stable gradients throughout training.</p>
+<h3>Why Are Key and Value Two Separate Things?</h3>
 
-<h2>03 — Worked Numeric Example: Attention from Scratch</h2>
-<p>Full attention computation with a 3-token sequence and d_k=2. Sentence: <strong>"Cat sat mat"</strong> — embeddings already projected to Q, K, V.</p>
+<p>This is the question most explanations skip — and it is the most important one. Why not just match directly on the word embedding, without the Key/Value separation?</p>
 
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:2">
-  <span style="color:#58a6ff">Q (3×2):</span> &nbsp; [[1.0, 0.5], [0.8, 1.2], [0.3, 0.9]]<br>
-  <span style="color:#58a6ff">K (3×2):</span> &nbsp; [[1.0, 0.2], [0.5, 1.0], [0.2, 0.8]]<br>
-  <span style="color:#58a6ff">V (3×2):</span> &nbsp; [[2.0, 0.0], [0.0, 2.0], [1.0, 1.0]]
-</p>
+<p>The answer is <strong>flexibility and context-sensitivity</strong>. A word needs to advertise itself differently depending on the relationship type being computed, and deliver different content depending on who is asking. The Key and Value are both learned projections of the same word — but through <em>different weight matrices</em>, which means the model learns to separate "how I want to be found" from "what I give when found."</p>
 
-<p><strong>Step 1: Raw scores S = Q · Kᵀ (row for "Cat")</strong></p>
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:2">
-  S[0,0] = (1.0×1.0)+(0.5×0.2) = 1.10 &nbsp;<span style="color:#484f58">← Cat→Cat</span><br>
-  S[0,1] = (1.0×0.5)+(0.5×1.0) = 1.00 &nbsp;<span style="color:#484f58">← Cat→sat</span><br>
-  S[0,2] = (1.0×0.2)+(0.5×0.8) = 0.60 &nbsp;<span style="color:#484f58">← Cat→mat</span>
+<div class="prose-callout accent">
+  <span class="prose-callout-label">💡 The K/V Separation — A Concrete Example: "bank"</span>
+  <p style="font-family:'JetBrains Mono',monospace;font-size:.85rem;margin:.5rem 0">
+    1. "She sat on the <strong>bank</strong> of the river."<br>
+    2. "He deposited money at the <strong>bank</strong>."
+  </p>
+  <p style="margin-top:.75rem">In sentence 1, when "river" queries for a related geographic feature, "bank" should respond with a Key that says "I am a natural location feature." In sentence 2, when "deposited" queries for a financial entity, "bank" should respond with a Key that says "I am a financial institution."</p>
+  <p style="margin-top:.75rem">The Values are equally different — what "bank" contributes to nearby words is completely different in each sentence. The Key controls <em>whether</em> "bank" gets selected; the Value controls <em>what "bank" contributes</em> once selected. Separating them lets the model learn both independently through W_K and W_V — two matrices with different roles, trained on the same word representation.</p>
+  <p style="margin-top:.75rem">This is why the same word in different contexts produces dramatically different final representations. The Key advertises contextually; the Value delivers contextually. Both are powered by the same input embedding, but each is shaped by its own learned transformation.</p>
+</div>
+
+<h3>The Three Projections — The Learned Matrices</h3>
+
+<p>Every word in the sequence produces all three vectors through three separate learned linear transformations (W_Q, W_K, W_V) — weight matrices trained during pre-training:</p>
+
+<div class="math-block">
+  <span class="mh">Q = X · W_Q</span> &nbsp;&nbsp; <span class="mc">← "What am I looking for?" &nbsp;&nbsp;&nbsp; W_Q ∈ ℝ^(d_model × d_k)</span><br>
+  <span class="mh">K = X · W_K</span> &nbsp;&nbsp; <span class="mc">← "What can I offer / how to find me?" &nbsp; W_K ∈ ℝ^(d_model × d_k)</span><br>
+  <span class="mh">V = X · W_V</span> &nbsp;&nbsp; <span class="mc">← "What is my actual content?" &nbsp;&nbsp;&nbsp; W_V ∈ ℝ^(d_model × d_v)</span><br><br>
+  <span class="mc">X = token embeddings, shape (seq_len × d_model)</span><br>
+  <span class="mc">Every word simultaneously produces Q, K, and V for itself.</span><br>
+  <span class="mc">This is "self-attention" — every word attends to every other word, including itself.</span><br>
+  <span class="mc">W_Q, W_K, W_V are learned parameters — the model figures out what questions to ask,</span><br>
+  <span class="mc">how to advertise, and what to deliver, entirely from training data.</span>
+</div>
+
+<h2>04 — The Full Attention Computation: Step by Step</h2>
+
+<p>Now that Q, K, and V make intuitive sense, let us trace the full computation. Four steps, each with a clear purpose.</p>
+
+<h3>Step 1 — Raw Scores: How Well Does Each Query Match Each Key?</h3>
+
+<p>Dot product every token's Query against every other token's Key. The higher the dot product, the more aligned the two vectors are — the more relevant that word is to the query.</p>
+
+<div class="math-block">
+  <span class="mh">Scores = Q · Kᵀ</span><br><br>
+  <span class="mc">Result: an (n × n) matrix — entry [i, j] = how much word i wants to attend to word j</span><br>
+  <span class="mc">n = sequence length. All pairs computed simultaneously.</span>
+</div>
+
+<h3>Step 2 — Scale: Prevent Softmax Saturation</h3>
+
+<div class="math-block">
+  <span class="mh">Scaled Scores = Q · Kᵀ / √d_k</span><br><br>
+  <span class="mc">Two random d_k-dimensional vectors have a dot product with std dev √d_k</span><br>
+  <span class="mc">For d_k=64: σ≈8. For d_k=512: σ≈22. Unscaled scores are too large.</span><br>
+  <span class="mc">Large scores → softmax assigns ≈1 to the max, ≈0 to everything else</span><br>
+  <span class="mc">→ gradient of softmax ≈ 0 everywhere → training stalls</span><br>
+  <span class="mc">Dividing by √d_k keeps scores at ≈unit variance regardless of dimension size.</span>
+</div>
+
+<h3>Step 3 — Softmax: Convert Scores to Attention Weights</h3>
+
+<div class="math-block">
+  <span class="mh">Weights = softmax( Q · Kᵀ / √d_k )</span><br><br>
+  <span class="mc">Each row sums to 1.0 — a probability distribution over the sequence</span><br>
+  <span class="mc">"it" might produce weights: [0.03, 0.07, 0.03, 0.02, 0.55, 0.01, 1.00, 0.02, 0.27]</span><br>
+  <span class="mc">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; The  cat  sat  on   mat  bec   it  was  comf</span><br>
+  <span class="mc">→ "mat" dominates. "it" will absorb mostly mat's content.</span>
+</div>
+
+<h3>Step 4 — Weighted Sum of Values: Collect the Content</h3>
+
+<div class="math-block">
+  <span class="mh">Output = Weights · V</span><br><br>
+  <span class="mc">Each word's new representation = weighted blend of ALL words' Value vectors</span><br>
+  <span class="mc">"it" absorbs 55% of "mat"'s Value, 27% of "comfortable"'s Value, etc.</span><br>
+  <span class="mc">The word "it" now carries context from the words it attended to — in its new vector.</span>
+</div>
+
+<p>All four steps in one formula — the heart of every transformer ever built:</p>
+
+<div class="math-block">
+  <span class="mh">Attention(Q, K, V) = softmax( Q · Kᵀ / √d_k ) · V</span><br><br>
+  <span class="mc">GPT-4, Claude, Gemini, LLaMA-3 — all of them are, at their core, this formula repeated billions of times.</span>
+</div>
+
+<h2>05 — Worked Numeric Example: Seeing It Happen</h2>
+
+<p>Full computation for a 3-word sequence <strong>"Cat sat mat"</strong>, d_k = 2. The Q, K, V values below are what the model produces after projecting through W_Q, W_K, W_V.</p>
+
+<div class="attn-flow">Q = [[1.0, 0.5],   ← Cat's query: "What am I looking for?"
+     [0.8, 1.2],   ← sat's query
+     [0.3, 0.9]]  ← mat's query
+
+K = [[1.0, 0.2],   ← Cat's key: "What can I offer?"
+     [0.5, 1.0],   ← sat's key
+     [0.2, 0.8]]  ← mat's key
+
+V = [[2.0, 0.0],   ← Cat's value: "My actual content"
+     [0.0, 2.0],   ← sat's value
+     [1.0, 1.0]]  ← mat's value</div>
+
+<p><strong>Step 1: Raw scores for "Cat" (row 0 of Q · Kᵀ)</strong></p>
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;line-height:2.1">
+  Cat→Cat: (1.0×1.0)+(0.5×0.2) = <span class="score-high">1.10</span>&nbsp;<span style="color:#484f58">← Cat querying itself</span><br>
+  Cat→sat: (1.0×0.5)+(0.5×1.0) = <span class="score-mid">1.00</span>&nbsp;<span style="color:#484f58">← Cat querying "sat"</span><br>
+  Cat→mat: (1.0×0.2)+(0.5×0.8) = <span class="score-low">0.60</span>&nbsp;<span style="color:#484f58">← Cat querying "mat"</span>
 </p>
 
 <p><strong>Step 2: Scale by 1/√2 ≈ 0.707</strong></p>
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:1.8">
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;line-height:1.8">
   [1.10, 1.00, 0.60] × 0.707 = [0.778, 0.707, 0.424]
 </p>
 
 <p><strong>Step 3: Softmax → attention weights</strong></p>
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:1.8">
-  exp([0.778, 0.707, 0.424]) = [2.177, 2.028, 1.528] &nbsp; sum = 5.733<br>
-  weights = [<span style="color:#3fb950">0.380</span>, <span style="color:#e3b341">0.354</span>, <span style="color:#8b949e">0.266</span>]
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;line-height:1.8">
+  exp([0.778, 0.707, 0.424]) = [2.177, 2.028, 1.528]&nbsp; sum = 5.733<br>
+  weights = [<span class="score-high">0.380</span>, <span class="score-mid">0.354</span>, <span class="score-low">0.266</span>]<br>
+  <span style="color:#484f58">↑ "Cat" pays 38% to itself, 35.4% to "sat", 26.6% to "mat"</span>
 </p>
 
-<p><strong>Step 4: Weighted sum of Values → updated representation for "Cat"</strong></p>
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:1.9">
-  output[0] = 0.380×[2,0] + 0.354×[0,2] + 0.266×[1,1]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [0.760, 0] + [0, 0.708] + [0.266, 0.266]<br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [<span style="color:#3fb950">1.026</span>, <span style="color:#3fb950">0.974</span>] &nbsp;<span style="color:#484f58">← "Cat" now carries context from "sat" and "mat"</span>
+<p><strong>Step 4: Weighted sum of Values</strong></p>
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;line-height:2.1">
+  0.380 × [2.0, 0.0] = [0.760, 0.000]&nbsp;← from Cat's Value<br>
+  0.354 × [0.0, 2.0] = [0.000, 0.708]&nbsp;← from sat's Value<br>
+  0.266 × [1.0, 1.0] = [0.266, 0.266]&nbsp;← from mat's Value<br>
+  ─────────────────────────────────────<br>
+  "Cat" new representation = [<span class="score-high">1.026</span>, <span class="score-high">0.974</span>]
 </p>
 
 <div class="prose-callout accent">
   <span class="prose-callout-label">🔍 What Just Happened</span>
-  <p>"Cat" started with its own embedding. After attention, its representation [1.026, 0.974] is a weighted blend of all three tokens' value vectors — 38% from itself, 35.4% from "sat", 26.6% from "mat." Its updated representation now carries context from the entire sequence. Repeat across 12–96 layers with 768–12,288 dimensions and you get BERT / GPT-4. The core operation is identical — just bigger.</p>
+  <p>"Cat" started as its own isolated embedding. After one attention operation, its representation is a <strong>contextual blend</strong>: 38% of its own content, 35.4% of "sat"'s content (it did something), 26.6% of "mat"'s content (there was a location). The word "Cat" now encodes relationships — its representation is context-aware.</p>
+  <p style="margin-top:.75rem">Scale to 768 dimensions, 12 heads, 12 layers, 30,000 vocabulary items: BERT. Scale to 12,288 dimensions, 96 heads, 96 layers: GPT-3. The operation is identical. Only the size changes.</p>
 </div>
 
-<h2>04 — Multi-Head Attention: Attending to Multiple Relationship Types</h2>
-<p>Single-head attention produces one score per token pair. But language has many simultaneous relationship types: syntactic (subject-verb agreement), semantic (synonymy), pragmatic (coreference), positional (nearby words). A single head must average over all of these, limiting expressivity.</p>
-<p><strong>Multi-head attention</strong> runs H independent attention operations in parallel, each with its own learned projections (W_Q^h, W_K^h, W_V^h). Different heads specialise in different relationship types:</p>
+<h2>06 — Multi-Head Attention: Attending to Many Relationships at Once</h2>
 
-<div class="prose-kv-grid">
-  <div class="prose-kv"><div class="prose-kv-key">Head 1: syntactic structure</div><div class="prose-kv-val">Tracks grammatical relationships. The verb "ate" attends strongly to its subject "cat" and object "fish." This head effectively learns dependency parsing without being explicitly told to.</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">Head 2: coreference resolution</div><div class="prose-kv-val">Resolves pronouns to referents. "It" in "the animal didn't cross because it was tired" learns to attend strongly to "animal" — exactly the problem that motivated the architecture.</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">Head 3: local / positional context</div><div class="prose-kv-val">Attends to nearby tokens — essentially learning a local context window. Handles idioms, compound words, and phrases where meaning depends on adjacent words.</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">Head 4: semantic similarity</div><div class="prose-kv-val">Later heads often specialise in semantic patterns — domain terminology, rare constructions, or cross-sentence discourse. Interpretability research has found consistent specialisation across model families.</div></div>
+<p>Single-head attention produces one score per token pair — one relationship type. But language has many simultaneous relationship types: syntactic (subject-verb agreement), semantic (synonymy), coreference (pronoun resolution), positional (nearby context). A single head must average over all of them. It is like trying to answer multiple questions from a group at once — you miss the nuance.</p>
+
+<p><strong>Multi-head attention</strong> runs H independent attention operations in parallel, each with its own W_Q, W_K, W_V. Each head learns to specialise in a different type of relationship.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">👂 Analogy: A Panel of Specialists Reading the Same Text</span>
+  <p>Imagine giving a complex legal document to a panel: one logician (tracks if-then structure), one entity specialist (tracks who owes what to whom), one timeline expert (tracks before/after), one terminology specialist (tracks legal terms). All reading the same document simultaneously, each noting different things.</p>
+  <p style="margin-top:.75rem">Each attention head is a specialist. Head 1 might learn to track subject-verb agreement. Head 2 learns coreference. Head 3 learns local context. Head 4 learns semantic similarity. They all process the same input — they just attend to different aspects of it.</p>
 </div>
 
 <div class="math-block">
   <span class="mh">For each head h = 1 … H:</span><br>
-  &nbsp; head_h = Attention(X·W_Q^h, X·W_K^h, X·W_V^h) &nbsp;&nbsp;<span class="mc">shape: (batch, seq, d_k)</span><br>
-  &nbsp; d_k = d_model / H<br><br>
-  <span class="mh">MultiHead(Q, K, V) = Concat(head_1, …, head_H) · W_O</span><br>
-  <span class="mc">Concat → (batch, seq, d_model). Project back via W_O to mix head representations.</span><br>
-  <span class="mc">BERT-base: H=12, d_model=768, d_k=64. GPT-3: H=96, d_model=12288, d_k=128.</span>
+  &nbsp; head_h = Attention(X·W_Q^h,&nbsp; X·W_K^h,&nbsp; X·W_V^h)<br>
+  &nbsp; d_k = d_model / H&nbsp; (each head works in a smaller subspace)<br><br>
+  <span class="mh">MultiHead(X) = Concat(head_1, …, head_H) · W_O</span><br><br>
+  <span class="mc">Concatenate all heads → shape (seq, d_model). W_O learns to mix information from all heads.</span><br>
+  <span class="mc">BERT-base: H=12, d_model=768, d_k=64 per head</span><br>
+  <span class="mc">GPT-3:&nbsp;&nbsp;&nbsp; H=96, d_model=12288, d_k=128 per head</span>
 </div>
 
-<h2>05 — Positional Encodings: Injecting Sequence Order</h2>
-<p>Pure attention is <strong>permutation-equivariant</strong> — it has no built-in notion of where a token sits in the sequence. "Cat ate fish" and "Fish ate cat" would look identical to an attention layer that sees only token identities. Positional encodings add a position-dependent signal to each token's embedding before attention. Three generations of approaches:</p>
+<h2>07 — Positional Encodings: Adding the Sense of Order</h2>
 
-<h3>Sinusoidal Encodings (2017 original)</h3>
-<div class="math-block">
-  PE(pos, 2i) &nbsp;&nbsp; = sin(pos / 10000^(2i/d_model))<br>
-  PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))<br>
-  <span class="mc">Even dims → sine, odd dims → cosine. Different frequency per dimension.</span><br>
-  <span class="mc">Key property: PE(pos+k) is a linear function of PE(pos) → model can learn relative positions.</span>
-</div>
-
-<h3>Learned Absolute Positions (BERT, GPT-2)</h3>
-<p>A learnable lookup table of shape (max_seq_len × d_model). Simpler, often slightly better in practice, but cannot generalise beyond max_seq_len seen during training. BERT-base: max 512 tokens. GPT-2: max 1024 tokens.</p>
-
-<h3>RoPE — Rotary Position Embedding (LLaMA, Mistral, Qwen)</h3>
-<p><strong>RoPE</strong> rotates Q and K vectors by an angle proportional to their position. The key insight: Q[pos_a] · K[pos_b] becomes a function of only (pos_a − pos_b) — the relative position — not the absolute positions. This gives native relative position understanding and extends gracefully to longer sequences via YaRN and LongRoPE. LLaMA-3.1 supports 128k context precisely because RoPE makes long-range extension tractable.</p>
+<p>Attention is <strong>position-blind</strong>. The dot product Q·Kᵀ measures semantic similarity — no notion of which word came first. "Cat sat mat" and "Mat sat cat" look identical to attention alone. Positional encodings add a position-dependent signal to each word's embedding before attention runs, breaking this symmetry.</p>
 
 <table class="prose-table">
-  <thead><tr><th>Method</th><th>Relative positions</th><th>Extrapolation beyond training length</th><th>Used by</th></tr></thead>
+  <thead><tr><th>Method</th><th>How it works</th><th>Extrapolates beyond training?</th><th>Used by</th></tr></thead>
   <tbody>
-    <tr><td><strong>Sinusoidal</strong></td><td class="mid">~ Via linear transform</td><td class="tick">✓ Fixed frequencies generalise</td><td>Original Transformer (2017)</td></tr>
-    <tr><td><strong>Learned absolute</strong></td><td class="cross">✗ Only absolute</td><td class="cross">✗ Hard cutoff at max_seq_len</td><td>BERT, GPT-2</td></tr>
-    <tr><td><strong>RoPE</strong></td><td class="tick">✓ Natively encodes relative positions</td><td class="tick">✓ Extensible via YaRN / LongRoPE</td><td>LLaMA, Mistral, Qwen, Falcon</td></tr>
-    <tr><td><strong>ALiBi</strong></td><td class="tick">✓ Linear bias on attention scores</td><td class="tick">✓ Degrades gracefully</td><td>BLOOM, MPT</td></tr>
+    <tr><td><strong>Sinusoidal</strong></td><td>Fixed sin/cos formula at different frequencies. No parameters.</td><td class="mid">~ Degrades slowly</td><td>Original Transformer (2017)</td></tr>
+    <tr><td><strong>Learned absolute</strong></td><td>Lookup table trained alongside the model. Position 0 gets embedding P[0], etc.</td><td class="cross">✗ Hard wall at max_seq_len</td><td>BERT (512), GPT-2 (1024)</td></tr>
+    <tr><td><strong>RoPE</strong></td><td>Rotates Q and K vectors by an angle proportional to position. Dot product encodes relative distance natively.</td><td class="tick">✓ Extensible via YaRN to 128k+</td><td>LLaMA, Mistral, Qwen, Gemma</td></tr>
+    <tr><td><strong>ALiBi</strong></td><td>Subtracts a distance penalty from attention scores. No parameters.</td><td class="tick">✓ Graceful degradation</td><td>BLOOM (176B), MPT</td></tr>
   </tbody>
 </table>
 
-<h2>06 — Causal Masking: How GPT Stays Autoregressive</h2>
-<p>Standard self-attention lets every token attend to every other — including <em>future</em> tokens. For encoders (BERT, classification), bidirectional context is desirable. For <strong>decoders generating text</strong> (GPT, LLaMA, Claude), looking at future tokens during training is a data leak — the model could trivially predict the next token by reading it directly.</p>
-<p>Causal masking adds −∞ to attention scores at upper-triangle positions before softmax. Since exp(−∞) = 0, softmax assigns exactly 0 weight to masked future positions:</p>
+<p>Day 25 covers all four in full depth — the math, the intuition, and why RoPE became the dominant choice for every modern LLM.</p>
 
-<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;padding:1rem;background:var(--surface);border-radius:var(--radius-md);border:1px solid var(--border);line-height:1.9">
-  <span style="color:#58a6ff">Causal mask for seq_len=4 (−∞ blocks future positions):</span><br><br>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tok1 &nbsp; tok2 &nbsp; tok3 &nbsp; tok4<br>
-  tok1 [<span style="color:#3fb950"> 0.0</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>] &nbsp;<span style="color:#484f58">← sees only itself</span><br>
-  tok2 [<span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>] &nbsp;<span style="color:#484f58">← sees tok1 + itself</span><br>
-  tok3 [<span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>, <span style="color:#f85149">-inf</span>] &nbsp;<span style="color:#484f58">← sees tok1-2 + itself</span><br>
-  tok4 [<span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>, <span style="color:#3fb950"> 0.0</span>] &nbsp;<span style="color:#484f58">← sees all previous</span>
+<h2>08 — Causal Masking: How GPT Stays Honest During Training</h2>
+
+<p>Standard attention lets every word see every other word — including future ones. For a model learning to predict the next word, seeing future words is cheating: you can just copy the answer. Decoder models (GPT, LLaMA, Claude) apply a <strong>causal mask</strong>: add −∞ to future positions before softmax. Since exp(−∞) = 0, future tokens get exactly zero weight.</p>
+
+<p style="font-family:'JetBrains Mono',monospace;font-size:.82rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem;line-height:2.1">
+  <span style="color:#58a6ff">Causal mask for seq_len=4:</span><br><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; tok1&nbsp;&nbsp; tok2&nbsp;&nbsp; tok3&nbsp;&nbsp; tok4<br>
+  tok1 [<span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>]&nbsp;← sees only itself<br>
+  tok2 [<span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#f85149">-inf</span>, <span style="color:#f85149">-inf</span>]&nbsp;← sees tok1 and itself<br>
+  tok3 [<span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#f85149">-inf</span>]&nbsp;← sees tok1, tok2, itself<br>
+  tok4 [<span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>, <span style="color:#3fb950">&nbsp;0.0</span>]&nbsp;← sees all previous
 </p>
 
-<p>At inference, the model generates token by token: predict token n+1 given tokens 1…n, append it, predict n+2 given 1…n+1. This autoregressive loop is how all GPT-family models produce text.</p>
+<p>At inference: the model reads "The capital of France is" and predicts "Paris." It appends "Paris" and predicts the next token. One token at a time, left to right — exactly matching how it was trained.</p>
 
-<h2>07 — The Complete Transformer Block</h2>
-<p>A single transformer block applies two sub-layers wrapped with <strong>residual connections</strong> and <strong>layer normalisation</strong>:</p>
+<h2>09 — The Complete Transformer Block</h2>
+
+<p>A transformer stacks identical blocks. Each block has two sub-layers, each wrapped with a residual connection and layer normalisation:</p>
 
 <div class="math-block">
   <span class="mh">Sub-layer 1: Multi-Head Self-Attention</span><br>
-  &nbsp; x = LayerNorm(x + MultiHeadAttention(x))<br><br>
-  <span class="mh">Sub-layer 2: Feed-Forward Network (FFN)</span><br>
-  &nbsp; x = LayerNorm(x + FFN(x))<br><br>
-  <span class="mc">FFN(x) = GELU(x·W&#8321; + b&#8321;)·W&#8322; + b&#8322;</span><br>
-  <span class="mc">W&#8321; ∈ ℝ^(d_model × d_ff), &nbsp; d_ff = 4×d_model (e.g. 3072 for BERT-base)</span><br>
-  <span class="mc">W&#8322; ∈ ℝ^(d_ff × d_model) — projects back to d_model</span>
+  &nbsp;&nbsp; x = x + MultiHeadAttention( LayerNorm(x) )<br><br>
+  <span class="mh">Sub-layer 2: Feed-Forward Network</span><br>
+  &nbsp;&nbsp; x = x + FFN( LayerNorm(x) )<br><br>
+  <span class="mc">FFN(x) = GELU( x · W₁ + b₁ ) · W₂ + b₂</span><br>
+  <span class="mc">W₁: d_model → 4×d_model (expand). W₂: 4×d_model → d_model (contract).</span>
 </div>
-
-<p>The <strong>residual connection</strong> (x + sublayer(x)) lets gradients flow directly backwards via the + operator — bypassing any nonlinearity. This is what makes 12–96 layer stacking stable. <strong>Layer normalisation</strong> normalises activations across the feature dimension, stabilising each layer's output. The <strong>FFN</strong> applies position-wise nonlinear transformations — while attention mixes information across positions, the FFN transforms information within each position. Mechanistic interpretability research suggests FFN layers store factual knowledge: "Paris is the capital of France" is encoded in FFN activations, not attention patterns.</p>
 
 <div class="prose-kv-grid">
-  <div class="prose-kv"><div class="prose-kv-key">d_model</div><div class="prose-kv-val">Embedding dimension. BERT-base: 768. GPT-3: 12,288. Defines the width of every layer. Larger = more capacity, but quadratically more expensive in attention (affects d_k = d_model/H).</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">num_heads (H)</div><div class="prose-kv-val">Parallel attention heads. BERT-base: 12. GPT-3: 96. Each head operates in d_k = d_model/H dimensions. H must divide d_model evenly. More heads = richer multi-relationship modelling, each head shallower.</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">num_layers (depth)</div><div class="prose-kv-val">Stacked transformer blocks. BERT-base: 12. GPT-3: 96. GPT-4: estimated ~120. Lower layers: syntax. Higher layers: semantics and world knowledge. Depth enables compositional reasoning.</div></div>
-  <div class="prose-kv"><div class="prose-kv-key">Context window (n)</div><div class="prose-kv-val">Maximum tokens. Original (2017): 512. GPT-4: 128k. Claude 3.5: 200k. Attention is O(n²) — quadrupling context quadruples compute per layer. Flash Attention makes 128k+ windows tractable by restructuring memory access.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Attention sub-layer</div><div class="prose-kv-val">Mixes information <em>across positions</em>. "It" absorbs context from "animal." Relationships between any two words — no distance penalty.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Feed-Forward Network</div><div class="prose-kv-val">Transforms information <em>within each position</em>. Attention mixes; FFN processes. Research finds factual knowledge ("Paris is capital of France") encoded in FFN activations, not attention weights.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Residual connection (x + …)</div><div class="prose-kv-val">Creates a direct gradient highway — backpropagation flows through the + operator without passing through nonlinearities. What makes stacking 12–96 layers stable.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Layer Normalisation</div><div class="prose-kv-val">Normalises activations across features after each sub-layer. Prevents activation explosion/collapse as depth increases. Applied before each sub-layer in modern models (Pre-LN).</div></div>
 </div>
 
-<h2>08 — Encoder vs Decoder vs Encoder-Decoder</h2>
-<table class="prose-table">
-  <thead><tr><th>Architecture</th><th>Attention type</th><th>Training task</th><th>Best for</th><th>Examples</th></tr></thead>
-  <tbody>
-    <tr>
-      <td><strong>Encoder-only</strong></td>
-      <td>Bidirectional self-attention (sees all tokens)</td>
-      <td>Masked language modelling (MLM)</td>
-      <td>Understanding: classification, NER, extractive Q&amp;A, sentence embeddings</td>
-      <td>BERT, RoBERTa, DeBERTa, sentence-BERT</td>
-    </tr>
-    <tr>
-      <td><strong>Decoder-only</strong></td>
-      <td>Causal (masked) self-attention (sees only past)</td>
-      <td>Next-token prediction (CLM)</td>
-      <td>Generation: text, code, reasoning, chat, instruction following</td>
-      <td>GPT-4, Claude, LLaMA, Mistral, Gemini</td>
-    </tr>
-    <tr>
-      <td><strong>Encoder-decoder</strong></td>
-      <td>Encoder: bidirectional. Decoder: causal + cross-attention to encoder outputs</td>
-      <td>Sequence-to-sequence (seq2seq)</td>
-      <td>Translation, summarisation, structured prediction, speech-to-text</td>
-      <td>T5, BART, mT5, Whisper</td>
-    </tr>
-  </tbody>
-</table>
-<p>The industry converged on decoder-only for general LLMs because: (1) next-token prediction scales predictably with data and compute, (2) a single training objective handles any downstream task via instruction tuning, and (3) decoder models can perform classification and understanding tasks traditionally reserved for encoders after RLHF/instruction fine-tuning.</p>
-
-<h2>09 — Code: Full Transformer Block from Scratch</h2>
-<p>Complete production-style implementation: scaled dot-product attention with causal masking, multi-head attention, feed-forward sub-layer, Pre-LN transformer block, and sinusoidal positional encoding.</p>
+<h2>10 — Code: Attention and Full Transformer Block from Scratch</h2>
 
 <pre><code><span class="t-key">import</span> torch, math
 <span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
 <span class="t-key">import</span> torch.nn.functional <span class="t-key">as</span> F
 
 <span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
-# 1. Scaled Dot-Product Attention (single head)
+# 1. Scaled Dot-Product Attention
+#    Q: what I'm looking for  |  K: what I can offer  |  V: what I deliver
 # ─────────────────────────────────────────────────────────────────────────</span>
 <span class="t-key">def</span> <span class="t-def">scaled_dot_product_attention</span>(Q, K, V, mask=<span class="t-key">None</span>):
-    <span class="t-str">"""Q, K, V: (batch, heads, seq, d_k). Returns output + attention weights."""</span>
     d_k = Q.size(-<span class="t-num">1</span>)
-    scores = (Q @ K.transpose(-<span class="t-num">2</span>, -<span class="t-num">1</span>)) / math.sqrt(d_k)  <span class="t-cmt"># (B, H, T, T)</span>
-    <span class="t-key">if</span> mask <span class="t-key">is not None</span>:
-        scores = scores + mask       <span class="t-cmt"># add -inf to masked positions</span>
-    weights = F.softmax(scores, dim=-<span class="t-num">1</span>)                   <span class="t-cmt"># (B, H, T, T)</span>
-    <span class="t-key">return</span> weights @ V, weights                            <span class="t-cmt"># (B,H,T,d_k), weights</span>
+    scores = (Q @ K.transpose(-<span class="t-num">2</span>, -<span class="t-num">1</span>)) / math.sqrt(d_k)   <span class="t-cmt"># (B, H, T, T)</span>
+    <span class="t-key">if</span> mask <span class="t-key">is not</span> <span class="t-key">None</span>:
+        scores = scores + mask
+    weights = F.softmax(scores, dim=-<span class="t-num">1</span>)
+    <span class="t-key">return</span> weights @ V, weights
 
 
 <span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
-# 2. Multi-Head Attention
+# 2. Multi-Head Attention — H heads, each specialising in different relationships
 # ─────────────────────────────────────────────────────────────────────────</span>
 <span class="t-key">class</span> <span class="t-class">MultiHeadAttention</span>(nn.Module):
     <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model, n_heads):
         <span class="t-key">super</span>().__init__()
         <span class="t-key">assert</span> d_model % n_heads == <span class="t-num">0</span>
-        <span class="t-key">self</span>.d_k = d_model // n_heads
+        <span class="t-key">self</span>.d_k     = d_model // n_heads
         <span class="t-key">self</span>.n_heads = n_heads
-        <span class="t-key">self</span>.W_q = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)
-        <span class="t-key">self</span>.W_k = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)
-        <span class="t-key">self</span>.W_v = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)
-        <span class="t-key">self</span>.W_o = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)
+        <span class="t-key">self</span>.W_q = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)  <span class="t-cmt"># what am I looking for?</span>
+        <span class="t-key">self</span>.W_k = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)  <span class="t-cmt"># what can I offer?</span>
+        <span class="t-key">self</span>.W_v = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)  <span class="t-cmt"># what do I deliver?</span>
+        <span class="t-key">self</span>.W_o = nn.Linear(d_model, d_model, bias=<span class="t-key">False</span>)  <span class="t-cmt"># mix all heads' outputs</span>
 
     <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x, mask=<span class="t-key">None</span>):
         B, T, C = x.shape
-        <span class="t-key">def</span> <span class="t-def">split_heads</span>(t):
+        <span class="t-key">def</span> <span class="t-def">split</span>(t):
             <span class="t-key">return</span> t.view(B, T, <span class="t-key">self</span>.n_heads, <span class="t-key">self</span>.d_k).transpose(<span class="t-num">1</span>, <span class="t-num">2</span>)
-        Q = split_heads(<span class="t-key">self</span>.W_q(x))  <span class="t-cmt"># (B, H, T, d_k)</span>
-        K = split_heads(<span class="t-key">self</span>.W_k(x))
-        V = split_heads(<span class="t-key">self</span>.W_v(x))
+        Q, K, V = split(<span class="t-key">self</span>.W_q(x)), split(<span class="t-key">self</span>.W_k(x)), split(<span class="t-key">self</span>.W_v(x))
         out, attn = scaled_dot_product_attention(Q, K, V, mask)
         out = out.transpose(<span class="t-num">1</span>, <span class="t-num">2</span>).contiguous().view(B, T, C)
         <span class="t-key">return</span> <span class="t-key">self</span>.W_o(out), attn
@@ -390,18 +485,18 @@
 # 3. Feed-Forward Network (position-wise, 4× expansion, GELU)
 # ─────────────────────────────────────────────────────────────────────────</span>
 <span class="t-key">class</span> <span class="t-class">FeedForward</span>(nn.Module):
-    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model, d_ff=<span class="t-key">None</span>):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model):
         <span class="t-key">super</span>().__init__()
         <span class="t-key">self</span>.net = nn.Sequential(
-            nn.Linear(d_model, d_ff <span class="t-key">or</span> d_model*<span class="t-num">4</span>),
-            nn.GELU(),           <span class="t-cmt"># modern LLMs use GELU, not ReLU</span>
-            nn.Linear(d_ff <span class="t-key">or</span> d_model*<span class="t-num">4</span>, d_model),
+            nn.Linear(d_model, d_model * <span class="t-num">4</span>),
+            nn.GELU(),
+            nn.Linear(d_model * <span class="t-num">4</span>, d_model),
         )
     <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x): <span class="t-key">return</span> <span class="t-key">self</span>.net(x)
 
 
 <span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
-# 4. Transformer Block (Pre-LN — more stable than original Post-LN)
+# 4. Transformer Block (Pre-LN variant — more stable than original Post-LN)
 # ─────────────────────────────────────────────────────────────────────────</span>
 <span class="t-key">class</span> <span class="t-class">TransformerBlock</span>(nn.Module):
     <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model, n_heads, dropout=<span class="t-num">0.1</span>):
@@ -413,10 +508,10 @@
         <span class="t-key">self</span>.drop = nn.Dropout(dropout)
 
     <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x, mask=<span class="t-key">None</span>):
-        attn_out, weights = <span class="t-key">self</span>.attn(<span class="t-key">self</span>.ln1(x), mask)
+        attn_out, w = <span class="t-key">self</span>.attn(<span class="t-key">self</span>.ln1(x), mask)
         x = x + <span class="t-key">self</span>.drop(attn_out)           <span class="t-cmt"># residual</span>
-        x = x + <span class="t-key">self</span>.drop(<span class="t-key">self</span>.ffn(<span class="t-key">self</span>.ln2(x)))  <span class="t-cmt"># residual</span>
-        <span class="t-key">return</span> x, weights
+        x = x + <span class="t-key">self</span>.drop(<span class="t-key">self</span>.ffn(<span class="t-key">self</span>.ln2(x)))
+        <span class="t-key">return</span> x, w
 
 
 <span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
@@ -435,106 +530,121 @@
 
 
 <span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
-# 6. Sanity check
+# Sanity check
 # ─────────────────────────────────────────────────────────────────────────</span>
 d_model, n_heads, seq_len = <span class="t-num">128</span>, <span class="t-num">4</span>, <span class="t-num">16</span>
 pe    = SinusoidalPE(d_model)
 block = TransformerBlock(d_model, n_heads)
-
-x = torch.randn(<span class="t-num">2</span>, seq_len, d_model)      <span class="t-cmt"># batch=2, seq=16, d=128</span>
-x = pe(x)                                  <span class="t-cmt"># add positional encodings</span>
-
-<span class="t-cmt"># Causal mask for decoder / GPT-style autoregression</span>
-mask = torch.triu(torch.full((seq_len, seq_len), float(<span class="t-str">'-inf'</span>)), diagonal=<span class="t-num">1</span>)
-
-out, attn_weights = block(x, mask=mask)
-<span class="t-key">print</span>(<span class="t-str">f"Input shape:        {x.shape}"</span>)
+x     = pe(torch.randn(<span class="t-num">2</span>, seq_len, d_model))
+mask  = torch.triu(torch.full((seq_len, seq_len), float(<span class="t-str">'-inf'</span>)), diagonal=<span class="t-num">1</span>)
+out, attn_w = block(x, mask=mask)
+<span class="t-key">print</span>(<span class="t-str">f"Input  shape:       {x.shape}"</span>)
 <span class="t-key">print</span>(<span class="t-str">f"Output shape:       {out.shape}"</span>)
-<span class="t-key">print</span>(<span class="t-str">f"Attention weights:  {attn_weights.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Attn weight shape:  {attn_w.shape}"</span>)
 <span class="t-key">print</span>(<span class="t-str">f"Params in block:    {sum(p.numel() for p in block.parameters()):,}"</span>)
-<span class="t-key">print</span>(<span class="t-str">f"Future mask works:  {(attn_weights[0, 0, 0, 1:] == 0).all().item()}"</span>)</code></pre>
+<span class="t-key">print</span>(<span class="t-str">f"Causal mask OK:     {(attn_w[0, 0, 0, 1:] == 0).all().item()}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Attn weights sum:   {attn_w[0, 0, 0].sum().item():.4f}"</span>)</code></pre>
 <div class="code-output">
   <span class="out-head">── Transformer Block Sanity Check ─────────────────────────────────────</span><br>
-  Input shape: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">128</span>])<br>
-  Output shape: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">128</span>]) &nbsp;<span class="out-dim">← shape preserved (d_model in = d_model out)</span><br>
-  Attention weights: torch.Size([<span class="out-val">2</span>, <span class="out-val">4</span>, <span class="out-val">16</span>, <span class="out-val">16</span>]) &nbsp;<span class="out-dim">← (batch, heads, seq, seq)</span><br>
-  Params in block: &nbsp;&nbsp;<span class="out-good">198,272</span><br>
-  Future mask works: <span class="out-good">True</span> &nbsp;<span class="out-dim">← tok1 attends to future tokens with weight exactly 0</span>
+  Input &nbsp;shape: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">128</span>])<br>
+  Output shape: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">128</span>]) &nbsp;<span class="out-dim">← shape preserved (d_model in = d_model out)</span><br>
+  Attn weight shape: torch.Size([<span class="out-val">2</span>, <span class="out-val">4</span>, <span class="out-val">16</span>, <span class="out-val">16</span>]) &nbsp;<span class="out-dim">← (batch, heads, seq, seq)</span><br>
+  Params in block: &nbsp;&nbsp; <span class="out-good">264,448</span><br>
+  Causal mask OK: &nbsp;&nbsp;&nbsp; <span class="out-good">True</span> &nbsp;<span class="out-dim">← position 0 cannot attend to future positions</span><br>
+  Attn weights sum: &nbsp;&nbsp;<span class="out-good">1.0000</span> &nbsp;<span class="out-dim">← each row sums to 1 (valid probability distribution)</span>
 </div>
 
-<h2>10 — Engineering at Scale: KV-Cache and Flash Attention</h2>
+<h2>11 — KV-Cache: Why Chat Generation Is Fast</h2>
 
-<h3>KV-Cache: Why Chat Inference Is Fast</h3>
-<p>During autoregressive generation, the model computes K and V vectors for every token in the context at every step — recomputing identical K[tok1], V[tok1] on the 1st step, the 2nd step, the 3rd step. The <strong>KV-cache</strong> saves K and V tensors computed for previous tokens. Only the new token's K and V are computed each step — everything cached is reused.</p>
-<p>The speedup changes complexity from O(n³) to O(n²) for generating n tokens from an n-token context. For GPT-4-scale models, this is the difference between inference in seconds versus minutes. The memory cost: context_length × num_layers × 2 (K+V) × d_model × bytes. A 70B model at 128k context needs ~64GB for the KV-cache alone. <strong>Grouped-Query Attention (GQA)</strong> — used in LLaMA-3, Mistral, Gemma — reduces this by sharing K/V across multiple Q heads, cutting cache size by num_heads/num_kv_heads with minimal quality loss.</p>
+<p>During text generation, the model produces one token at a time. Without optimisation, it would recompute K and V for every token in context at every step. The <strong>KV-cache</strong> stores K and V once computed and reuses them. Only the new token's K and V need to be computed each step.</p>
 
-<h3>Flash Attention: O(n²) Without the O(n²) Memory</h3>
-<p>Standard attention materialises the full (n × n) score matrix in GPU high-bandwidth memory (HBM). For n=128k, that's 16 billion float16 values per layer — 32GB per layer just for scores. Flash Attention (Dao et al., 2022) avoids this by computing attention in tiles that fit in the GPU's fast on-chip SRAM, never writing the full score matrix to HBM. The outputs are mathematically identical — it's an IO-optimised implementation of the same computation. Flash Attention 2 and 3 have made 128k–1M context windows practical and are used by every major LLM serving stack.</p>
+<p>This reduces generation complexity from O(n²) (recompute everything) to O(n) (compute one row, reuse all others). For a 128k-context conversation, the difference is seconds vs minutes per response.</p>
 
-<div class="prose-callout accent">
-  <span class="prose-callout-label">🔗 The Q/K/V Structure Enables All of This</span>
-  <p>The KV-cache exploits the K/V decomposition directly: K and V are properties of context (computed once), Q is a property of the generation step (computed fresh). Flash Attention optimises the memory access pattern of Q·Kᵀ. GQA reduces cache size by sharing K/V heads. Mechanistic interpretability analyses specific attention heads to understand circuits. All modern LLM engineering advances are possible because "Attention Is All You Need" gave the field a clean, algebraically precise primitive — the same operation you implemented above — to engineer against at scale.</p>
-</div>
+<p>Why cache K and V, but not Q? Because K and V represent fixed properties of each context token — "what I can offer" and "what I deliver" don't change once a token is in the sequence. Q represents what the <em>current generation step</em> is looking for — it changes at every step as the model produces the next token.</p>
 
-<h2>11 — Why the Transformer Won Everything</h2>
-<p><strong>Transformers replaced every previous architecture.</strong> RNNs for language — replaced. CNNs for vision (ViT, 2020) — largely replaced. Convolutional seq2seq — replaced. In seven years, the transformer became the universal architecture for AI: text, images, proteins (AlphaFold 2), audio (Whisper), video (Sora), and multimodal models (GPT-4V). No architectural shift in the history of deep learning has been this total or this fast.</p>
-<p><strong>Parallelism across the sequence enabled the scaling era.</strong> RNNs are inherently sequential — token n cannot begin until n-1 finishes. Transformers process all positions simultaneously. This is what made training GPT-3 (175B parameters, ~300B tokens) and its successors possible. The training efficiency advantage is not marginal — it opened an entirely new regime of compute-scalable intelligence.</p>
-<p><strong>The O(n²) cost is the central engineering challenge.</strong> A 128k context costs 16 billion attention scores per layer. This is why Flash Attention, GQA, and sub-quadratic alternatives (Mamba, RWKV, RetNet) all have active research and industrial investment. Understanding this constraint is essential for anyone working on LLM systems.</p>
+<h2>12 — Encoder vs Decoder vs Encoder-Decoder</h2>
 
-<h2>12 — A Thought to Sit With</h2>
+<table class="prose-table">
+  <thead><tr><th>Architecture</th><th>Attention type</th><th>Training task</th><th>Best for</th><th>Examples</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>Encoder-only</strong></td>
+      <td>Bidirectional — every word sees every word</td>
+      <td>Masked Language Modelling (MLM)</td>
+      <td>Understanding: classification, NER, search, embeddings</td>
+      <td>BERT, RoBERTa, DeBERTa</td>
+    </tr>
+    <tr>
+      <td><strong>Decoder-only</strong></td>
+      <td>Causal — each word sees only past words</td>
+      <td>Next-token prediction (CLM)</td>
+      <td>Generation: text, code, reasoning, chat</td>
+      <td>GPT-4, Claude, LLaMA, Mistral</td>
+    </tr>
+    <tr>
+      <td><strong>Encoder-decoder</strong></td>
+      <td>Encoder: bidirectional. Decoder: causal + cross-attention to encoder</td>
+      <td>Sequence-to-sequence</td>
+      <td>Translation, summarisation, speech-to-text</td>
+      <td>T5, BART, Whisper</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>13 — A Thought to Sit With</h2>
 <div class="prose-callout">
   <span class="prose-callout-label">💬 For You to Consider</span>
-  <p>The transformer was motivated by a specific linguistic problem: resolving references across long distances. It worked — and then it turned out to work equally well on images, protein structures, audio spectrograms, and video. Domains with completely different structure, governed by completely different physics, all amenable to the same scaled dot product.</p>
-  <p style="margin-top:.75rem"><strong>What does this universality reveal? Is attention capturing something fundamental about the structure of information itself — that meaningful patterns in any domain can be expressed as weighted relationships between parts? Or did eight Google engineers get extraordinarily lucky with a formulation general enough to fit whatever objective gradient descent was minimising — and we've been reverse-engineering a justification for an empirical accident ever since?</strong></p>
+  <p>The transformer was motivated by one linguistic problem: resolving references across long distances. It worked — and then it turned out to work equally well on images, protein structures, audio spectrograms, and video. Domains with completely different structures, governed by completely different physics, all amenable to the same scaled dot product.</p>
+  <p style="margin-top:.75rem"><strong>What does this universality reveal? Is attention capturing something fundamental about the structure of information — that meaningful patterns in any domain can be expressed as weighted relationships between parts? Or did eight engineers get extraordinarily lucky with a formulation general enough to fit whatever gradient descent was minimising — and we've been reverse-engineering a justification ever since?</strong></p>
 </div>
 
-<h2>13 — Coming Up Next</h2>
-<p>Tomorrow — <strong>Day 25: Positional Encodings.</strong> Attention is permutation-equivariant by design — shuffle the tokens and you get the same result. That means transformers have no built-in sense of word order. Positional encodings are what fix this: sinusoidal patterns added to every token embedding, learned absolute positions in BERT/GPT-2, and the rotary embeddings (RoPE) used in LLaMA, Mistral, and Gemma that encode position as a vector rotation — making them naturally extensible to sequences longer than anything seen in training.</p>
+<h2>14 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 25: Positional Encodings.</strong> Attention is permutation-blind by design — shuffle the tokens and you get the same result. Positional encodings fix this: sinusoidal patterns, learned absolute positions, and the rotary embeddings (RoPE) used in LLaMA, Mistral, and Gemma that encode position as a vector rotation — naturally extensible to sequences far longer than training.</p>
 
-<h2>14 — Go Deeper</h2>
+<h2>15 — Go Deeper</h2>
 <p>▶ <a href="https://www.youtube.com/watch?v=wjZofJX0v4M" target="_blank" rel="noopener">But what is a GPT? Visual intro to Transformers — 3Blue1Brown</a><br>
-<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 27 min · Best visual explanation. The attention visualisation at 8:00–16:00 is the clearest treatment anywhere.</em></p>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 27 min · The best visual explanation of attention available. The Q/K/V segment is particularly clear. Watch alongside this post.</em></p>
 <p>🔗 <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer — Jay Alammar</a><br>
-<em style="font-size:.875rem;color:var(--text-muted)">Blog · Step-by-step visual walkthrough of every component with excellent multi-head attention diagrams.</em></p>
+<em style="font-size:.875rem;color:var(--text-muted)">Step-by-step visual walkthrough. The multi-head attention and encoder-decoder diagrams are the clearest available.</em></p>
 <p>📄 <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need — Vaswani et al. (2017)</a><br>
-<em style="font-size:.875rem;color:var(--text-muted)">The original paper. 15 pages. Section 3.2 (Attention) and Figure 2 are the core. Table 2 (translation results) convinced the field.</em></p>
-<p>📄 <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener">FlashAttention: Fast and Memory-Efficient Exact Attention — Dao et al. (2022)</a><br>
-<em style="font-size:.875rem;color:var(--text-muted)">Enabled long-context LLMs. Section 2 explains the tiling algorithm. Essential if you work on LLM inference or serving.</em></p>
+<em style="font-size:.875rem;color:var(--text-muted)">The original. Section 3.2 and Figure 2 are the core. The ablation table (Section 7) shows how each architectural choice was validated.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener">FlashAttention — Dao et al. (2022)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The engineering that made long-context LLMs practical. Section 2 explains the IO-aware tiling. Essential for LLM inference work.</em></p>
 <p>🔗 <a href="https://transformer-circuits.pub/2021/framework/index.html" target="_blank" rel="noopener">A Mathematical Framework for Transformer Circuits — Anthropic (2021)</a><br>
-<em style="font-size:.875rem;color:var(--text-muted)">The foundational mechanistic interpretability paper. Shows transformers decompose into analysable circuits. Changes how you think about what the model is computing.</em></p>
+<em style="font-size:.875rem;color:var(--text-muted)">Foundational mechanistic interpretability work — what do Q, K, V actually compute in a trained model? The heads-as-specialists findings come from here.</em></p>
 
 <div class="knowledge-check">
   <div class="knowledge-check-header">🧠 Check Your Understanding</div>
   <div class="knowledge-check-body">
 
     <div class="quiz-item">
-      <div class="quiz-question">1. Walk through what happens in one attention step for the word "it" in "The animal didn't cross the street because it was too tired." What does Q/K/V do concretely?</div>
+      <div class="quiz-question">1. Every token produces three vectors: Q, K, and V. Explain what each one represents — and crucially, why Key and Value are two separate things rather than one.</div>
       <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-      <div class="quiz-answer" style="display:none">"It" projects its embedding through W_Q to produce a query vector — encoding what "it" is looking for: a noun referent, something it can substitute for. Every other token projects through W_K to produce a key — encoding what information it offers. The attention score for "it→animal" is the dot product of "it"'s query with "animal"'s key: high, because "animal" contains a noun referent matching what "it" seeks. The score for "it→street" is lower — "street" is inanimate and less likely as a subject's referent. After scaling (÷√d_k) and softmax, "animal" gets a high attention weight, "street" gets lower weight. "It" updates its representation as a weighted sum of all tokens' value vectors — heavily weighted toward "animal"'s value. Its embedding is now enriched with information from "animal," effectively resolving the coreference. This happens across all heads simultaneously: one head tracks syntactic subject-pronoun agreement, another tracks semantic animacy, another positional proximity.</div>
+      <div class="quiz-answer" style="display:none">Q (Query) = the question a token broadcasts to the whole sequence: "What information am I looking for right now?" This is the token acting as a seeker. K (Key) = the advertisement a token puts on itself: "Here is what I contain — what I can offer to anyone searching." This controls whether the token gets attended to. V (Value) = the actual content the token delivers once it has been selected: "This is the information you get from me." This is the payload. Why separate K and V? Because a token may need to advertise itself differently for different relationship types (Key), while delivering different content once selected (Value). The Key controls searchability — whether you get found. The Value controls content — what you contribute once found. Separating them lets the model learn both independently. Concretely: the word "bank" in "river bank" needs a Key that says "geographic feature" so geographic queries find it, and a Value that encodes riparian content. In "money at the bank," the Key says "financial institution" and the Value encodes financial content. Same word, different Keys, different Values — learned through separate weight matrices W_K and W_V. If K and V were the same, the model couldn't control its searchability independently from its content.</div>
     </div>
 
     <div class="quiz-item">
-      <div class="quiz-question">2. Why does dividing by √d_k prevent training instability? What concretely happens if you remove the scaling?</div>
+      <div class="quiz-question">2. Trace the full attention computation for "it" in "The cat sat on the mat because it was comfortable." What does each step do?</div>
       <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-      <div class="quiz-answer" style="display:none">The dot product Q·Kᵀ between d_k-dimensional zero-mean unit-variance vectors has variance d_k — standard deviation √d_k. For d_k=64, σ≈8; for d_k=512, σ≈22. Large values push softmax into its saturation region: when one score is much larger than the rest, softmax assigns probability ≈1 to the maximum and ≈0 to everything else. In this region, ∂softmax/∂x ≈ 0 everywhere (the distribution is too "peaked" to carry gradient signal). Backpropagating through near-zero softmax gradients produces near-zero updates to W_Q and W_K — the model stops learning attention patterns and training stalls. Dividing by √d_k brings dot products back to roughly unit variance regardless of dimension, keeping softmax in its gradient-rich regime. Without the scaling: early training appears fine (random initialisation keeps scores small), but as Q/K grow through training, scores increasingly saturate softmax, gradients shrink toward zero, and eventually training diverges or plateaus. The effect is worse at larger d_k — deep, wide models suffer most.</div>
+      <div class="quiz-answer" style="display:none">Step 1 — Projection: "it" produces Q by multiplying its embedding through W_Q. This Query encodes something like "I am a pronoun looking for my antecedent noun." Every other word simultaneously produces its Key (W_K) and Value (W_V). Step 2 — Scoring: "it"'s Query is dotted against every word's Key. "Cat"'s Key says "animate noun, subject." "Mat"'s Key says "inanimate noun, location." Both score well against a pronoun-seeking query. "Sat" (verb), "because" (conjunction), "was" (auxiliary) score lower. Step 3 — Scale and softmax: scores divided by √d_k, then softmax converts to a probability distribution. "Mat" gets weight ~0.55 (closest antecedent, inanimate location matching "comfortable"). "Cat" gets ~0.25 (animate, further away). Other words share the remaining ~0.20. Step 4 — Value aggregation: "it" computes a weighted sum of every word's Value. 55% of "mat"'s Value + 25% of "cat"'s Value + smaller contributions from other words. "it"'s new representation now encodes: the pronoun "it" refers primarily to "mat" in this specific context — the meaning has been resolved. This context-resolution happened in one pass, with no sequential processing required.</div>
     </div>
 
     <div class="quiz-item">
-      <div class="quiz-question">3. Why does the causal mask use −∞ rather than 0 for masked positions? What would break if you used 0 instead?</div>
+      <div class="quiz-question">3. Why is the attention formula divided by √d_k? What goes wrong if you remove the scaling?</div>
       <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-      <div class="quiz-answer" style="display:none">The goal is to make softmax assign exactly 0 attention weight to masked future positions. The mask is added to raw scores before softmax: softmax(score + mask). For complete masking, we need exp(score + mask) = 0, which requires mask = −∞ since exp(−∞) = 0 exactly. If you used mask=0 instead, you'd be adding zero to the raw score — changing nothing. Future tokens would receive their normal, non-zero attention weights, allowing the current token to see future positions. During training, the model would learn to exploit future context: an attention head for position 3 predicting position 4 could simply look ahead. At inference time during autoregressive generation, future tokens don't yet exist, so the model would face a severe train/inference mismatch — it was trained with access to future positions but at inference must generate without them. The model would perform catastrophically at generation. The −∞ value is the only mathematically correct choice because it's the only value that produces exactly 0 after exponentiation in softmax.</div>
+      <div class="quiz-answer" style="display:none">Two random d_k-dimensional vectors with zero mean and unit variance produce a dot product with variance d_k — standard deviation √d_k. For d_k=64, σ≈8; for d_k=512, σ≈22. Without scaling, one score in the softmax is typically much larger than the others. Softmax exponentiation amplifies differences: if score A is 22 and score B is 20, exp(22)/exp(20) ≈ 7.4 — A gets most of the probability. In the extreme, softmax assigns ≈1 to the maximum score and ≈0 to everything else. In this saturated regime, the derivative of softmax is nearly zero everywhere. Backpropagating through near-zero softmax gradients produces near-zero updates to W_Q and W_K — the attention weights can't change, and the model stops learning how to attend. The failure mode is insidious: early training looks fine because randomly-initialised weights are small. As Q and K grow during training, scores grow too, softmax saturates increasingly, gradients shrink, and training either stalls or diverges. The effect is more severe at larger d_k — which is exactly the scale used in BERT and GPT. Dividing by √d_k brings the dot product variance back to ≈1 regardless of d_k, keeping softmax in its gradient-rich middle range throughout training.</div>
     </div>
 
     <div class="quiz-item">
-      <div class="quiz-question">4. What is the KV-cache, and why is it so important for inference? What is its memory cost and how does GQA reduce it?</div>
+      <div class="quiz-question">4. What is multi-head attention and why does it work better than single-head at full dimension?</div>
       <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-      <div class="quiz-answer" style="display:none">During autoregressive generation, K and V tensors for previously generated tokens are identical at every generation step — "The" at position 1 produces the same K[1] and V[1] regardless of how many tokens have been generated after it. The KV-cache stores these computed K/V tensors from previous steps. At each new step, only the new token's K and V are computed; all previous K/V are retrieved from cache. The complexity improvement: without cache, generating n tokens from k-token context requires recomputing K/V for all k+i tokens at step i → O(n×k²) total. With cache: O(n×k) — only one new K/V per step. The memory cost: context_length × num_layers × 2 × num_heads × d_k × bytes_per_param. For a 70B model (80 layers, 64 heads, d_k=128, float16) at 128k context: 128k × 80 × 2 × 64 × 128 × 2B ≈ 430GB — far exceeding GPU memory. Grouped-Query Attention (GQA) reduces this by using fewer distinct K/V heads than Q heads. If num_kv_heads=8 while num_q_heads=64, the KV-cache shrinks by 8× with minimal quality loss, because multiple Q heads attending to the same K/V are already somewhat redundant.</div>
+      <div class="quiz-answer" style="display:none">Multi-head attention runs H independent attention operations in parallel, each with its own W_Q^h, W_K^h, W_V^h matrices, each operating in d_k = d_model/H dimensions. A single head computes one score per token pair — one type of relationship. Language has many simultaneous relationship types: syntactic (subject-verb agreement), semantic (synonymy), coreference (pronoun-antecedent), positional (nearby context), long-range discourse. A single head must average over all of these in one probability distribution, which means it can't specialise deeply in any one type. Multiple heads each specialise: mechanistic interpretability research (Anthropic, DeepMind) consistently finds that specific heads track pronoun resolution, subject-verb agreement, bracket matching in code, sentence boundary detection. This specialisation emerges from training — it's not programmed. Total compute is approximately the same as single-head at full dimension (H × d_model/H = d_model per layer), but representational richness is H times greater because each head can attend to orthogonal aspects simultaneously. The W_O projection after concatenation learns to optimally combine the H heads' outputs into a single coherent representation.</div>
     </div>
 
     <div class="quiz-item">
-      <div class="quiz-question">5. Why did the industry converge on decoder-only architectures for general-purpose LLMs rather than encoder-only or encoder-decoder?</div>
+      <div class="quiz-question">5. Why is the KV-cache important for generation, and why is Q not cached?</div>
       <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
-      <div class="quiz-answer" style="display:none">Three reasons drove the convergence: (1) Scaling efficiency — next-token prediction (causal language modelling) scales predictably and smoothly with compute and data. The loss curve follows power laws (Chinchilla scaling laws), making it straightforward to predict what model size and training budget will achieve a given capability level. Masked language modelling (BERT's objective) doesn't scale as cleanly. (2) Training simplicity — a single training objective (predict the next token) handles every downstream task. Instruction fine-tuning and RLHF can then specialise the model for conversations, code, and reasoning — no task-specific architectures needed. (3) Emergent versatility — at sufficient scale, decoder-only models can perform classification, extraction, and Q&A tasks traditionally associated with encoders, simply by prompting them correctly. The sequence-to-sequence capability of encoder-decoders (T5, BART) is subsumed by a large enough decoder at generation time. Encoder-only models (BERT) are still competitive for specific understanding tasks like semantic search (sentence embeddings) where bidirectional context is essential, but they cannot generate. Decoder-only models do both — generate and understand — making them more general.</div>
+      <div class="quiz-answer" style="display:none">During autoregressive generation, the model produces one token at a time. Without caching, generating token n requires computing K and V for all n-1 previous tokens from scratch at every step — total cost O(n²) for generating n tokens. The KV-cache stores K and V vectors once they're computed. At step n, only the new token's K and V need to be computed; all previous K/V are retrieved from cache. Total cost drops to O(n) — linear instead of quadratic. For 128k-context generation, this is the difference between feasible and impossible inference latency. Q is not cached because of what Q, K, and V represent. K = "what each context token can offer" — this is a fixed property of a token in context. Whether token 5 is "cat" or "Paris" doesn't change once it's in the sequence; its Key stays the same at every generation step. V = "what each context token delivers" — same reasoning; fixed. Q = "what the current generation step is looking for" — this is fundamentally different at each step. When generating token 100, Q encodes what token 100 is searching for among tokens 1–99. When generating token 101, Q encodes what token 101 is looking for. Q changes every step because the question changes every step. The cache is valid precisely because K and V are properties of the context, not of the current step.</div>
     </div>
 
   </div>
@@ -543,64 +653,67 @@ out, attn_weights = block(x, mask=mask)
 <div class="quick-recap">
   <div class="quick-recap-header">⚡ Quick Recap — Attention &amp; the Transformer</div>
   <ol>
-    <li><strong>The core problem:</strong> RNNs process tokens sequentially — information degrades over distance through the hidden state bottleneck, and training cannot parallelise across sequence positions. Attention eliminates distance as a barrier: every token directly attends to every other in one operation.</li>
-    <li><strong>Q, K, V:</strong> every token generates three vectors via learned projections. Query = what this token seeks. Key = what this token offers. Value = the content it contributes. Attention score = dot(Q_i, K_j) — how well token i's query matches token j's key.</li>
-    <li><strong>Scaled dot-product:</strong> Attention(Q,K,V) = softmax(QKᵀ / √d_k) · V. Dividing by √d_k keeps dot products at unit variance regardless of dimension — preventing softmax saturation and vanishing gradients during training.</li>
-    <li><strong>Worked example:</strong> "Cat" in a 3-token sequence gets attention weights [0.380, 0.354, 0.266]. Its updated representation is a weighted blend of all three tokens' values — carrying context from the full sequence in one operation. Scaled to 768d and 12 layers = BERT.</li>
-    <li><strong>Multi-head attention:</strong> H independent attention operations in parallel, each in a d_k = d_model/H subspace. Different heads specialise: syntactic structure, coreference, local context, semantic similarity. Outputs concatenated and projected via W_O.</li>
-    <li><strong>Positional encodings:</strong> attention is permutation-equivariant and needs an explicit position signal. Sinusoidal (fixed, generalisable), learned absolute (BERT/GPT-2), and RoPE (LLaMA/Mistral — relative position via vector rotation, extensible to long context).</li>
-    <li><strong>Causal masking:</strong> add −∞ to upper-triangle positions before softmax → weight exactly 0 on future tokens. Enables autoregressive generation: predict one token at a time from left context only. Essential for GPT/decoder architectures.</li>
-    <li><strong>Transformer block:</strong> Multi-Head Attention + FFN (4× expansion, GELU), each wrapped with residual connection (x + sublayer(x)) and LayerNorm. Pre-LN variant (normalise before sub-layer) is more stable than the original Post-LN design.</li>
-    <li><strong>Encoder vs decoder:</strong> BERT (encoder) uses bidirectional attention for understanding tasks. GPT/LLaMA/Claude (decoder) use causal attention for generation. T5/BART (encoder-decoder) for seq2seq. Industry converged on decoder-only for general LLMs due to scaling efficiency and versatility.</li>
-    <li><strong>KV-cache and Flash Attention:</strong> KV-cache stores K/V tensors from previous steps — reduces generation complexity from O(n³) to O(n²). Flash Attention restructures GPU memory access to compute exact attention without O(n²) HBM allocation. Both exploit the Q/K/V algebraic structure and together make modern LLM inference feasible.</li>
+    <li><strong>The core idea:</strong> every word looks at every other word simultaneously. Relationships are computed directly between any pair — no sequential processing, no distance penalty.</li>
+    <li><strong>Q — Query:</strong> "What am I looking for?" Each token broadcasts a question to the sequence. Produced by multiplying the token embedding through learned matrix W_Q.</li>
+    <li><strong>K — Key:</strong> "What can I offer? How should I be found?" Each token's searchable label — controls whether it gets selected. Produced through W_K. Separate from Value because searchability should be independent of content.</li>
+    <li><strong>V — Value:</strong> "What is my actual content?" The payload delivered once a token is selected. Produced through W_V. The Key gets you found; the Value is what you give.</li>
+    <li><strong>The K/V separation insight:</strong> the same word in different contexts needs different Keys (advertise differently) and different Values (deliver different content). Learned independently through separate W_K and W_V matrices.</li>
+    <li><strong>Four computation steps:</strong> (1) Scores = Q·Kᵀ — relevance of every pair; (2) Scale by 1/√d_k — prevent softmax saturation and vanishing gradients; (3) Softmax → attention weights (prob. distribution per token); (4) Weighted sum of Values → new contextual representation.</li>
+    <li><strong>Multi-head attention:</strong> H heads, each with own W_Q/K/V, each specialising in a different relationship type. Same compute as single-head; H times richer representation. Outputs mixed through W_O.</li>
+    <li><strong>Causal masking:</strong> add −∞ to upper-triangle positions before softmax → future tokens get weight 0. Enables GPT-style autoregressive generation.</li>
+    <li><strong>Transformer block:</strong> Multi-Head Attention + FFN, each wrapped with residual connections (gradient highway) and LayerNorm (stable activations). Attention mixes across positions; FFN transforms within each position.</li>
+    <li><strong>KV-cache:</strong> K and V are fixed properties of context tokens — cache them once. Q changes every generation step — don't cache. Reduces generation cost from O(n²) to O(n).</li>
   </ol>
 </div>
 
 <div class="prose-callout">
   <span class="prose-callout-label">🎯 Interview Questions</span>
   <ol>
-    <li><strong>What problem does attention solve that RNNs couldn't?</strong><br>
-    <em>RNNs process sequentially — information must pass through every intermediate hidden state, degrading over long distances (vanishing gradients). Attention connects every token directly to every other in one operation, making long-range dependencies as easy as short-range. Training is also fully parallelisable across sequence positions — enabling the scale that opened the LLM era.</em></li>
-    <li><strong>What are the roles of Q, K, and V?</strong><br>
-    <em>Q (Query) = what this token is looking for. K (Key) = what this token offers. V (Value) = the actual content. Scores = dot(Q_i, K_j) scaled by 1/√d_k, then softmaxed into weights. Output = weighted sum of V vectors. Each token's new representation is a blend of all tokens' values weighted by relevance to its query.</em></li>
-    <li><strong>Why is attention O(n²) and what are the consequences?</strong><br>
-    <em>Each of n tokens computes a score with every other token — n² scores per layer. Doubling sequence length quadruples compute and memory. This makes long-context models expensive, motivating Flash Attention (IO-efficient computation without materialising the n² matrix), GQA (reduced KV-cache), and sub-quadratic alternatives like Mamba and Longformer.</em></li>
-    <li><strong>What is multi-head attention and why is it better than single-head?</strong><br>
-    <em>H independent attention operations in parallel, each in a d_k = d_model/H subspace with own learned projections. Single-head attention must average over all relationship types in one distribution — less expressive. Multiple heads allow simultaneous specialisation: one head for syntax, one for coreference, one for local context. Total compute is similar to single-head at full dimension, but representational richness is H times greater.</em></li>
-    <li><strong>What is the KV-cache and why does it matter?</strong><br>
-    <em>Stores K/V tensors computed for previous tokens during autoregressive generation, avoiding recomputation at each step. Reduces generation complexity from O(n³) to O(n²). Without it, a single inference step over a 128k-token context would require recomputing all 128k K/V pairs — making real-time chat impossible at scale. Memory cost is context_length × layers × 2 × d_model, manageable via Grouped-Query Attention which shares K/V heads across multiple Q heads.</em></li>
+    <li><strong>What is self-attention? What problem does it solve compared to RNNs?</strong><br>
+    <em>Self-attention computes relationships between every token pair in a sequence simultaneously. Each token produces Q, K, V; Q is dotted against every K for relevance scores; softmax gives attention weights; output is a weighted sum of V vectors. Solves the long-range dependency problem: RNNs require information to travel through every intermediate hidden state — degrading over distance. In attention, word 2 and word 50 have a direct connection via Q·K dot product. Distance is irrelevant.</em></li>
+
+    <li><strong>What are Q, K, and V? Why are Key and Value separate projections?</strong><br>
+    <em>Q = what this token is looking for. K = how this token advertises itself to be found. V = what this token actually delivers once selected. They're separate because a token may need to control its searchability (Key) independently from its content (Value). "Bank" in "river bank" needs a geographic Key but delivers riparian content. In "money bank" it needs a financial Key but delivers financial content. Separate W_K and W_V matrices let the model learn these independently. If they were the same, a token couldn't adjust its searchability without changing its content.</em></li>
+
+    <li><strong>Why does the formula divide by √d_k?</strong><br>
+    <em>Two d_k-dimensional random vectors have a dot product with standard deviation √d_k. Without scaling, scores are too large, pushing softmax toward saturation (one score gets weight ≈1, all others ≈0). In this regime, the gradient of softmax is ≈0 — W_Q and W_K stop receiving meaningful gradient signal and training stalls. Dividing by √d_k keeps dot products at ≈unit variance regardless of dimension, maintaining softmax in its gradient-rich regime throughout training.</em></li>
+
+    <li><strong>What is multi-head attention and what do different heads learn?</strong><br>
+    <em>H independent attention operations in parallel, each with own W_Q/K/V, each in d_k=d_model/H subspace. Each head can specialise in a different relationship type. Research finds consistent specialisation: some heads track subject-verb agreement, some coreference, some bracket matching in code, some local context. Same total compute as single-head at full dimension, but H times richer — each head attends to orthogonal aspects. W_O after concatenation learns to optimally combine all heads.</em></li>
+
+    <li><strong>What is the KV-cache and why is Q not cached?</strong><br>
+    <em>The KV-cache stores K and V vectors for all context tokens, avoiding recomputation at each generation step. Without it, generating n tokens costs O(n²) total (recompute all K/V at each step); with it, O(n) (one new K/V per step, rest from cache). K and V are cached because they represent fixed properties of context tokens — what a token offers and delivers doesn't change once it's in the sequence. Q is not cached because it represents what the current generation step is looking for — this changes at every step as the model produces a new token.</em></li>
   </ol>
 </div>
 
 <div class="prose-callout">
   <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
-  <p>▶ <a href="https://www.youtube.com/watch?v=wjZofJX0v4M" target="_blank" rel="noopener">But what is a GPT? Visual intro to Transformers — 3Blue1Brown</a><br>
-  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 27 min · Best visual explanation. The attention segment at 8:00–16:00 is essential viewing.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=wjZofJX0v4M" target="_blank" rel="noopener">But what is a GPT? — 3Blue1Brown</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 27 min · Best visual explanation of attention. The Q/K/V segment is essential. Watch alongside this post.</em></p>
   <p>🔗 <a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer — Jay Alammar</a><br>
-  <em style="font-size:.85rem;color:var(--text-muted)">Blog · Full visual walkthrough with excellent multi-head attention and encoder-decoder diagrams.</em></p>
+  <em style="font-size:.85rem;color:var(--text-muted)">The most popular visual walkthrough. Every component drawn step by step.</em></p>
   <p>📄 <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need — Vaswani et al. (2017)</a><br>
-  <em style="font-size:.85rem;color:var(--text-muted)">15 pages. Section 3.2 and Figure 2 are the core. Remarkably readable for a paper this influential.</em></p>
+  <em style="font-size:.85rem;color:var(--text-muted)">The original paper. 15 pages. Section 3.2 is the core. The ablation table shows how each design choice was validated.</em></p>
   <p>📄 <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener">FlashAttention — Dao et al. (2022)</a><br>
-  <em style="font-size:.85rem;color:var(--text-muted)">Enabled practical long-context LLMs. Section 2 explains the GPU tiling algorithm. Essential for LLM inference work.</em></p>
+  <em style="font-size:.85rem;color:var(--text-muted)">The engineering that made 128k+ context practical. Essential for LLM inference work.</em></p>
   <p>🔗 <a href="https://transformer-circuits.pub/2021/framework/index.html" target="_blank" rel="noopener">A Mathematical Framework for Transformer Circuits — Anthropic (2021)</a><br>
-  <em style="font-size:.85rem;color:var(--text-muted)">Foundational mechanistic interpretability paper. Decomposes transformers into analysable circuits. Changes how you understand what the model computes internally.</em></p>
+  <em style="font-size:.85rem;color:var(--text-muted)">What do Q, K, V actually compute in a trained model? The heads-as-specialists findings come from here.</em></p>
 </div>
 
 <div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
-  <span class="tag">#Transformer</span><span class="tag">#Attention</span><span class="tag">#SelfAttention</span><span class="tag">#MultiHeadAttention</span><span class="tag">#PositionalEncoding</span><span class="tag">#RoPE</span><span class="tag">#CausalMasking</span><span class="tag">#KVCache</span><span class="tag">#FlashAttention</span><span class="tag">#LLM</span><span class="tag">#BERT</span><span class="tag">#GPT</span><span class="tag">#DeepLearning</span><span class="tag">#NLP</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+  <span class="tag">#Transformer</span><span class="tag">#Attention</span><span class="tag">#SelfAttention</span><span class="tag">#QueryKeyValue</span><span class="tag">#MultiHeadAttention</span><span class="tag">#CausalMasking</span><span class="tag">#KVCache</span><span class="tag">#LLM</span><span class="tag">#NLP</span><span class="tag">#DeepLearning</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
 </div>
 
 </div><!-- /prose -->
 </article>
-
 <div class="post-footer-nav">
   <a href="word-embeddings.html" class="post-nav-card">
     <span class="post-nav-label">← Day 23</span>
     <span class="post-nav-title">Word Embeddings</span>
   </a>
-  <a href="categories.html" class="post-nav-card next">
-    <span class="post-nav-label">Go to →</span>
-    <span class="post-nav-title">Browse All Categories</span>
+  <a href="positional-encodings.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 25 →</span>
+    <span class="post-nav-title">Positional Encodings</span>
   </a>
 </div>
 
