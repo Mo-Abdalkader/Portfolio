@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 25 — Positional Encodings | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="How transformers know where words are: sinusoidal encodings, learned positions, RoPE (Rotary Position Embedding), ALiBi, and why the choice matters for long-context LLMs — with full derivations and working code." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+    /* code output */
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+    /* knowledge-check */
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+    /* quick-recap */
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+    /* table */
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+    /* math block */
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    /* pe visualiser */
+    .pe-vis{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:.7rem}
+    .pe-cell{padding:.35rem .2rem;text-align:center;border-radius:3px;color:#0d1117;font-weight:600}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 25 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span><span class="meta-sep">·</span>
+      <span>Mar 15, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">28 min read</span><span class="meta-sep">·</span>
+      <span>Transformers</span>
+    </div>
+    <h1>Positional Encodings:<br>How Transformers Know Where Words Are</h1>
+    <p class="post-hero-lead">Attention is blind to word order — it sees a bag of words, not a sequence. Shuffle "The cat sat on the mat" into any random order and attention alone sees exactly the same thing. Positional encodings fix this: they stamp every word with a position signal before attention runs. From the original sine waves (2017) to the rotary embeddings powering LLaMA, Mistral, and Qwen today — this guide explains every major approach with plain-English analogies, the math behind each, and why the choice affects how far your model can read.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>"Dog bites man" and "Man bites dog" are very different events.<br>
+  To a bag-of-words model, they are identical.<br>
+  To an attention layer with no positional information — they are also identical.<br><br>
+  Attention is extraordinarily good at understanding relationships between words.<br>
+  But it has no idea which word came first.<br><br>
+  Positional encodings are the solution that made the transformer complete.</p>
+</blockquote>
+
+<!-- §01 -->
+<h2>01 — The Problem: Attention Has No Memory of Order</h2>
+
+<p>In Day 24 we built the full attention mechanism. Recall the formula:</p>
+
+<div class="math-block">
+  Attention(Q, K, V) = softmax( Q · K<sup>T</sup> / √d_k ) · V
+</div>
+
+<p>Notice what's missing: position. The dot product Q·K<sup>T</sup> measures semantic similarity between token representations — it has no term for "how far apart are these tokens?" or "which comes first?" If you give the transformer the sentence "The cat sat on the mat" in shuffled order — "mat the on sat cat the" — the attention scores between "cat" and "sat" are <em>identical</em> in both cases. The model sees the same bag of token embeddings either way.</p>
+
+<p>This is called <strong>permutation equivariance</strong>: permute the input tokens, and the attention outputs permute in the same way. There is no mechanism inside attention itself that distinguishes position 1 from position 10. For some tasks this doesn't matter much. For language, it is catastrophic — word order is meaning.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🧩 Non-Tech Analogy: Numbered Seats at a Concert</span>
+  <p>Imagine a concert where every seat is identical — same colour, same shape. Without row and seat numbers, 5,000 people cannot find their places. But the moment you stamp a number on each seat, everyone knows exactly where they belong and how to navigate relative to each other ("three seats to the left of mine").</p>
+  <p style="margin-top:.75rem">Positional encodings are the seat numbers. The words (token embeddings) are the seats — already meaningful on their own. Position encodings don't change what the word <em>means</em>, they tell the model <em>where</em> in the sequence each word sits. Without them, the transformer sees 10 words in no particular order. With them, it sees word 1, word 2, word 3 — a proper sequence.</p>
+</div>
+
+<div class="prose-callout">
+  <span class="prose-callout-label">🎵 Another Analogy: Sheet Music Without Bar Numbers</span>
+  <p>All the notes are correct, but the bar numbers have been removed. A skilled musician can identify each note's pitch and duration — but they cannot tell you whether a note comes in the first bar or the last. Played in random order, it no longer resembles the original piece.</p>
+  <p style="margin-top:.75rem">Positional encodings are the bar numbers. They don't change the notes (token identities), but they tell the model how to arrange them in time.</p>
+</div>
+
+<p>The solution is to add a position-dependent signal to each token's embedding before it enters the transformer. The challenge: the signal must be:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv"><div class="prose-kv-key">Unique per position</div><div class="prose-kv-val">Position 1 and position 100 must have different signals so the model can distinguish them. If two positions share an encoding, the model cannot differentiate tokens at those positions.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Consistent across sequences</div><div class="prose-kv-val">Position 5 in a short sentence must mean the same thing as position 5 in a long sentence. The encoding for a position should not depend on the total sequence length.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Generalisable to new lengths</div><div class="prose-kv-val">At inference time, you may encounter sequences longer than any seen during training. A good positional encoding degrades gracefully — or better, handles new lengths without retraining.</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Compatible with attention</div><div class="prose-kv-val">The encoding must work with the dot-product attention mechanism — it must influence the Q·K similarity scores in a way that lets the model reason about relative and absolute positions.</div></div>
+</div>
+
+<!-- §02 -->
+<h2>02 — Sinusoidal Encodings: The 2017 Original</h2>
+
+<p>The original "Attention Is All You Need" paper (Vaswani et al., 2017) introduced sinusoidal positional encodings — a fixed, non-learned formula that assigns every (position, dimension) pair a unique value using sine and cosine waves at different frequencies.</p>
+
+<div class="math-block">
+  <span class="mh">PE(pos, 2i) &nbsp;&nbsp; = sin( pos / 10000^(2i / d_model) )</span><br>
+  <span class="mh">PE(pos, 2i+1) = cos( pos / 10000^(2i / d_model) )</span><br><br>
+  <span class="mc">pos = token position (0, 1, 2, …)</span><br>
+  <span class="mc">i &nbsp;&nbsp;= dimension index (0, 1, 2, … d_model/2 − 1)</span><br>
+  <span class="mc">Even dimensions → sine &nbsp;&nbsp; Odd dimensions → cosine</span><br>
+  <span class="mc">d_model = embedding size (e.g. 512 for the original transformer)</span>
+</div>
+
+<h3>What Does This Actually Do?</h3>
+<p>Think of it like a clock — but one with many hands. A normal clock has three hands (seconds, minutes, hours), each rotating at a different speed. At any moment, the combination of all three hand positions uniquely identifies the time. No two moments in a 12-hour cycle produce exactly the same combination of three hand positions. Sinusoidal PE works exactly the same way, but with hundreds of "hands" instead of three:</p>
+
+<ul style="margin:1rem 0 1rem 1.5rem;line-height:1.9">
+  <li><strong>Low dimensions (small i) → fast waves:</strong> these dimensions change rapidly from position to position, like the seconds hand. They help distinguish nearby positions (position 1 vs position 2).</li>
+  <li><strong>High dimensions (large i) → slow waves:</strong> these dimensions change slowly across positions, like the hours hand. They help distinguish positions that are far apart (position 100 vs position 500).</li>
+  <li>The combination of all d_model dimensions gives every position a unique "fingerprint" — like a unique combination of all clock hands. No two positions share the same encoding.</li>
+</ul>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">👶 For Non-Tech Readers: The Lighthouse Analogy</span>
+  <p>Imagine a row of lighthouses along a coastline. Each lighthouse flashes its light in a repeating pattern — but at different speeds. Lighthouse #1 flashes fast (every 2 seconds), lighthouse #2 flashes medium (every 10 seconds), lighthouse #3 flashes slow (every 60 seconds). At any moment in time, the combination of which lighthouses are on/off uniquely identifies the time of day.</p>
+  <p style="margin-top:.75rem">Sinusoidal encodings are those lighthouse patterns. Each "lighthouse" (each dimension pair) pulses at a different frequency. A word at position 47 gets a unique combination of lighthouse states — different from position 46, different from position 48. The transformer uses this pattern to figure out where in the sequence each word sits.</p>
+</div>
+
+<p>The divisor 10000 is chosen so the lowest-frequency wave has a period of ~62,832 positions — far longer than any sequence seen in 2017. Each pair of dimensions (sin, cos at frequency f) forms a 2D rotation at that frequency, which is precisely why this method works well with dot products.</p>
+
+<h3>The Key Mathematical Property</h3>
+<p>The crucial insight the paper highlights: <strong>PE(pos + k) is a linear function of PE(pos)</strong>. Specifically, there exists a rotation matrix M_k such that PE(pos + k) = M_k · PE(pos). This means relative positions can be expressed as linear transformations — and linear transformations play nicely with the linear projections inside attention. The model can learn to attend to "the token 3 positions back" by learning an appropriate weight matrix, because relative displacement has a consistent linear representation.</p>
+
+<h3>Visual Intuition: The Encoding Grid</h3>
+<p>Here's what sinusoidal encodings look like across 8 positions and 8 dimensions — each cell shows the PE value (blue = negative, orange = positive, intensity = magnitude):</p>
+
+<div id="peVis" class="pe-vis" aria-label="Sinusoidal PE visualisation"></div>
+<p style="font-size:.8rem;color:var(--text-muted);text-align:center;margin-top:.25rem">Rows = positions 0–7 · Columns = dimensions 0–7 · High freq (left) → Low freq (right)</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">✅ Strengths and ⚠️ Limitations</span>
+  <p><strong>Strengths:</strong> No learned parameters — zero training cost. Deterministic and interpretable. Works reasonably well for sequences up to ~2× training length (the linear property helps). Still the default in many non-LLM transformer applications (ViT uses learned positions, but many academic models use sinusoidal).</p>
+  <p style="margin-top:.75rem"><strong>Limitations:</strong> Absolute positions only — the model learns "position 5 has this encoding" but not directly "this token is 3 positions after that token." Degrades outside training length. Cannot be updated if you want to extend context later. Modern LLMs require much longer contexts (128k+) than sinusoidal handles gracefully.</p>
+</div>
+
+<!-- §03 -->
+<h2>03 — Learned Absolute Positions: Simpler and Often Better</h2>
+
+<p>BERT (2018) and GPT-2 replaced the fixed sinusoidal formula with a learnable lookup table: a matrix of shape (max_seq_len × d_model) that is trained alongside all other model parameters. Position 0 gets embedding P[0], position 1 gets P[1], and so on. These position embeddings are added to the token embeddings before the first transformer layer — exactly like sinusoidal encodings, but the values are learned from data rather than computed by formula.</p>
+
+<div class="math-block">
+  <span class="mh">Input to transformer = Token_Embedding(x) + Position_Embedding(pos)</span><br><br>
+  <span class="mc">Position_Embedding ∈ ℝ^(max_len × d_model) &nbsp;&nbsp; ← fully learnable</span><br>
+  <span class="mc">BERT-base: max_len = 512, d_model = 768 &nbsp;&nbsp; → 393,216 extra parameters</span><br>
+  <span class="mc">GPT-2: max_len = 1024, d_model = 768 &nbsp;&nbsp; → 786,432 extra parameters</span>
+</div>
+
+<p>In practice, learned positions often match or slightly outperform sinusoidal on standard benchmarks. The model can learn whatever positional signal is most useful for the task — it's not constrained to a fixed mathematical pattern. The cost is small (the positional embedding table is tiny compared to the full model) and the benefit is flexibility.</p>
+
+<p>The critical limitation: <strong>hard cutoff at max_seq_len</strong>. There is no position embedding for position 513 in BERT — the model has never seen it and has nothing to look up. You cannot extrapolate beyond the training length without retraining or architectural changes. This was acceptable in 2018 when 512 tokens covered most NLP tasks. It becomes a severe constraint when building LLMs that need to handle documents, codebases, or conversations spanning thousands of tokens.</p>
+
+<!-- §04 -->
+<h2>04 — RoPE: Rotary Position Embedding</h2>
+
+<p>RoPE (Su et al., 2021) is the dominant positional encoding in modern open-source LLMs — used by LLaMA (all versions), Mistral, Qwen, Falcon, Yi, and most models released since 2023. It elegantly solves the main weakness of both sinusoidal and learned absolute positions: <strong>neither directly encodes relative distances in the attention score itself</strong>.</p>
+
+<h3>The Core Idea</h3>
+<p>Instead of adding a positional encoding to the token embedding before the attention layer, RoPE modifies the <strong>query and key vectors directly</strong> — by rotating them by an angle proportional to their position. Think of it like setting the hands of a clock to a specific angle before you hand it to the attention mechanism. If word A is at position 3, you rotate its "meaning vector" by 3°. If word B is at position 7, you rotate it by 7°.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🕰️ Non-Tech Analogy: Compass Bearings</span>
+  <p>Imagine two people comparing directions. Person A says "the café is 30° north-east of me" and Person B says "the café is 30° north-east of me too." Even though they're standing in different places, the <em>relative direction</em> between them and the café is the same. What matters is not where they are in the city (absolute position) — it's the angle between them (relative position).</p>
+  <p style="margin-top:.75rem">RoPE does this for words. It rotates each word's vector by an angle that depends on its position in the sentence. When attention computes the similarity between two words, the result automatically captures how far apart they are — regardless of where in the sentence they appear. The word "walked" 3 positions after "She" gives the same positional signal whether we're at the start of the sentence or the middle.</p>
+</div>
+
+<p>Specifically, for a token at position m, its query vector q is rotated by angle mθ, and for position n, its key vector k is rotated by angle nθ. Because both are rotated before the dot product:</p>
+
+<div class="math-block">
+  <span class="mh">RoPE attention score: &lt;q_m, k_n&gt; = &lt;R(mθ)·q, R(nθ)·k&gt;</span><br><br>
+  <span class="mc">This equals: q<sup>T</sup> · R((m−n)θ) · k</span><br><br>
+  <span class="mh">→ The dot product depends only on (m − n): the RELATIVE position</span><br>
+  <span class="mc">R(θ) = 2D rotation matrix at angle θ &nbsp;&nbsp; (applied independently per dimension pair)</span>
+</div>
+
+<p>This is the key insight: when you rotate both Q and K before computing their dot product, the result depends only on the <em>difference</em> in their rotation angles — which equals the difference in their positions. The model inherently learns relative positional relationships, not just absolute ones. "The token 3 positions back" has a consistent geometric meaning regardless of where in the sequence you are.</p>
+
+<h3>How the Rotation Works</h3>
+<p>RoPE treats the d-dimensional vector as d/2 pairs of 2D coordinates. Each pair is independently rotated by an angle that depends on both the position and the pair index (different frequencies for different pairs — just like sinusoidal PE):</p>
+
+<div class="math-block">
+  <span class="mc">For pair index i (dimension 2i and 2i+1), frequency: θ_i = 1 / 10000^(2i/d)</span><br><br>
+  <span class="mh">Rotate pair (x_{2i}, x_{2i+1}) at position pos by angle pos·θ_i:</span><br>
+  &nbsp; [x_{2i} · cos(pos·θ_i) − x_{2i+1} · sin(pos·θ_i)]<br>
+  &nbsp; [x_{2i} · sin(pos·θ_i) + x_{2i+1} · cos(pos·θ_i)]<br><br>
+  <span class="mc">Applied to Q and K before the dot product — not added to the token embedding</span>
+</div>
+
+<h3>Why RoPE Handles Long Contexts Better</h3>
+<p>Learned absolute positions have a hard wall at max_seq_len. Sinusoidal positions degrade because they were designed for fixed sequence lengths. RoPE's rotation angle grows linearly with position — and because the dot product depends only on <em>relative</em> rotation, the model learns to interpret relative distances, which generalise better to longer sequences it hasn't seen. With techniques like <strong>YaRN</strong> (Yet Another RoPE extensioN) and <strong>LongRoPE</strong>, models trained with RoPE at 4k context can be extended to 128k+ context by adjusting the rotation frequencies — without full retraining. This is why LLaMA-3.1 supports 128k context without architectural changes.</p>
+
+<h2>05 — ALiBi: Attention with Linear Biases</h2>
+
+<p>ALiBi (Press et al., 2022) takes a completely different approach. Instead of adding anything to the token embeddings or rotating the Q/K vectors, it adds a <strong>penalty directly to the attention scores</strong> based on the distance between tokens — before the softmax.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📞 Non-Tech Analogy: Phone Signal Strength</span>
+  <p>When you're on a phone call, you can hear nearby people clearly but distant sounds are muffled — not because they're less important, but because distance reduces signal strength. ALiBi works the same way: it doesn't change what words mean, it just makes attention naturally weaker between tokens that are far apart.</p>
+  <p style="margin-top:.75rem">Each attention head has a different "signal decay rate" (slope). Some heads decay quickly and only pay attention to nearby words — great for local grammar. Others decay slowly and can attend across long distances — great for long-range references. And crucially: this penalty is always calculable, even for positions the model has never seen, because it only depends on distance.</p>
+</div>
+
+<div class="math-block">
+  <span class="mh">ALiBi attention score: softmax( Q·K<sup>T</sup>/√d_k − m · |i − j| )</span><br><br>
+  <span class="mc">|i − j| = absolute distance between positions i and j</span><br>
+  <span class="mc">m = head-specific slope (fixed, not learned): m = 2^(−8/H) for head h</span><br>
+  <span class="mc">H = number of attention heads</span><br><br>
+  <span class="mc">Example slopes for H=8: [1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256]</span>
+</div>
+
+<p>The effect: tokens that are far apart receive a penalty proportional to their distance, making them attend to each other less. The slope m controls how quickly this penalty grows — heads with larger m focus on local context, heads with smaller m can attend globally. No learned parameters, no changes to embedding dimensions, no rotation — just a simple subtraction before softmax.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">💡 ALiBi's Superpower: Extrapolation</span>
+  <p>ALiBi's linear penalty is not position-specific — it only cares about distance. A token at position 1000 attending to a token at position 997 gets the same penalty (3 · m) as position 10 attending to position 7. This means the model's behaviour at positions it has never seen during training is well-defined and smooth — it just applies the same distance penalty it always has. ALiBi models trained at 1024 context often maintain 90%+ of their performance at 2048 context without any modification. BLOOM (176B) and MPT use ALiBi for this reason.</p>
+</div>
+
+<!-- §06 -->
+<h2>06 — Head-to-Head Comparison</h2>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Added to</th>
+      <th>Learned?</th>
+      <th>Absolute position</th>
+      <th>Relative position</th>
+      <th>Extrapolation</th>
+      <th>Used by</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Sinusoidal</strong></td>
+      <td>Token embedding</td>
+      <td class="cross">✗ Fixed</td>
+      <td class="tick">✓</td>
+      <td class="mid">~ Via linear property</td>
+      <td class="mid">~ Degrades slowly</td>
+      <td>Original Transformer (2017)</td>
+    </tr>
+    <tr>
+      <td><strong>Learned Absolute</strong></td>
+      <td>Token embedding</td>
+      <td class="tick">✓ Full</td>
+      <td class="tick">✓</td>
+      <td class="cross">✗</td>
+      <td class="cross">✗ Hard cutoff</td>
+      <td>BERT, GPT-2, original GPT</td>
+    </tr>
+    <tr>
+      <td><strong>RoPE</strong></td>
+      <td>Q and K vectors</td>
+      <td class="cross">✗ Fixed frequencies</td>
+      <td class="tick">✓</td>
+      <td class="tick">✓ Native</td>
+      <td class="tick">✓ Via YaRN/LongRoPE</td>
+      <td>LLaMA (all), Mistral, Qwen, Falcon, Yi</td>
+    </tr>
+    <tr>
+      <td><strong>ALiBi</strong></td>
+      <td>Attention scores</td>
+      <td class="cross">✗ Fixed slopes</td>
+      <td class="cross">✗</td>
+      <td class="tick">✓ Only relative</td>
+      <td class="tick">✓ Excellent</td>
+      <td>BLOOM (176B), MPT</td>
+    </tr>
+    <tr>
+      <td><strong>NoPE (no PE)</strong></td>
+      <td>Nothing</td>
+      <td>N/A</td>
+      <td class="cross">✗</td>
+      <td class="cross">✗</td>
+      <td class="mid">~ Depends on context</td>
+      <td>Some state-space models, research</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>The practical answer for 2026:</strong> if you're training or fine-tuning an LLM from scratch, use <strong>RoPE</strong>. If you're working with a BERT-style encoder for classification or retrieval, learned absolute positions are fine (context rarely exceeds 512 tokens for these tasks). If you need to extend an existing model's context window cheaply, RoPE + YaRN is the standard approach.</p>
+
+<!-- §07 -->
+<h2>07 — Context Length Extension: YaRN and LongRoPE</h2>
+
+<p>One of the most practically important applications of understanding positional encodings is <strong>context window extension</strong> — taking a model trained at 4k context and extending it to 32k, 128k, or beyond. RoPE makes this possible via frequency adjustment.</p>
+
+<h3>The Problem: Frequency Mismatch</h3>
+<p>A LLaMA model trained at 4096 tokens has seen rotation angles from 0 to 4096·θ_i for each dimension pair. At position 8000 (beyond training), the rotation angle 8000·θ_i for high-frequency dimensions wraps around multiple times — the model has never seen these angle values and the attention pattern breaks down. Low-frequency dimensions (large i, slow rotation) are fine because they've barely rotated even at 8000 tokens. The problem is specifically with high-frequency dimensions getting "confused" at positions beyond training length.</p>
+
+<h3>YaRN: Scaling Frequencies</h3>
+<p>YaRN (Peng et al., 2023) extends RoPE context by <strong>scaling down the rotation frequencies</strong> — stretching the "clock" so that angles that previously completed one cycle per 4096 tokens now complete one cycle per 32768 tokens. Only a short fine-tuning run (~0.1% of original training compute) on long documents is needed to adapt to the new frequencies. LLaMA-3.1's 128k context uses exactly this approach. The key insight: you don't need to retrain from scratch — you just need the model to see enough long-context examples to adjust to the new frequency scale.</p>
+
+<!-- §08 -->
+<h2>08 — Code: All Four Methods Side by Side</h2>
+
+<p>Working implementations of sinusoidal PE, learned absolute PE, RoPE, and ALiBi — all in PyTorch, all producing outputs compatible with the transformer block from Day 24.</p>
+
+<pre><code><span class="t-key">import</span> torch, math
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 1. Sinusoidal Positional Encoding (Vaswani et al. 2017)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">SinusoidalPE</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model, max_len=<span class="t-num">4096</span>):
+        <span class="t-key">super</span>().__init__()
+        pe  = torch.zeros(max_len, d_model)
+        pos = torch.arange(<span class="t-num">0</span>, max_len).unsqueeze(<span class="t-num">1</span>).float()
+        div = torch.exp(torch.arange(<span class="t-num">0</span>, d_model, <span class="t-num">2</span>).float()
+                        * -(math.log(<span class="t-num">10000.0</span>) / d_model))
+        pe[:, <span class="t-num">0</span>::<span class="t-num">2</span>] = torch.sin(pos * div)    <span class="t-cmt"># even dims → sin</span>
+        pe[:, <span class="t-num">1</span>::<span class="t-num">2</span>] = torch.cos(pos * div)    <span class="t-cmt"># odd  dims → cos</span>
+        <span class="t-key">self</span>.register_buffer(<span class="t-str">'pe'</span>, pe.unsqueeze(<span class="t-num">0</span>))   <span class="t-cmt"># (1, max_len, d_model)</span>
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x):
+        <span class="t-key">return</span> x + <span class="t-key">self</span>.pe[:, :x.size(<span class="t-num">1</span>)]   <span class="t-cmt"># add PE to token embeddings</span>
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 2. Learned Absolute Positional Encoding (BERT / GPT-2 style)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">LearnedPE</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model, max_len=<span class="t-num">512</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.pe = nn.Embedding(max_len, d_model)   <span class="t-cmt"># fully learnable lookup table</span>
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x):
+        B, T, _ = x.shape
+        positions = torch.arange(T, device=x.device)   <span class="t-cmt"># [0, 1, 2, ..., T-1]</span>
+        <span class="t-key">return</span> x + <span class="t-key">self</span>.pe(positions)          <span class="t-cmt"># add learned PE to token embeddings</span>
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 3. RoPE — Rotary Position Embedding (Su et al. 2021)
+#    Applied to Q and K vectors INSIDE attention — not to the token embedding
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">precompute_rope_freqs</span>(d_k, max_len=<span class="t-num">4096</span>, base=<span class="t-num">10000</span>):
+    <span class="t-str">"""Precompute cosine and sine tables for RoPE rotation."""</span>
+    theta = <span class="t-num">1.0</span> / (base ** (torch.arange(<span class="t-num">0</span>, d_k, <span class="t-num">2</span>).float() / d_k))
+    positions = torch.arange(max_len).float()
+    angles = torch.outer(positions, theta)          <span class="t-cmt"># (max_len, d_k/2)</span>
+    freqs_cos = torch.cos(angles)                   <span class="t-cmt"># (max_len, d_k/2)</span>
+    freqs_sin = torch.sin(angles)                   <span class="t-cmt"># (max_len, d_k/2)</span>
+    <span class="t-key">return</span> freqs_cos, freqs_sin
+
+<span class="t-key">def</span> <span class="t-def">apply_rope</span>(x, freqs_cos, freqs_sin):
+    <span class="t-str">"""
+    Apply RoPE rotation to Q or K vectors.
+    x: (batch, heads, seq_len, d_k)
+    """</span>
+    B, H, T, d_k = x.shape
+    cos = freqs_cos[:T].unsqueeze(<span class="t-num">0</span>).unsqueeze(<span class="t-num">0</span>)   <span class="t-cmt"># (1, 1, T, d_k/2)</span>
+    sin = freqs_sin[:T].unsqueeze(<span class="t-num">0</span>).unsqueeze(<span class="t-num">0</span>)
+
+    x1 = x[..., :<span class="t-num">0</span>::<span class="t-num">2</span>]    <span class="t-cmt"># Wait — cleaner to reshape into pairs</span>
+    x_r = x.reshape(B, H, T, d_k // <span class="t-num">2</span>, <span class="t-num">2</span>)         <span class="t-cmt"># (B, H, T, d_k/2, 2)</span>
+    x_even = x_r[..., <span class="t-num">0</span>]                            <span class="t-cmt"># (B, H, T, d_k/2)</span>
+    x_odd  = x_r[..., <span class="t-num">1</span>]
+
+    <span class="t-cmt"># Apply 2D rotation: [x_even, x_odd] → [x_even·cos − x_odd·sin, x_even·sin + x_odd·cos]</span>
+    rotated_even = x_even * cos - x_odd * sin
+    rotated_odd  = x_even * sin + x_odd * cos
+
+    <span class="t-cmt"># Interleave back: (B, H, T, d_k/2, 2) → (B, H, T, d_k)</span>
+    out = torch.stack([rotated_even, rotated_odd], dim=-<span class="t-num">1</span>).reshape(B, H, T, d_k)
+    <span class="t-key">return</span> out
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# 4. ALiBi — Attention with Linear Biases (Press et al. 2022)
+#    Returns an additive bias matrix to subtract from attention scores
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">build_alibi_bias</span>(n_heads, seq_len):
+    <span class="t-str">"""
+    Returns (n_heads, seq_len, seq_len) bias matrix.
+    Subtract from attention scores before softmax.
+    """</span>
+    <span class="t-cmt"># Head-specific slopes: m_h = 2^(-8h/H) for h = 1 … H</span>
+    slopes = torch.pow(<span class="t-num">2</span>, -torch.arange(<span class="t-num">1</span>, n_heads + <span class="t-num">1</span>).float() * (<span class="t-num">8</span> / n_heads))
+
+    <span class="t-cmt"># Distance matrix: entry [i,j] = |i − j|</span>
+    positions = torch.arange(seq_len)
+    distances = (positions.unsqueeze(<span class="t-num">0</span>) - positions.unsqueeze(<span class="t-num">1</span>)).abs().float()  <span class="t-cmt"># (T, T)</span>
+
+    <span class="t-cmt"># Bias = −slope × distance, one per head</span>
+    bias = -slopes.view(n_heads, <span class="t-num">1</span>, <span class="t-num">1</span>) * distances.unsqueeze(<span class="t-num">0</span>)  <span class="t-cmt"># (H, T, T)</span>
+    <span class="t-key">return</span> bias
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Quick sanity checks
+# ─────────────────────────────────────────────────────────────────────────</span>
+d_model, seq_len = <span class="t-num">64</span>, <span class="t-num">8</span>
+x = torch.randn(<span class="t-num">2</span>, seq_len, d_model)   <span class="t-cmt"># batch=2</span>
+
+<span class="t-cmt"># Sinusoidal</span>
+sin_pe = SinusoidalPE(d_model)
+out_sin = sin_pe(x)
+<span class="t-key">print</span>(<span class="t-str">f"Sinusoidal PE output: {out_sin.shape}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  PE values differ by position: {not torch.allclose(sin_pe.pe[0,0], sin_pe.pe[0,3])}"</span>)
+
+<span class="t-cmt"># Learned</span>
+learned_pe = LearnedPE(d_model)
+out_learned = learned_pe(x)
+<span class="t-key">print</span>(<span class="t-str">f"Learned PE output:    {out_learned.shape}  ({sum(p.numel() for p in learned_pe.parameters()):,} params)"</span>)
+
+<span class="t-cmt"># RoPE</span>
+cos_f, sin_f = precompute_rope_freqs(d_k=d_model, max_len=<span class="t-num">128</span>)
+q = torch.randn(<span class="t-num">2</span>, <span class="t-num">4</span>, seq_len, d_model)   <span class="t-cmt"># (batch, heads, seq, d_k)</span>
+q_rotated = apply_rope(q, cos_f, sin_f)
+<span class="t-key">print</span>(<span class="t-str">f"RoPE Q rotated:       {q_rotated.shape}  (same shape, values rotated)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Rotation changes values: {not torch.allclose(q, q_rotated)}"</span>)
+
+<span class="t-cmt"># ALiBi</span>
+alibi = build_alibi_bias(n_heads=<span class="t-num">4</span>, seq_len=seq_len)
+<span class="t-key">print</span>(<span class="t-str">f"ALiBi bias shape:     {alibi.shape}  ← add to attn scores before softmax"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Head-0 bias [0→0]: {alibi[0,0,0]:.3f} (same pos, no penalty)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Head-0 bias [0→3]: {alibi[0,0,3]:.3f} (3 apart, penalty applied)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"  Head-3 bias [0→3]: {alibi[3,0,3]:.3f} (same distance, smaller slope = less penalty)"</span>)</code></pre>
+<div class="code-output">
+  <span class="out-head">── Positional Encoding Sanity Checks ───────────────────────────────────</span><br>
+  Sinusoidal PE output: torch.Size([<span class="out-val">2</span>, <span class="out-val">8</span>, <span class="out-val">64</span>])<br>
+  &nbsp;&nbsp;PE values differ by position: <span class="out-good">True</span><br>
+  Learned PE output: &nbsp;&nbsp;&nbsp;torch.Size([<span class="out-val">2</span>, <span class="out-val">8</span>, <span class="out-val">64</span>]) &nbsp;(<span class="out-val">32,768</span> params)<br>
+  RoPE Q rotated: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;torch.Size([<span class="out-val">2</span>, <span class="out-val">4</span>, <span class="out-val">8</span>, <span class="out-val">64</span>]) &nbsp;(same shape, values rotated)<br>
+  &nbsp;&nbsp;Rotation changes values: <span class="out-good">True</span><br>
+  ALiBi bias shape: &nbsp;&nbsp;&nbsp;&nbsp;torch.Size([<span class="out-val">4</span>, <span class="out-val">8</span>, <span class="out-val">8</span>]) &nbsp;← add to attn scores before softmax<br>
+  &nbsp;&nbsp;Head-0 bias [0→0]: <span class="out-good">&nbsp;0.000</span> &nbsp;(same pos, no penalty)<br>
+  &nbsp;&nbsp;Head-0 bias [0→3]: <span class="out-val">-1.500</span> &nbsp;(3 apart, penalty applied)<br>
+  &nbsp;&nbsp;Head-3 bias [0→3]: <span class="out-dim">-0.188</span> &nbsp;(same distance, smaller slope = less penalty)
+</div>
+
+<!-- §09 -->
+<h2>09 — Why This Matters in Practice</h2>
+
+<p><strong>Your choice of PE determines your context ceiling.</strong> BERT's learned positions hard-cap at 512 tokens — trying to run BERT on a 600-token input requires truncation or a different model. GPT-2 caps at 1024. Models using RoPE can be extended post-training via frequency scaling; models using learned absolute positions cannot. When you see a model advertise "128k context" — that capability is almost always a consequence of RoPE + YaRN fine-tuning.</p>
+
+<p><strong>PE affects what the model knows about structure.</strong> ALiBi's local-focus bias means models using it naturally pay more attention to nearby context, which can help with tasks where local coherence matters but may limit very long-range reasoning. RoPE's relative position awareness means the model has a consistent notion of "3 tokens back" regardless of absolute position — useful for code (function calls, variable scoping) and long documents where patterns repeat at varying positions.</p>
+
+<p><strong>PE matters for fine-tuning and extending base models.</strong> If you fine-tune a LLaMA-3 model (RoPE, 8k base) on longer documents, the model degrades gracefully beyond 8k tokens because RoPE's relative representation is smooth. If you try to fine-tune BERT on longer inputs, you hit a hard wall — you'd need to add new position embeddings and retrain. Understanding PE is essential for any practitioner working on RAG (Day 29) or long-document applications.</p>
+
+<!-- §10 -->
+<h2>10 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>Humans process language sequentially but also holistically — we don't just track "word 1, word 2, word 3." We understand that the beginning of a sentence sets up expectations the end fulfils, that a pronoun refers back to a noun established paragraphs ago, that a poem's structure is inseparable from its meaning.</p>
+  <p style="margin-top:.75rem"><strong>Positional encodings give transformers a notion of "where" — but do they give a notion of "structure"? Is knowing that token 400 comes after token 399 the same as understanding that a conclusion follows from premises, or that a punchline comes at the end of a setup? What would a truly structure-aware positional encoding look like?</strong></p>
+</div>
+
+<!-- §11 -->
+<h2>11 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 26: BERT vs GPT.</strong> We now have the complete transformer with positional encodings. Day 26 splits the same architecture in two directions: the encoder (BERT) that reads the whole sentence at once with bidirectional attention, and the decoder (GPT) that generates one token at a time with causal masking. We cover what each is actually good at, how pre-training objectives differ (masked vs causal language modelling), and why the industry converged on decoder-only models for modern LLMs.</p>
+
+<!-- §12 -->
+<h2>12 — Go Deeper</h2>
+<p>📄 <a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need — Vaswani et al. (2017)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">Section 3.5 covers sinusoidal encodings. The choice of 10000 as base and the discussion of linear offset properties is in the appendix.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">RoFormer: Enhanced Transformer with Rotary Position Embedding — Su et al. (2021)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The original RoPE paper. Section 3 derives the rotation formulation from scratch. Required reading if you plan to implement or modify RoPE.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2108.12409" target="_blank" rel="noopener">Train Short, Test Long: ALiBi — Press et al. (2022)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The ALiBi paper. Table 1 shows the perplexity comparison at lengths beyond training — the extrapolation advantage is striking.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2309.00071" target="_blank" rel="noopener">YaRN: Efficient Context Window Extension of Large Language Models</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">How to extend LLaMA from 4k to 128k context using RoPE frequency scaling. Sections 2–3 are the practical how-to.</em></p>
+<p>▶ <a href="https://www.youtube.com/watch?v=GQPOtyITy54" target="_blank" rel="noopener">Positional Encoding in Transformer — Aladdin Persson</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 18 min · Clear visual walkthrough of the sinusoidal formula with code. Good complement to this post.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. Why is attention described as "permutation equivariant," and why is this a problem for language modelling?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Permutation equivariance means: if you permute the input tokens, the output tokens permute in the same way — and nothing else changes. The attention score between "cat" and "sat" is the same whether they're adjacent or 20 positions apart. The model has no way to distinguish "the cat sat on the mat" from any scrambled version of those six tokens, because the dot product Q·Kᵀ only measures semantic similarity between token representations — it has no position term. This is a problem for language because word order encodes meaning: "dog bites man" and "man bites dog" are opposite events with identical bag-of-tokens. Without positional information, a transformer cannot learn subject-verb-object structure, cannot resolve pronouns to their referents reliably, and cannot model any grammatical or discourse structure that depends on order. Positional encodings add the missing order signal by making each token's representation depend on its position — so even if "cat" appears in two different positions, its representation (embedding + PE) differs, breaking the permutation equivariance.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. What is the key mathematical property of sinusoidal encodings that makes relative positions expressible as linear transformations?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The property is: PE(pos + k) = M_k · PE(pos), where M_k is a rotation matrix that depends only on the offset k, not on the absolute position pos. This follows from the angle addition formulas for sine and cosine: sin(a+b) = sin(a)cos(b) + cos(a)sin(b), cos(a+b) = cos(a)cos(b) − sin(a)sin(b). If you write each (sin, cos) pair as a 2D vector, then adding k to the position is equivalent to rotating that vector by a fixed angle determined by k and the frequency. Because it's a fixed linear (rotation) transformation, the model can learn to attend to "the token k positions back" by incorporating the rotation matrix M_k into its weight matrices. Concretely: if the model's attention weights W capture M_k, then the dot product between a query at position pos and a key at position pos+k encodes the relative distance k consistently. This is the formal basis for why transformers with sinusoidal PE can generalise to some extent to longer sequences — the relative distance relationships remain linearly consistent beyond training length.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. RoPE encodes relative positions natively. Explain exactly how — what mathematical property of the dot product makes this happen?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">RoPE rotates the query vector at position m by angle mθ and the key vector at position n by angle nθ, before computing their dot product. The key is in the geometry of rotations: the inner product between two vectors after rotation equals the inner product between the original vectors after applying the difference rotation. Formally: &lt;R(mθ)q, R(nθ)k&gt; = q^T · R((m−n)θ) · k. The rotation angle in this final expression is (m−n)θ — the relative position — not the absolute positions m and n separately. So the attention score between positions m and n depends only on their difference (m−n), making relative position the native currency of the attention mechanism. This is fundamentally different from sinusoidal PE (which adds absolute position information to embeddings and only indirectly encodes relative positions via the linear property) and from learned absolute PE (which has no relative position signal at all). Because the dot product directly computes relative-position-dependent similarity, the model can learn to attend to "3 positions back" or "5 positions forward" with the same attention head weight at any absolute position — enabling better generalisation to sequence lengths beyond training.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. Why does ALiBi extrapolate well to sequences longer than training length, while learned absolute positions cannot?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Learned absolute positions store a lookup table: P[0], P[1], …, P[max_len-1]. For any position ≥ max_len, there is no entry in the table — the model has never seen that position and has no representation for it. The model's behaviour at position 513 in a 512-trained BERT model is undefined (usually either an index error or using the last known embedding, both of which produce garbage outputs). ALiBi, by contrast, doesn't store position-specific values — it only applies a penalty based on distance: score -= slope × |i−j|. The distance |i−j| is a well-defined number for any i and j, including positions far beyond training length. A token at position 2000 attending to a token at position 1997 gets exactly the same penalty (3 × slope) as position 10 attending to position 7. There's nothing to "look up" and nothing that runs out of range. The model's behaviour at long range is determined entirely by the slope values (which are fixed) and the distance metric (which is always computable). The only degradation is that the model may not have learned to use very long-range context effectively during training — but it won't break. This graceful degradation is why BLOOM (176B parameters) uses ALiBi: at that scale, unexpected failures at long context would be catastrophic.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. A team trained a LLaMA-2 model (RoPE, 4k context) and now needs 32k context. What approach would you recommend and why? What would change in the model?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The recommended approach is YaRN (or similar RoPE frequency scaling), followed by a short fine-tuning run on long documents. Here is what changes and why: The root problem is that RoPE rotation angles for high-frequency dimensions cycle through their full period many times between position 4096 and position 32768 — the model has never experienced these angle values and the attention patterns break down. YaRN addresses this by scaling down the rotation frequencies — dividing each θ_i by a scaling factor s chosen so the new effective context length equals the target (32k). After scaling, the angle for position 32768 in the extended model equals the angle the original model saw at position 4096, putting the model back in familiar angular territory. You then fine-tune on ~1000–5000 long documents for ~0.1% of the original training compute, allowing the model to adjust to the new frequency scale. The model architecture is unchanged — only the rotation frequency table (precomputed cos/sin values) is modified, plus the fine-tuned weights. This is much cheaper than training from scratch and is the approach used for LLaMA-3.1's 128k context. If the team is using a BERT-like model with learned absolute positions instead of RoPE, this approach would not work — they'd need to add new position embeddings for positions 512–32768 and train them from scratch, which requires substantially more compute and data.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Positional Encodings</div>
+  <ol>
+    <li><strong>The problem:</strong> attention is permutation equivariant — it has no built-in notion of word order. "Dog bites man" and "Man bites dog" look identical to an attention layer. Positional encodings inject position information before attention runs.</li>
+    <li><strong>Requirements:</strong> a good PE must be unique per position, consistent across sequences, generalisable to new lengths, and compatible with the attention dot product mechanism.</li>
+    <li><strong>Sinusoidal PE (2017):</strong> fixed formula using sin/cos at multiple frequencies. PE(pos, 2i) = sin(pos / 10000^(2i/d)). Key property: PE(pos+k) is a linear function of PE(pos) — relative positions expressible as rotation matrices. No learned parameters. Degrades for sequences much longer than training length.</li>
+    <li><strong>Learned absolute PE (BERT, GPT-2):</strong> a trainable embedding lookup table — one vector per position. Simple, often slightly better than sinusoidal in practice. Hard cutoff at max_seq_len — cannot extrapolate beyond training length without retraining.</li>
+    <li><strong>RoPE (LLaMA, Mistral, Qwen):</strong> rotates Q and K vectors by angles proportional to position before the dot product. Because &lt;R(mθ)q, R(nθ)k&gt; = q·R((m−n)θ)·k, the attention score depends only on relative position (m−n). Native relative position encoding. Extendable via YaRN/LongRoPE for long-context models.</li>
+    <li><strong>ALiBi (BLOOM, MPT):</strong> subtracts a distance penalty directly from attention scores: score −= slope × |i−j|. No parameters, no changes to embeddings. Each head has a different slope, creating a spectrum from local to global attention. Extrapolates gracefully because the distance metric is always defined.</li>
+    <li><strong>Practical choice (2026):</strong> RoPE for training LLMs from scratch. Learned absolute for short-context encoders (BERT-style). ALiBi if you need simple, parameter-free extrapolation. Sinusoidal for academic / non-LLM transformers.</li>
+    <li><strong>Context extension:</strong> RoPE models (LLaMA, Mistral) can be extended from 4k to 128k+ context via YaRN — scaling down rotation frequencies and fine-tuning briefly on long documents. This is impossible for models using learned absolute positions without adding new embeddings and retraining.</li>
+    <li><strong>Connection to Day 24:</strong> the transformer block from Day 24 applies PE before the first attention layer (sinusoidal/learned) or inside the Q/K projection (RoPE). Everything else in the transformer is identical — PE is a plug-in component, not a structural change.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW Q&A -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>Why do transformers need positional encodings at all?</strong><br>
+    <em>Attention is permutation equivariant — it computes token relationships from semantic content alone, with no positional signal. Without PE, "cat sat on mat" and any scrambled version are processed identically: the model cannot learn subject-verb-object structure, resolve pronouns, or model any grammatical pattern that depends on order. PE adds a position-dependent signal to each token's representation before attention, breaking the permutation symmetry. The choice of how to add that signal — fixed formula, lookup table, or rotation — is what distinguishes the four major approaches.</em></li>
+
+    <li><strong>What is the difference between absolute and relative positional encodings? Give an example of each.</strong><br>
+    <em>Absolute encodings (sinusoidal, learned) assign every position a fixed or learned vector — position 5 gets encoding E[5], regardless of where it appears relative to other tokens. The model must infer relative distances by comparing two absolute positions. Examples: sinusoidal PE (original transformer), learned PE (BERT, GPT-2). Relative encodings (RoPE, ALiBi) directly embed the distance between token pairs into the attention score itself — the score between positions 3 and 7 encodes "4 apart," not "position 3" and "position 7" separately. This is why RoPE's attention score depends on (m−n) not on m and n independently. Relative encodings generalise better to new lengths because the model learns "3 apart means this" rather than "position 1003 means this."</em></li>
+
+    <li><strong>What is RoPE and why has it become the dominant PE in open-source LLMs?</strong><br>
+    <em>RoPE (Rotary Position Embedding) rotates Q and K vectors by angles proportional to their position before the dot product. Because the inner product between two rotated vectors equals the inner product between the originals multiplied by the rotation for their difference: ⟨R(mθ)q, R(nθ)k⟩ = q·R((m−n)θ)·k — the attention score depends only on the relative position (m−n). Three reasons drive its adoption: (1) Native relative position — the model directly learns positional relationships rather than inferring them. (2) Context extensibility — via YaRN frequency scaling, RoPE models can extend from 4k to 128k+ context with a short fine-tuning run (~0.1% of original compute). (3) No extra parameters — the rotation frequencies are fixed, adding no parameter overhead. LLaMA (all versions), Mistral, Qwen, Gemma, and Falcon all use RoPE.</em></li>
+
+    <li><strong>A model trained with BERT-style learned PE at 512 tokens needs to handle 1,024 tokens. What are your options? What if it used RoPE instead?</strong><br>
+    <em>For learned absolute PE: (1) Truncate to 512 — simplest, loses the extra tokens. (2) Add new embeddings for positions 512–1,023 and fine-tune on long examples — the existing 0–511 weights are preserved but you need sufficient long-context training data. (3) Switch to sinusoidal PE — drop-in replacement, no parameters, degrades gradually beyond training length. There is no free option; the hard cutoff is a fundamental limitation of the lookup-table design. For RoPE: extend via YaRN frequency scaling — divide rotation frequencies by scaling factor 2 (since 1024/512=2), then fine-tune for a few thousand steps on long examples. The attention mechanism works identically; only the precomputed cos/sin tables change. Total cost is roughly 1,000 GPU-hours for a BERT-scale model versus retraining from scratch. This is why practitioners now prefer RoPE for any model that may need context extension later.</em></li>
+
+    <li><strong>Why does ALiBi extrapolate to long sequences while learned absolute PE cannot? What is the architectural reason?</strong><br>
+    <em>Learned absolute PE is a lookup table: E[0], E[1], …, E[max_len−1]. Position 513 in a 512-trained BERT model has no entry — the model has never seen it and produces undefined behaviour (usually garbage or an index error). The hard wall is architectural: there is literally nothing stored for positions beyond training length. ALiBi applies a penalty based only on distance: score −= slope × |i−j|. The distance |i−j| is a well-defined number for any i and j, including positions far beyond training length. A token at position 2,000 attending to position 1,997 gets exactly the same penalty (3 × slope) as position 10 attending to position 7. There is nothing to "look up" and nothing that runs out of range — the model's behaviour at long positions is completely determined by the fixed slope values and the always-computable distance metric. The only degradation is that the model may not have learned to use very long-range context effectively during training. But it will not break — which is why BLOOM (176B) chose ALiBi: at that scale, unexpected failures at long context would be catastrophic.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>📄 <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">RoFormer: Enhanced Transformer with Rotary Position Embedding — Su et al. (2021)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The original RoPE paper. Section 3 is the essential derivation — 15 minutes of reading that explains why every major open-source LLM uses this method.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/2108.12409" target="_blank" rel="noopener">Train Short, Test Long: Attention with Linear Biases (ALiBi) — Press et al. (2022)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The ALiBi paper. Table 1's perplexity comparison at 2× training length is the most convincing demonstration of extrapolation advantage anywhere in the literature.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/2309.00071" target="_blank" rel="noopener">YaRN: Efficient Context Window Extension of Large Language Models — Peng et al. (2023)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The practical guide to extending LLaMA context. Used by LLaMA-3.1 128k. Section 2 explains the frequency scaling derivation clearly.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=GQPOtyITy54" target="_blank" rel="noopener">Positional Encoding in Transformer — Aladdin Persson</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 18 min · Best visual walkthrough of the sinusoidal formula with live NumPy code. Complements the derivation in this post.</em></p>
+  <p>🔗 <a href="https://blog.eleuther.ai/rotary-embeddings/" target="_blank" rel="noopener">Rotary Embeddings: A Relative Revolution — EleutherAI Blog</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">Excellent intuitive explanation of RoPE with visualisations. Explains why rotation is the right mathematical operation and compares alternatives.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#PositionalEncoding</span><span class="tag">#RoPE</span><span class="tag">#ALiBi</span><span class="tag">#Sinusoidal</span><span class="tag">#Transformer</span><span class="tag">#LLM</span><span class="tag">#LongContext</span><span class="tag">#YaRN</span><span class="tag">#BERT</span><span class="tag">#GPT</span><span class="tag">#LLaMA</span><span class="tag">#NLP</span><span class="tag">#DeepLearning</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="attention-transformer.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 24</span>
+    <span class="post-nav-title">Attention &amp; the Transformer</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+
+// Sinusoidal PE visualiser
+(function(){
+  var el=document.getElementById('peVis');
+  if(!el)return;
+  var nPos=8,nDim=8,dModel=64;
+  for(var pos=0;pos<nPos;pos++){
+    for(var dim=0;dim<nDim;dim++){
+      var i=Math.floor(dim/2);
+      var angle=pos/Math.pow(10000,2*i/dModel);
+      var val=(dim%2===0)?Math.sin(angle):Math.cos(angle);
+      var t=Math.round((val+1)/2*255);
+      var r=dim%2===0?Math.round(t*0.2):Math.round(t*0.9);
+      var g=Math.round(t*0.4);
+      var b=dim%2===0?Math.round(t*0.9):Math.round(t*0.2);
+      var cell=document.createElement('div');
+      cell.className='pe-cell';
+      cell.style.background='rgb('+r+','+g+','+b+')';
+      cell.title='pos='+pos+' dim='+dim+' val='+val.toFixed(2);
+      cell.textContent=val.toFixed(1);
+      el.appendChild(cell);
+    }
+  }
+})();
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>

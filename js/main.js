@@ -774,7 +774,7 @@ const PUBLISHED_POSTS = [
   'tokenization.html',               // Day 22 - Mar 12
   'word-embeddings.html',            // Day 23 - Mar 13
   'attention-transformer.html',      // Day 24 - Mar 14
-  // 'positional-encodings.html',       // Day 25 - Mar 15
+  'positional-encodings.html',       // Day 25 - Mar 15
   // 'bert-vs-gpt.html',                // Day 26 - Mar 16
   // 'tokenization-deep-dive.html',     // Day 27 - Mar 17
   // 'fine-tuning.html',                // Day 28 - Mar 18
