@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 26 — BERT vs GPT | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="BERT vs GPT explained clearly: encoder vs decoder, masked vs causal language modelling, bidirectional vs left-to-right attention, pre-training objectives, fine-tuning, and when to use each — with analogies, comparisons, and full PyTorch examples." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-step-num{background:#0f0e0c;border-color:#c8a94b;color:#c8a94b}
+    [data-theme="light"] .prose-step-text{color:#2e2b25}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mw{color:#f85149;font-weight:600}
+    .math-block .mg{color:#3fb950;font-weight:600}
+
+    /* Attention mask visualisers */
+    .attn-grid{display:inline-grid;gap:3px;font-family:'JetBrains Mono',monospace;font-size:.72rem;margin:.75rem 0}
+    .attn-cell{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:3px;font-weight:600}
+    .attn-vis{display:flex;flex-wrap:wrap;gap:2rem;align-items:flex-start;margin:1rem 0}
+    .attn-vis-block{display:flex;flex-direction:column;gap:.4rem}
+    .attn-vis-label{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text-muted);font-weight:600}
+
+    /* Model pill badges */
+    .model-pill{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace;border:1px solid}
+    .pill-bert{background:rgba(42,107,110,.15);border-color:rgba(42,107,110,.5);color:#4ac6ca}
+    .pill-gpt{background:rgba(88,166,255,.12);border-color:rgba(88,166,255,.4);color:#58a6ff}
+    .pill-t5{background:rgba(227,179,65,.12);border-color:rgba(227,179,65,.4);color:#e3b341}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 26 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span><span class="meta-sep">·</span>
+      <span>Mar 16, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">25 min read</span><span class="meta-sep">·</span>
+      <span>Transformers · NLP</span>
+    </div>
+    <h1>BERT vs GPT:<br>Encoders, Decoders &amp; What They're For</h1>
+    <p class="post-hero-lead">Same transformer architecture. Same attention mechanism. Same positional encodings. But BERT reads the whole sentence at once while GPT only ever looks left. That single difference — bidirectional vs causal attention — splits the world of language models into two families with completely different strengths, training objectives, and use cases. This guide explains both from the ground up: what they see, how they're trained, what they're good at, and how every major model since 2018 fits into one of these two families.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>Two students take the same exam.<br>
+  One can flip to any page — reading forward, backward, skipping around.<br>
+  The other can only read left to right, never peeking ahead.<br><br>
+  The first student is better at understanding. The second is better at writing.<br><br>
+  BERT is the first student. GPT is the second.<br>
+  Same exam. Same knowledge. Completely different strategies.</p>
+</blockquote>
+
+<!-- §01 -->
+<h2>01 — One Architecture, Two Families</h2>
+
+<p>In Day 24 we built the full transformer architecture. In Day 25 we added positional encodings. The transformer is now complete — but here's something remarkable: <strong>BERT and GPT are both transformers</strong>. They use the same multi-head attention, the same feed-forward blocks, the same layer norm and residual connections. The difference between them is not the architecture — it's <strong>what part of the sequence each token is allowed to see during training</strong>.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🔍 Non-Tech Analogy: Two Kinds of Reader</span>
+  <p>Imagine you're trying to understand a mystery novel. A <strong>bidirectional reader</strong> (BERT) reads the whole book at once — they can see the ending when analysing chapter 1, and they can see chapter 1 when analysing the ending. They build a complete, context-rich understanding of every sentence from all directions.</p>
+  <p style="margin-top:.75rem">A <strong>left-to-right reader</strong> (GPT) reads strictly page by page — they can never look ahead. When they reach chapter 5, they only know what happened in chapters 1–4. But this constraint turns out to be incredibly useful: because they've learned to predict what comes next, they can <em>write</em> the novel themselves.</p>
+  <p style="margin-top:.75rem">Understanding vs writing. Reading vs generating. That's the BERT/GPT split.</p>
+</div>
+
+<p>This distinction flows from a single change in the attention mask. When computing self-attention, the mask determines which positions each token can attend to:</p>
+
+<div class="attn-vis">
+  <div class="attn-vis-block">
+    <div class="attn-vis-label">BERT — Bidirectional (full attention)</div>
+    <div class="attn-grid" id="bertGrid"></div>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem">Every token sees every other token</p>
+  </div>
+  <div class="attn-vis-block">
+    <div class="attn-vis-label">GPT — Causal (left-to-right only)</div>
+    <div class="attn-grid" id="gptGrid"></div>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem">Each token only sees itself and what came before</p>
+  </div>
+</div>
+
+<p>That grid is not just a visual — it's literally the attention mask applied before the softmax in Day 24. BERT sets all mask values to 0 (attend everywhere). GPT sets the upper triangle to −∞ (block future tokens). Everything else — the Q/K/V projections, multi-head attention, FFN layers, residuals — is identical.</p>
+
+<!-- §02 -->
+<h2>02 — BERT: The Encoder</h2>
+
+<h3>What BERT Is</h3>
+<p><strong>BERT</strong> (Bidirectional Encoder Representations from Transformers — Google, 2018) is an <strong>encoder-only</strong> transformer. It takes a sequence of tokens and produces a rich contextual embedding for each token — a representation that captures the meaning of that token in the context of the <em>entire</em> sentence, both what comes before and what comes after.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📚 Non-Tech Analogy: The Proofreader</span>
+  <p>A proofreader reads the entire document before correcting a single word. When they get to the word "bank" in sentence 3, they've already read sentence 10 — which mentions "a river" — so they know it means riverbank, not a financial institution. They understand every word in full context.</p>
+  <p style="margin-top:.75rem">BERT is the proofreader. It reads the whole sentence before assigning meaning to any word. The embedding BERT produces for "bank" in "The fish swam past the bank" is completely different from the embedding for "bank" in "I deposited money at the bank." Same word, totally different vectors — because BERT saw both the fish and the money before deciding.</p>
+</div>
+
+<h3>BERT's Pre-Training: Masked Language Modelling (MLM)</h3>
+<p>BERT was pre-trained on two tasks simultaneously. The first and most important is <strong>Masked Language Modelling (MLM)</strong>: randomly hide 15% of tokens in the input by replacing them with a special <code>[MASK]</code> token, then train the model to predict what the hidden tokens were.</p>
+
+<div class="math-block">
+  <span class="mc">Input:  "The cat [MASK] on the [MASK]."</span><br>
+  <span class="mc">Target: predict "sat" and "mat"</span><br><br>
+  <span class="mh">Loss = CrossEntropy( BERT_output[masked_pos], true_token_id )</span><br><br>
+  <span class="mc">15% of tokens are masked each training step</span><br>
+  <span class="mc">Of those 15%: 80% replaced with [MASK], 10% random token, 10% unchanged</span><br>
+  <span class="mc">(The 10% variations prevent the model from only learning [MASK] positions)</span>
+</div>
+
+<p>To predict "sat," the model must understand both the subject ("The cat") and the destination ("on the [MASK]"). It cannot rely on just looking left — it <em>must</em> use both sides. This forces BERT to build genuinely bidirectional representations. After pre-training on 3.3 billion words, every layer of BERT learned something deep about language: syntax, coreference, semantic relationships, named entities — all encoded in the token embeddings.</p>
+
+<p>The second task is <strong>Next Sentence Prediction (NSP)</strong>: given two sentences A and B, predict whether B actually follows A in the original document or was randomly sampled. This teaches BERT cross-sentence relationships — important for tasks like question answering where the question and passage are both inputs.</p>
+
+<h3>The [CLS] Token — BERT's Summary Vector</h3>
+<p>BERT prepends a special <code>[CLS]</code> (classification) token to every input. After passing through all transformer layers, the final embedding of this token aggregates information from the entire sequence — it becomes a sentence-level representation. For classification tasks, you attach a small linear head on top of <code>[CLS]</code> and fine-tune. The rest of BERT's weights don't need to change much — they already understand language remarkably well.</p>
+
+<div class="math-block">
+  <span class="mc">Input format: [CLS] token_1 token_2 ... token_n [SEP]</span><br>
+  <span class="mc">For sentence pairs: [CLS] sentence_A [SEP] sentence_B [SEP]</span><br><br>
+  <span class="mh">Classification: Linear( BERT_output[CLS] ) → logits</span><br>
+  <span class="mc">BERT_output[CLS] ∈ ℝ^768 (base) or ℝ^1024 (large)</span>
+</div>
+
+<h3>BERT Fine-Tuning: One Pre-trained Model, Any Task</h3>
+<p>The pre-train/fine-tune paradigm BERT introduced was revolutionary: train once on massive unlabelled text, then fine-tune on small labelled datasets for any specific task. A single BERT-base model reached state-of-the-art on 11 NLP benchmarks simultaneously in 2018 — sentiment analysis, named entity recognition, question answering, textual entailment, and more. The key insight: language understanding is universal. A model that deeply understands language in general can quickly learn any language task with a small additional training signal.</p>
+
+<table class="prose-table">
+  <thead><tr><th>Task</th><th>What you attach to BERT</th><th>What you fine-tune on</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Text classification</strong><br><span style="font-size:.82rem;color:var(--text-muted)">sentiment, spam, topic</span></td><td>Linear layer on <code>[CLS]</code></td><td>Labelled sentences (hundreds–thousands)</td></tr>
+    <tr><td><strong>Named entity recognition</strong><br><span style="font-size:.82rem;color:var(--text-muted)">find names, dates, orgs</span></td><td>Linear layer on each token output</td><td>Tagged text (BIO labels per token)</td></tr>
+    <tr><td><strong>Question answering</strong><br><span style="font-size:.82rem;color:var(--text-muted)">SQuAD-style extractive</span></td><td>Two linear heads (start, end position)</td><td>(question, passage, answer_span) triples</td></tr>
+    <tr><td><strong>Sentence similarity</strong><br><span style="font-size:.82rem;color:var(--text-muted)">duplicate detection, NLI</span></td><td>Linear layer on <code>[CLS]</code> with two sentences</td><td>Sentence pairs with similarity labels</td></tr>
+    <tr><td><strong>Semantic search / embeddings</strong><br><span style="font-size:.82rem;color:var(--text-muted)">RAG retrieval, clustering</span></td><td>Mean-pool all token outputs (Sentence-BERT)</td><td>Contrastive learning on similar pairs</td></tr>
+  </tbody>
+</table>
+
+<!-- §03 -->
+<h2>03 — GPT: The Decoder</h2>
+
+<h3>What GPT Is</h3>
+<p><strong>GPT</strong> (Generative Pre-trained Transformer — OpenAI, 2018) is a <strong>decoder-only</strong> transformer. It takes a sequence of tokens and, one token at a time, predicts the next one. The causal mask ensures that when predicting token at position n, it can only see tokens 1 through n−1 — never anything after. This constraint is what makes generation possible.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">✍️ Non-Tech Analogy: The Author</span>
+  <p>An author writing a novel never knows what they'll write in chapter 10 when they're writing chapter 1. They write word by word, sentence by sentence, each new word informed only by everything that came before. The constraint "you can't look ahead" is not a weakness — it's exactly what writing requires.</p>
+  <p style="margin-top:.75rem">GPT is the author. It reads everything it's written so far and asks: "Given all of this, what word comes next?" Train it on enough text — billions of words of books, articles, code, conversations — and it learns the statistical patterns of human language so thoroughly that its "next word guesses" become coherent paragraphs, then essays, then code, then multi-step reasoning.</p>
+</div>
+
+<h3>GPT's Pre-Training: Causal Language Modelling (CLM)</h3>
+<p>GPT's training objective is beautifully simple: <strong>predict the next token</strong>. Given a sequence of tokens, maximise the probability of each token given all preceding tokens. No masking tricks, no special tokens — just next-token prediction across the entire training corpus.</p>
+
+<div class="math-block">
+  <span class="mc">Training sequence: "The cat sat on the mat"</span><br><br>
+  <span class="mc">Step 1: given ["The"]           → predict "cat"</span><br>
+  <span class="mc">Step 2: given ["The", "cat"]    → predict "sat"</span><br>
+  <span class="mc">Step 3: given ["The","cat","sat"]→ predict "on"</span><br>
+  <span class="mc">... and so on for every position</span><br><br>
+  <span class="mh">Loss = − (1/T) Σ log P(token_t | token_1, ..., token_{t-1})</span><br>
+  <span class="mc">T = sequence length. This is the language modelling objective.</span>
+</div>
+
+<p>This objective is strikingly powerful because it provides a training signal at <em>every position</em> in every sequence. A 1,024-token sequence generates 1,024 training examples in one forward pass. And the task is hard enough to force the model to learn everything about language: grammar (wrong grammar is less probable), facts (wrong facts are less probable), logic (incoherent continuations are less probable), and style — all emerge as side effects of trying to predict what word comes next.</p>
+
+<h3>Generation: How GPT Produces Text</h3>
+<p>At inference time, GPT generates text <strong>autoregressively</strong> — one token at a time, feeding each newly generated token back as input for the next step:</p>
+
+<div class="prose-kv-grid" style="grid-template-columns:1fr;gap:.5rem;margin:1rem 0">
+  <div class="prose-kv"><div class="prose-kv-key">Step 1</div><div class="prose-kv-val">Input: "The capital of France is" → sample "Paris" (highest probability)</div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Step 2</div><div class="prose-kv-val">Input: "The capital of France is Paris" → sample "." </div></div>
+  <div class="prose-kv"><div class="prose-kv-key">Step 3</div><div class="prose-kv-val">Input: "The capital of France is Paris." → sample "It" (continues…)</div></div>
+</div>
+
+<p>The sampling strategy matters enormously here. Greedy decoding (always pick the highest probability token) produces repetitive, boring text. Temperature scaling (divide logits by T before softmax) controls randomness — low T makes text more deterministic, high T more creative/random. Top-k sampling (only sample from the top-k tokens) and nucleus sampling / top-p (sample from the smallest set of tokens whose cumulative probability exceeds p) are used by GPT-3, GPT-4, and most modern LLMs.</p>
+
+<!-- §04 -->
+<h2>04 — The Attention Mask: The One Real Difference</h2>
+
+<p>Everything above comes down to a single change in the attention computation. Here is the exact mask difference:</p>
+
+<div class="math-block">
+  <span class="mh">BERT (bidirectional) — no mask:</span><br>
+  <span class="mc">scores = Q · Kᵀ / √d_k</span><br>
+  <span class="mc">weights = softmax(scores)  ← every token can attend to every other token</span><br><br>
+  <span class="mh">GPT (causal) — upper triangle masked:</span><br>
+  <span class="mc">mask[i, j] = 0     if j ≤ i  (token j is at or before token i → allowed)</span><br>
+  <span class="mc">mask[i, j] = −∞   if j &gt; i  (token j is after token i → blocked)</span><br>
+  <span class="mc">weights = softmax(scores + mask)  ← future tokens get weight 0</span>
+</div>
+
+<p>This one mask is the entire architectural difference between BERT and GPT. Both use:</p>
+<ul style="margin:.75rem 0 .75rem 1.5rem;line-height:2">
+  <li>The same transformer blocks (attention + FFN + residual + LayerNorm)</li>
+  <li>The same token embeddings and positional encodings</li>
+  <li>The same training procedure (AdamW optimiser, learning rate warmup)</li>
+  <li>The same tokenizer format (WordPiece for BERT, BPE for GPT)</li>
+</ul>
+<p>The mask determines the pre-training objective — bidirectional attention enables MLM, causal attention enables CLM — and the pre-training objective determines what the model is good at.</p>
+
+<!-- §05 -->
+<h2>05 — BERT vs GPT: Head-to-Head</h2>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th><span class="model-pill pill-bert">BERT</span> Encoder</th>
+      <th><span class="model-pill pill-gpt">GPT</span> Decoder</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Attention direction</strong></td>
+      <td>Bidirectional — every token sees every other</td>
+      <td>Causal (left-to-right) — each token sees only past tokens</td>
+    </tr>
+    <tr>
+      <td><strong>Training objective</strong></td>
+      <td>Masked Language Modelling (MLM): predict hidden tokens</td>
+      <td>Causal Language Modelling (CLM): predict next token</td>
+    </tr>
+    <tr>
+      <td><strong>Can generate text?</strong></td>
+      <td class="cross">✗ No — no autoregressive mechanism</td>
+      <td class="tick">✓ Yes — designed for generation</td>
+    </tr>
+    <tr>
+      <td><strong>Context quality</strong></td>
+      <td class="tick">✓ Full bidirectional — richest representations</td>
+      <td class="mid">~ One-directional — weaker for understanding tasks</td>
+    </tr>
+    <tr>
+      <td><strong>Best use cases</strong></td>
+      <td>Classification, NER, QA (extractive), semantic search, embeddings</td>
+      <td>Text generation, chat, code, summarisation, instruction following</td>
+    </tr>
+    <tr>
+      <td><strong>Fine-tuning paradigm</strong></td>
+      <td>Add small head to [CLS] or token outputs; fine-tune on small labelled data</td>
+      <td>Instruction fine-tuning (IFT) + RLHF; few-shot via prompting</td>
+    </tr>
+    <tr>
+      <td><strong>Scales to very large?</strong></td>
+      <td class="mid">~ Limited — largest BERT variants ~350M params</td>
+      <td class="tick">✓ Yes — GPT-3 175B, GPT-4 ~1T, LLaMA-3 405B</td>
+    </tr>
+    <tr>
+      <td><strong>Key models (2018–2026)</strong></td>
+      <td>BERT, RoBERTa, ALBERT, DeBERTa, Sentence-BERT, BGE, E5</td>
+      <td>GPT-2/3/4, Claude, LLaMA (all), Mistral, Gemma, Falcon, Qwen</td>
+    </tr>
+    <tr>
+      <td><strong>Typical parameter count</strong></td>
+      <td>110M (base) – 350M (large)</td>
+      <td>1.5B – 405B+ (modern LLMs)</td>
+    </tr>
+    <tr>
+      <td><strong>Training data requirement</strong></td>
+      <td>Moderate — BERT trained on ~3.3B words (Wikipedia + BookCorpus)</td>
+      <td>Massive — GPT-3 trained on ~300B tokens; LLaMA-3 on 15T tokens</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §06 -->
+<h2>06 — The Third Family: Encoder-Decoder (T5, BART)</h2>
+
+<p>There's a third architecture that combines both: the <strong>encoder-decoder</strong> (or seq2seq) transformer. It uses a BERT-style encoder to read and understand the input, and a GPT-style decoder to generate the output. The decoder can attend to all encoder outputs via <strong>cross-attention</strong> — a third type of attention head that reads from the encoder's representations while generating.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🌍 Non-Tech Analogy: The Translator</span>
+  <p>A translator reads the entire French sentence first (encoder — bidirectional, full understanding), then writes the English translation word by word (decoder — left-to-right generation). While writing, they can refer back to any part of the French original at any time (cross-attention). The encoding and generation are separate but connected phases.</p>
+</div>
+
+<div class="math-block">
+  <span class="mh">Encoder-Decoder flow:</span><br><br>
+  <span class="mc">1. Encoder reads full input sequence → rich contextual embeddings (bidirectional)</span><br>
+  <span class="mc">2. Decoder generates output token by token (causal)</span><br>
+  <span class="mc">3. At each decode step, cross-attention lets the decoder query the encoder outputs</span><br><br>
+  <span class="mh">Cross-attention: Q from decoder, K and V from encoder</span><br>
+  <span class="mc">Decoder "asks questions" of the encoder's full-context representations</span>
+</div>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Architecture</th>
+      <th>Examples</th>
+      <th>Best for</th>
+      <th>Weakness</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong><span class="model-pill pill-bert">Encoder-only</span></strong></td>
+      <td>BERT, RoBERTa, DeBERTa, E5, BGE</td>
+      <td>Understanding, classification, retrieval, embeddings</td>
+      <td>Cannot generate text at all</td>
+    </tr>
+    <tr>
+      <td><strong><span class="model-pill pill-gpt">Decoder-only</span></strong></td>
+      <td>GPT-2/3/4, Claude, LLaMA, Mistral, Gemma</td>
+      <td>Generation, chat, code, reasoning, instruction-following</td>
+      <td>Weaker on pure understanding tasks without prompting tricks</td>
+    </tr>
+    <tr>
+      <td><strong><span class="model-pill pill-t5">Encoder-Decoder</span></strong></td>
+      <td>T5, BART, mT5, FLAN-T5, mBART</td>
+      <td>Translation, summarisation, conditional generation</td>
+      <td>More complex, higher memory at inference, smaller ecosystem</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §07 -->
+<h2>07 — Why the Industry Converged on Decoder-Only</h2>
+
+<p>By 2023 the industry had converged overwhelmingly on <strong>decoder-only</strong> models for general-purpose LLMs — GPT-4, Claude, LLaMA, Mistral, Gemma, Falcon, Qwen. BERT-family models are still dominant for embedding and retrieval. But for the "chat with an AI" use case, decoder-only won. Here's why:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔢 Scaling efficiency</div>
+    <div class="prose-kv-val">Next-token prediction scales smoothly and predictably with compute and data — the Chinchilla scaling laws hold cleanly. MLM (BERT's objective) uses only 15% of tokens per pass as training signal; CLM uses 100%. Decoder-only models extract more learning per token.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🎯 Universal objective</div>
+    <div class="prose-kv-val">A single training task — predict next token — handles every downstream task through prompting: classification becomes "answer Q/A/B/C", summarisation becomes "summarise:", code becomes generating the continuation. No task-specific architectures needed.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🚀 Emergent versatility</div>
+    <div class="prose-kv-val">At sufficient scale (>7B parameters), decoder-only models can perform classification, extraction, and Q&A tasks traditionally dominated by encoders — simply by prompting them correctly. The capability gap with encoders shrinks as decoder models scale up.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">💬 Instruction following</div>
+    <div class="prose-kv-val">Instruction fine-tuning (IFT) and RLHF work naturally on top of CLM because both are framed as text continuation. "User: summarise this. Assistant: [generated text]" is just next-token prediction with a specific format. BERT cannot natively do this.</div>
+  </div>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">📌 BERT Is Not Dead — It Still Wins at Retrieval</span>
+  <p>Encoder-only models dominate wherever you need <em>embeddings</em> — fixed-size vector representations of text for search, clustering, or retrieval. BERT's bidirectional representations are denser and more semantically rich than decoder-only representations for the same parameter count. Models like BGE, E5, GTE, and Sentence-BERT are still the backbone of every production RAG pipeline (Day 29) and semantic search system. The key insight: for retrieval, you embed millions of documents offline and query them later — generation is irrelevant. Encoder-only models are 10–100× cheaper to run at that scale than 7B+ decoder models.</p>
+</div>
+
+<!-- §08 -->
+<h2>08 — Notable Models in Each Family</h2>
+
+<h3><span class="model-pill pill-bert">Encoder-Only</span> — The BERT Family</h3>
+<table class="prose-table">
+  <thead><tr><th>Model</th><th>Year</th><th>Key improvement over BERT</th></tr></thead>
+  <tbody>
+    <tr><td><strong>BERT-base</strong></td><td>2018</td><td>The original. 110M params. Trained on Wikipedia + BookCorpus.</td></tr>
+    <tr><td><strong>RoBERTa</strong></td><td>2019</td><td>Removed NSP task, used dynamic masking, trained on 10× more data. Consistently beats BERT on benchmarks.</td></tr>
+    <tr><td><strong>ALBERT</strong></td><td>2020</td><td>Parameter sharing across layers — 89% fewer params than BERT-large with comparable performance.</td></tr>
+    <tr><td><strong>DeBERTa</strong></td><td>2020</td><td>Disentangled attention (content and position separate). Best BERT-style model on GLUE for years.</td></tr>
+    <tr><td><strong>Sentence-BERT</strong></td><td>2019</td><td>Fine-tuned with siamese networks for sentence embeddings. Still widely used for semantic search.</td></tr>
+    <tr><td><strong>BGE / E5 / GTE</strong></td><td>2023–24</td><td>State-of-the-art text embedding models. Used in RAG pipelines, vector databases, and search.</td></tr>
+  </tbody>
+</table>
+
+<h3><span class="model-pill pill-gpt">Decoder-Only</span> — The GPT Family</h3>
+<table class="prose-table">
+  <thead><tr><th>Model</th><th>Year</th><th>Key milestone</th></tr></thead>
+  <tbody>
+    <tr><td><strong>GPT-1</strong></td><td>2018</td><td>Proved pre-training + fine-tuning works for language. 117M params.</td></tr>
+    <tr><td><strong>GPT-2</strong></td><td>2019</td><td>1.5B params. Coherent paragraph generation. "Too dangerous to release" (then released).</td></tr>
+    <tr><td><strong>GPT-3</strong></td><td>2020</td><td>175B params. Few-shot prompting. Demonstrated emergent reasoning. Changed the field.</td></tr>
+    <tr><td><strong>LLaMA-1/2/3</strong></td><td>2023–24</td><td>Open-weight. LLaMA-3 70B matches GPT-4-level quality on many tasks. 15T training tokens.</td></tr>
+    <tr><td><strong>Mistral 7B</strong></td><td>2023</td><td>Outperforms LLaMA-2 13B at 7B params. Sliding window attention. Apache 2.0 license.</td></tr>
+    <tr><td><strong>Claude (Anthropic)</strong></td><td>2023–26</td><td>Constitutional AI training. Strong at reasoning, coding, and long context (200k+).</td></tr>
+    <tr><td><strong>Gemma / Qwen / Falcon</strong></td><td>2023–24</td><td>Open-weight decoder-only models from Google, Alibaba, and TII. Multilingual focus.</td></tr>
+  </tbody>
+</table>
+
+<h3><span class="model-pill pill-t5">Encoder-Decoder</span> — The T5 Family</h3>
+<table class="prose-table">
+  <thead><tr><th>Model</th><th>Year</th><th>Key milestone</th></tr></thead>
+  <tbody>
+    <tr><td><strong>T5</strong></td><td>2019</td><td>Framed every NLP task as text-to-text. Trained on C4 dataset. Unified framework for NLP.</td></tr>
+    <tr><td><strong>BART</strong></td><td>2019</td><td>Pre-trained by corrupting text and learning to reconstruct it. Excellent for summarisation.</td></tr>
+    <tr><td><strong>FLAN-T5</strong></td><td>2022</td><td>T5 fine-tuned on 1,800+ instruction tasks. Outperforms GPT-3 on many tasks at 11B params.</td></tr>
+    <tr><td><strong>mT5 / mBART</strong></td><td>2021</td><td>Multilingual T5/BART variants. Still widely used for machine translation.</td></tr>
+  </tbody>
+</table>
+
+<!-- §09 -->
+<h2>09 — Practical Decision Guide: Which to Use?</h2>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🧭 Quick Decision Framework</span>
+  <p><strong>Do you need to generate text?</strong> → Decoder-only (GPT-style) or Encoder-Decoder (T5-style)<br>
+  <strong>Do you need fixed-size embeddings for search/retrieval?</strong> → Encoder-only (BERT-style)<br>
+  <strong>Do you need to classify, label, or extract from existing text?</strong> → Either — BERT for small data, decoder-only LLM with prompting for zero-shot</p>
+</div>
+
+<table class="prose-table">
+  <thead><tr><th>Your task</th><th>Best architecture</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td>Sentiment classification (with labelled data)</td><td><span class="model-pill pill-bert">BERT</span></td><td>Fine-tune on [CLS] output. Needs only hundreds of examples.</td></tr>
+    <tr><td>Named entity recognition</td><td><span class="model-pill pill-bert">BERT</span></td><td>Token-level output head. Bidirectional context critical for tagging.</td></tr>
+    <tr><td>Semantic search / document retrieval</td><td><span class="model-pill pill-bert">BERT</span> (Sentence-BERT / BGE)</td><td>Dense embeddings. Run offline on millions of docs cheaply.</td></tr>
+    <tr><td>Chatbot / conversational AI</td><td><span class="model-pill pill-gpt">GPT</span> decoder-only</td><td>Natural next-token generation, instruction fine-tuning.</td></tr>
+    <tr><td>Code generation / completion</td><td><span class="model-pill pill-gpt">GPT</span> decoder-only</td><td>Causal generation mirrors how code is written left-to-right.</td></tr>
+    <tr><td>Summarisation (abstractive)</td><td><span class="model-pill pill-t5">T5/BART</span> or <span class="model-pill pill-gpt">GPT</span></td><td>Seq2seq natural fit; large decoder-only also works via prompting.</td></tr>
+    <tr><td>Machine translation</td><td><span class="model-pill pill-t5">mT5 / mBART</span></td><td>Encoder-decoder designed for this. Cross-attention from source to target.</td></tr>
+    <tr><td>Zero-shot classification (no labels)</td><td><span class="model-pill pill-gpt">GPT</span> large decoder-only</td><td>Prompt engineering: "Is this review positive or negative? Answer:"</td></tr>
+    <tr><td>RAG retrieval component</td><td><span class="model-pill pill-bert">BERT</span> (BGE / E5)</td><td>Embed documents for vector DB. 10–100× cheaper than LLM at scale.</td></tr>
+    <tr><td>RAG generation component</td><td><span class="model-pill pill-gpt">GPT</span> decoder-only</td><td>Generate grounded response from retrieved context.</td></tr>
+  </tbody>
+</table>
+
+<!-- §10 -->
+<h2>10 — Code: Both Architectures Side by Side</h2>
+
+<p>A minimal BERT-style encoder and GPT-style decoder in PyTorch, showing the exact difference in the attention mask.</p>
+
+<pre><code><span class="t-key">import</span> torch
+<span class="t-key">import</span> torch.nn <span class="t-key">as</span> nn
+<span class="t-key">import</span> torch.nn.functional <span class="t-key">as</span> F
+<span class="t-key">import</span> math
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Shared transformer block (identical for both BERT and GPT)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">TransformerBlock</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, d_model=<span class="t-num">128</span>, n_heads=<span class="t-num">4</span>, d_ff=<span class="t-num">512</span>, dropout=<span class="t-num">0.1</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.attn  = nn.MultiheadAttention(d_model, n_heads, dropout=dropout, batch_first=<span class="t-key">True</span>)
+        <span class="t-key">self</span>.ff    = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
+        <span class="t-key">self</span>.norm1 = nn.LayerNorm(d_model)
+        <span class="t-key">self</span>.norm2 = nn.LayerNorm(d_model)
+        <span class="t-key">self</span>.drop  = nn.Dropout(dropout)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, x, attn_mask=<span class="t-key">None</span>):
+        <span class="t-cmt"># Pre-LN + residual (modern stable training variant)</span>
+        x_norm = <span class="t-key">self</span>.norm1(x)
+        attn_out, _ = <span class="t-key">self</span>.attn(x_norm, x_norm, x_norm, attn_mask=attn_mask)
+        x = x + <span class="t-key">self</span>.drop(attn_out)
+        x = x + <span class="t-key">self</span>.drop(<span class="t-key">self</span>.ff(<span class="t-key">self</span>.norm2(x)))
+        <span class="t-key">return</span> x
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# BERT-style encoder — bidirectional, no mask
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">BERTEncoder</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, vocab_size=<span class="t-num">30522</span>, d_model=<span class="t-num">128</span>, n_layers=<span class="t-num">4</span>,
+                 n_heads=<span class="t-num">4</span>, max_len=<span class="t-num">512</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.tok_emb = nn.Embedding(vocab_size, d_model)
+        <span class="t-key">self</span>.pos_emb = nn.Embedding(max_len, d_model)  <span class="t-cmt"># learned absolute PE (BERT-style)</span>
+        <span class="t-key">self</span>.layers  = nn.ModuleList([TransformerBlock(d_model, n_heads) <span class="t-key">for</span> _ <span class="t-key">in</span> <span class="t-key">range</span>(n_layers)])
+        <span class="t-key">self</span>.norm    = nn.LayerNorm(d_model)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, token_ids):
+        B, T = token_ids.shape
+        positions = torch.arange(T, device=token_ids.device)
+        x = <span class="t-key">self</span>.tok_emb(token_ids) + <span class="t-key">self</span>.pos_emb(positions)
+        <span class="t-key">for</span> layer <span class="t-key">in</span> <span class="t-key">self</span>.layers:
+            x = layer(x, attn_mask=<span class="t-key">None</span>)   <span class="t-cmt"># ← NO MASK: full bidirectional attention</span>
+        <span class="t-key">return</span> <span class="t-key">self</span>.norm(x)   <span class="t-cmt"># (B, T, d_model) — all token representations</span>
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# GPT-style decoder — causal (left-to-right) mask
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">GPTDecoder</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, vocab_size=<span class="t-num">50257</span>, d_model=<span class="t-num">128</span>, n_layers=<span class="t-num">4</span>,
+                 n_heads=<span class="t-num">4</span>, max_len=<span class="t-num">1024</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.tok_emb = nn.Embedding(vocab_size, d_model)
+        <span class="t-key">self</span>.pos_emb = nn.Embedding(max_len, d_model)
+        <span class="t-key">self</span>.layers  = nn.ModuleList([TransformerBlock(d_model, n_heads) <span class="t-key">for</span> _ <span class="t-key">in</span> <span class="t-key">range</span>(n_layers)])
+        <span class="t-key">self</span>.norm    = nn.LayerNorm(d_model)
+        <span class="t-key">self</span>.lm_head = nn.Linear(d_model, vocab_size, bias=<span class="t-key">False</span>)  <span class="t-cmt"># predicts next token</span>
+
+    <span class="t-key">def</span> <span class="t-def">get_causal_mask</span>(<span class="t-key">self</span>, T, device):
+        <span class="t-cmt"># Upper triangle = -inf: token at position i cannot see positions j > i</span>
+        <span class="t-key">return</span> torch.triu(torch.full((T, T), float(<span class="t-str">'-inf'</span>), device=device), diagonal=<span class="t-num">1</span>)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, token_ids):
+        B, T = token_ids.shape
+        positions = torch.arange(T, device=token_ids.device)
+        x = <span class="t-key">self</span>.tok_emb(token_ids) + <span class="t-key">self</span>.pos_emb(positions)
+        mask = <span class="t-key">self</span>.get_causal_mask(T, token_ids.device)
+        <span class="t-key">for</span> layer <span class="t-key">in</span> <span class="t-key">self</span>.layers:
+            x = layer(x, attn_mask=mask)  <span class="t-cmt"># ← CAUSAL MASK: only attend left</span>
+        x = <span class="t-key">self</span>.norm(x)
+        <span class="t-key">return</span> <span class="t-key">self</span>.lm_head(x)   <span class="t-cmt"># (B, T, vocab_size) — next-token logits</span>
+
+    <span class="t-key">@torch.no_grad()</span>
+    <span class="t-key">def</span> <span class="t-def">generate</span>(<span class="t-key">self</span>, prompt_ids, max_new_tokens=<span class="t-num">20</span>, temperature=<span class="t-num">1.0</span>):
+        <span class="t-cmt">"""Simple autoregressive generation with temperature sampling."""</span>
+        ids = prompt_ids.clone()
+        <span class="t-key">for</span> _ <span class="t-key">in</span> <span class="t-key">range</span>(max_new_tokens):
+            logits = <span class="t-key">self</span>(ids)              <span class="t-cmt"># (1, T, vocab)</span>
+            next_logits = logits[:, -<span class="t-num">1</span>, :] / temperature   <span class="t-cmt"># last position</span>
+            probs = F.softmax(next_logits, dim=-<span class="t-num">1</span>)
+            next_id = torch.multinomial(probs, num_samples=<span class="t-num">1</span>)
+            ids = torch.cat([ids, next_id], dim=<span class="t-num">1</span>)          <span class="t-cmt"># append and loop</span>
+        <span class="t-key">return</span> ids
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# BERT classification head (add on top for fine-tuning)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">class</span> <span class="t-class">BERTClassifier</span>(nn.Module):
+    <span class="t-key">def</span> <span class="t-def">__init__</span>(<span class="t-key">self</span>, encoder, num_classes=<span class="t-num">2</span>, d_model=<span class="t-num">128</span>):
+        <span class="t-key">super</span>().__init__()
+        <span class="t-key">self</span>.encoder = encoder
+        <span class="t-key">self</span>.head = nn.Linear(d_model, num_classes)
+
+    <span class="t-key">def</span> <span class="t-def">forward</span>(<span class="t-key">self</span>, token_ids):
+        out = <span class="t-key">self</span>.encoder(token_ids)     <span class="t-cmt"># (B, T, d_model)</span>
+        cls_repr = out[:, <span class="t-num">0</span>, :]           <span class="t-cmt"># [CLS] token is at position 0</span>
+        <span class="t-key">return</span> <span class="t-key">self</span>.head(cls_repr)         <span class="t-cmt"># (B, num_classes) — classification logits</span>
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Sanity checks
+# ─────────────────────────────────────────────────────────────────────────</span>
+B, T = <span class="t-num">2</span>, <span class="t-num">16</span>   <span class="t-cmt"># batch=2, sequence_length=16</span>
+fake_input = torch.randint(<span class="t-num">0</span>, <span class="t-num">1000</span>, (B, T))
+
+bert = BERTEncoder(vocab_size=<span class="t-num">1000</span>, d_model=<span class="t-num">128</span>)
+gpt  = GPTDecoder(vocab_size=<span class="t-num">1000</span>, d_model=<span class="t-num">128</span>)
+clf  = BERTClassifier(bert, num_classes=<span class="t-num">3</span>)
+
+bert_out   = bert(fake_input)
+gpt_logits = gpt(fake_input)
+clf_out    = clf(fake_input)
+
+<span class="t-cmt"># Check causal mask: position 0 should only attend to position 0</span>
+mask = gpt.get_causal_mask(<span class="t-num">4</span>, <span class="t-str">'cpu'</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"BERT output:         {bert_out.shape}   ← (batch, seq, d_model)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"GPT logits:          {gpt_logits.shape}  ← (batch, seq, vocab_size)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"Classifier output:   {clf_out.shape}    ← (batch, num_classes)"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nCausal mask (4×4):\n{mask}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"\nBERT params:  {sum(p.numel() for p in bert.parameters()):,}"</span>)
+<span class="t-key">print</span>(<span class="t-str">f"GPT params:   {sum(p.numel() for p in gpt.parameters()):,}"</span>)</code></pre>
+<div class="code-output">
+  <span class="out-head">── BERT vs GPT Architecture Sanity Check ──────────────────────────────</span><br>
+  BERT output: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">128</span>]) &nbsp;&nbsp;← (batch, seq, d_model)<br>
+  GPT logits: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; torch.Size([<span class="out-val">2</span>, <span class="out-val">16</span>, <span class="out-val">1000</span>]) &nbsp; ← (batch, seq, vocab_size)<br>
+  Classifier output: &nbsp;&nbsp; torch.Size([<span class="out-val">2</span>, <span class="out-val">3</span>]) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;← (batch, num_classes)<br><br>
+  Causal mask (4×4):<br>
+  <span class="out-dim">tensor([[  0., -inf, -inf, -inf],</span><br>
+  <span class="out-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[  0.,   0., -inf, -inf],</span><br>
+  <span class="out-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[  0.,   0.,   0., -inf],</span><br>
+  <span class="out-dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[  0.,   0.,   0.,   0.]])</span><br><br>
+  BERT params: &nbsp;&nbsp;<span class="out-good">4,072,832</span> <span class="out-dim">← encoder only, no LM head</span><br>
+  GPT params: &nbsp;&nbsp;&nbsp;<span class="out-good">4,200,960</span> <span class="out-dim">← includes LM head (vocab_size × d_model)</span>
+</div>
+
+<!-- §11 -->
+<h2>11 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>BERT reads everything at once and is excellent at understanding. GPT reads left to right and is excellent at generating. Humans do both simultaneously — we understand and generate at the same time, in real-time conversation, without switching modes.</p>
+  <p style="margin-top:.75rem"><strong>Is the encoder/decoder split a fundamental architectural truth about the nature of language tasks — or just a practical consequence of training objectives that happened to work well? Could a single architecture truly do both as well as specialised ones? And if the industry has converged on decoder-only for almost everything, what does that say about the relationship between generation and understanding?</strong></p>
+</div>
+
+<!-- §12 -->
+<h2>12 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 27: Tokenization Deep Dive.</strong> We've been using tokenizers throughout the series without fully opening the black box. Day 27 goes inside: Byte-Pair Encoding (BPE) — how GPT builds its vocabulary; WordPiece — how BERT does it differently; SentencePiece — the language-agnostic approach used by LLaMA and T5; and why the same word tokenizes into completely different numbers of tokens across models — with direct consequences for cost, context length, and multilingual performance.</p>
+
+<!-- §13 -->
+<h2>13 — Go Deeper</h2>
+<p>📄 <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">BERT: Pre-training of Deep Bidirectional Transformers — Devlin et al. (2018)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The original BERT paper. Section 3 (model architecture) and Section 4 (fine-tuning) are the essential parts. Table 1 showing 11 GLUE benchmark improvements simultaneously is one of the most impressive result tables in NLP history.</em></p>
+<p>📄 <a href="https://openai.com/research/language-unsupervised" target="_blank" rel="noopener">Improving Language Understanding by Generative Pre-Training — Radford et al. (2018)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The original GPT-1 paper. Short and readable. Section 3 explains the pre-training/fine-tuning paradigm that the entire field adopted.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener">RoBERTa: A Robustly Optimized BERT Pretraining Approach — Liu et al. (2019)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">Shows that BERT was undertrained. Removing NSP, increasing batch size, and training longer produces consistent improvements. Section 4 is a clean ablation study worth reading.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener">Exploring the Limits of Transfer Learning with T5 — Raffel et al. (2019)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">Unifies every NLP task as text-to-text. The most rigorous comparison of architectures, objectives, and scales ever published. Section 3 is a masterclass in ablation study design.</em></p>
+<p>▶ <a href="https://www.youtube.com/watch?v=xI0HHN5XKDo" target="_blank" rel="noopener">BERT explained — Andrej Karpathy / various</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">Karpathy's "Let's build GPT from scratch" on YouTube is the clearest derivation of the decoder architecture available. Highly recommended alongside this post.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. BERT and GPT use the same transformer architecture. What is the single concrete difference that makes BERT an encoder and GPT a decoder?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">The only architectural difference is the attention mask. BERT applies no mask — every token's query can attend to every other token's key, giving full bidirectional context. GPT applies a causal (upper-triangular) mask: for token at position i, all positions j &gt; i are set to −∞ before softmax, producing attention weight exactly 0 on future tokens. This means BERT's embedding for any token is computed from the entire sentence simultaneously, while GPT's embedding for any token is computed only from that token and everything before it. This single change determines everything else: BERT cannot generate text (it has no autoregressive mechanism) while GPT cannot use future context (it is explicitly blocked). The pre-training objectives follow naturally: bidirectional attention enables MLM (predicting masked tokens using both directions), causal attention enables CLM (predicting the next token from the left context only).</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. What is Masked Language Modelling (MLM) and why does it force BERT to learn bidirectional representations?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">MLM randomly replaces 15% of tokens with [MASK] and trains BERT to predict the original token. The key insight is in the bidirectionality requirement: to predict the masked token "sat" in "The cat [MASK] on the mat," the model needs information from both sides — "The cat" (left context) and "on the mat" (right context). If BERT could only see the left context, it would have to guess from "The cat ___" alone, which is much harder. Bidirectional attention lets the prediction of each masked token draw on the full sentence. This forces every layer to build representations that integrate information from all positions simultaneously — rather than just compressing left context into a running state (as RNNs do) or compressing right context. The 10% random / 10% unchanged variation in masking prevents the model from learning to rely only on the [MASK] special token as a signal — it must also handle the case where the input token is unchanged, which prevents train/inference mismatch when [MASK] doesn't appear at inference time.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. Why can GPT generate text but BERT cannot? Explain the architectural reason.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Generation requires producing tokens one at a time, where each new token depends only on previously generated tokens — never on future ones that don't yet exist. GPT's causal mask enforces exactly this: token at position i only attends to positions 0 through i. So at generation step n, GPT looks at tokens 0 through n−1 (already generated) and produces a probability distribution over the vocabulary for position n. You sample from this distribution, append the sampled token, and repeat. Each step is a valid forward pass through GPT because the model was trained with this exact left-only constraint. BERT cannot do this because it was trained with full bidirectional attention. If you tried to use BERT autoregressively — feeding it a partial sequence and asking it to complete it — its representations were built assuming all tokens are visible simultaneously. The model expects to see the full sentence including [MASK] tokens in specific positions, not an open-ended sequence to extend. There is no position from which BERT generates the "next" token; every forward pass produces embeddings for all positions simultaneously. Fundamentally: BERT maps sequences to representations. GPT maps sequences to probability distributions over next tokens. These are different mathematical objects for different purposes.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. Why did the industry converge on decoder-only models for general-purpose LLMs, even though BERT-style encoders often produce better representations per parameter?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Four reinforcing reasons: (1) Scaling efficiency — CLM provides a training signal at every token position in every sequence (100% utilisation). MLM only supervises 15% of tokens per pass. Decoder-only models learn more per token of training data. The Chinchilla scaling laws fit cleanly to CLM loss, enabling predictable capability scaling. (2) Universal objective — next-token prediction subsumes every NLP task through prompting. "Classify this text as positive or negative: [text] Answer:" is just CLM with a specific format. No task-specific architecture or head is needed. (3) Emergent versatility — at 7B+ parameters, decoder-only models achieve competitive performance on classification and extraction tasks traditionally requiring BERT, simply through instruction fine-tuning and prompting. The capability gap with encoders shrinks as scale increases. (4) Instruction following compatibility — RLHF and instruction fine-tuning are naturally expressed as text continuation: "User: [instruction] Assistant: [response]" is CLM. BERT has no equivalent — it cannot generate the assistant's response. These factors together explain why every major general-purpose LLM since GPT-3 (Claude, LLaMA, Mistral, Gemma, Falcon, Qwen) is decoder-only. Encoder-only models remain dominant for retrieval and embedding tasks where generation is not required.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. You are building a system that: (a) retrieves the top-5 relevant documents from a 10-million-document corpus, then (b) generates a grounded answer from those documents. Which architecture would you use for each component and why?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Component (a) — retrieval: use an encoder-only model (Sentence-BERT, BGE, or E5). Reasons: (i) You need to embed 10 million documents into fixed-size dense vectors to store in a vector database (FAISS, Pinecone). Encoder-only models produce rich bidirectional representations — the [CLS] embedding or mean-pooled output captures full-sentence semantics from all directions, making it a better semantic fingerprint than a decoder-only model's one-directional representation. (ii) Encoder models are 10–100× smaller and cheaper to run per document than 7B+ decoder-only models. Embedding 10M documents with a 110M-parameter BERT is practical; doing it with a 7B GPT-style model would be prohibitively expensive. (iii) The embedding is computed offline — you run the retrieval encoder once per document and store the result. At query time, you only embed the query (one short text) and do a nearest-neighbour search. Component (b) — generation: use a decoder-only LLM (LLaMA-3, Mistral, or similar). Reasons: (i) You need to generate coherent, fluent natural language — only decoder-only models can do this. (ii) The retrieved documents and the query are concatenated into the prompt context, and the model generates the answer as next-token prediction from that full context. (iii) The model can apply instruction-following to stay grounded in the retrieved documents ("answer only using the provided context"). This is the exact architecture used in Day 29 (RAG) and in every production RAG system.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — BERT vs GPT</div>
+  <ol>
+    <li><strong>Same architecture, one difference:</strong> BERT and GPT are both transformer stacks with identical attention, FFN, residual, and norm components. The only architectural difference is the attention mask — BERT uses no mask (bidirectional), GPT uses a causal upper-triangle mask (left-to-right only).</li>
+    <li><strong>BERT (encoder-only):</strong> every token attends to every other token. Trained with Masked Language Modelling (MLM) — predict 15% hidden tokens using both left and right context. Produces rich contextual representations. Cannot generate text.</li>
+    <li><strong>GPT (decoder-only):</strong> each token only attends to itself and previous tokens. Trained with Causal Language Modelling (CLM) — predict the next token from all preceding tokens. Generates text autoregressively. Cannot use future context.</li>
+    <li><strong>BERT fine-tuning:</strong> add a small task-specific head (linear layer on [CLS] or token outputs) and fine-tune on small labelled datasets. The pre-trained weights transfer extremely well — hundreds of labelled examples often suffice.</li>
+    <li><strong>GPT generation:</strong> append the sampled token to the input and repeat. Temperature controls randomness. Top-k / nucleus (top-p) sampling prevents degenerate outputs. KV-cache (Day 24) makes this efficient at scale.</li>
+    <li><strong>Encoder-Decoder (T5, BART):</strong> combines both — a BERT-style encoder reads the input, a GPT-style decoder generates the output with cross-attention to the encoder. Best for translation and conditional summarisation.</li>
+    <li><strong>Why decoder-only won for LLMs:</strong> CLM uses 100% of tokens as training signal (vs 15% for MLM). Next-token prediction scales cleanly. Universal objective handles all tasks via prompting. Compatible with instruction fine-tuning and RLHF.</li>
+    <li><strong>BERT still wins at retrieval:</strong> for embedding-based semantic search and RAG retrieval, encoder-only models (BGE, E5, Sentence-BERT) produce better dense vectors and are 10–100× cheaper to run at scale than decoder-only models.</li>
+    <li><strong>Key model families:</strong> BERT → RoBERTa → DeBERTa → BGE/E5 (encoder); GPT-1 → GPT-3 → GPT-4 / LLaMA → Claude / Mistral / Gemma (decoder); T5 → FLAN-T5 / BART → mT5 (encoder-decoder).</li>
+    <li><strong>Decision rule:</strong> embedding/retrieval/classification with labelled data → encoder. Generation/chat/code/zero-shot → decoder. Translation/summarisation with seq2seq format → encoder-decoder.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW Q&A -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is the difference between an encoder and a decoder in the transformer architecture?</strong><br>
+    <em>An encoder uses bidirectional (full) attention — every token can attend to every other token. It maps an input sequence to a sequence of contextual representations. A decoder uses causal (unidirectional) attention — each token can only attend to itself and previous tokens. It maps a sequence to next-token probability distributions and generates text autoregressively. Same transformer blocks, different attention mask. BERT is encoder-only; GPT is decoder-only; T5 combines both.</em></li>
+
+    <li><strong>What is the difference between Masked Language Modelling (MLM) and Causal Language Modelling (CLM)?</strong><br>
+    <em>MLM (BERT): randomly mask 15% of input tokens and predict them using the surrounding context from both directions. Training signal covers 15% of tokens per pass. Forces the model to build bidirectional representations but cannot be used for generation. CLM (GPT): predict the next token given all preceding tokens, for every position in the sequence. Training signal covers 100% of tokens per pass — significantly more efficient. Scales cleanly. Enables autoregressive generation but can only use left context. The choice of objective determines the attention pattern and ultimately what the model can and cannot do.</em></li>
+
+    <li><strong>Why are encoder-only models (BERT) preferred for semantic search and retrieval, even in a world dominated by decoder-only LLMs?</strong><br>
+    <em>Three reasons: (1) Representation quality — BERT's bidirectional attention produces richer, more semantically complete fixed-size embeddings than decoder-only models' one-directional representations at the same parameter count. For retrieval, you need a single vector that captures the full meaning of a document. (2) Cost at scale — embedding 10M documents with a 110M-parameter BERT costs a fraction of running a 7B decoder-only model for the same. Embeddings are computed offline once and reused. (3) Task alignment — semantic search doesn't require generation. Running a full generative LLM to produce embeddings is wasteful — the generation head is never used. BGE, E5, and Sentence-BERT are purpose-built for this and significantly outperform decoder-only models at equivalent cost on retrieval benchmarks.</em></li>
+
+    <li><strong>What is the [CLS] token in BERT and how is it used for classification?</strong><br>
+    <em>BERT prepends a special [CLS] (classification) token to every input. During pre-training with NSP, [CLS]'s final representation is trained to capture sentence-level information — it aggregates context from the entire sequence through attention across all layers. For fine-tuning on classification tasks, a linear layer is attached to the final [CLS] embedding: logits = W · BERT_output[CLS] + b, where W ∈ ℝ^(num_classes × d_model). The full model (BERT + linear head) is then fine-tuned end-to-end on the labelled task data. [CLS] is not inherently special architecturally — it's just a token that BERT learns during pre-training to aggregate global information because the NSP objective requires it. In practice, mean-pooling all token outputs often performs equally well or better for sentence embeddings, which is why Sentence-BERT uses mean-pooling instead of [CLS].</em></li>
+
+    <li><strong>A company wants to build a customer support system that: (1) classifies incoming tickets into 12 categories, (2) generates personalised responses. What model architecture would you recommend for each and why?</strong><br>
+    <em>Task (1) — classification: use a fine-tuned BERT-style encoder (BERT, RoBERTa, or DeBERTa). Reasons: with labelled ticket data available, fine-tuning an encoder on [CLS] output is highly sample-efficient (hundreds of examples per category typically sufficient), computationally cheap at inference (110M–350M params, runs fast on CPU or small GPU), and produces excellent accuracy for classification. A 12-class linear head on top of RoBERTa would be the first choice. Alternative: if labelled data is very limited (&lt;50 examples/class), prompt a decoder-only LLM for zero-shot/few-shot classification instead. Task (2) — generation: use a fine-tuned decoder-only LLM (LLaMA-3 7B/8B or Mistral 7B). Reasons: generating personalised natural-language responses requires autoregressive generation, which only decoder-only models support. Fine-tune with instruction-following data (customer support Q&A pairs) to ground the model in company policies and tone. The two components run independently — the classifier routes the ticket and the LLM generates the response. This hybrid encoder (fast, cheap classification) + decoder (rich generation) architecture is the industry standard for production customer support AI systems.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>📄 <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener">BERT: Pre-training of Deep Bidirectional Transformers — Devlin et al. (2018)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The paper that established the pre-train/fine-tune paradigm. Table 1 (11 GLUE tasks improved simultaneously) is still remarkable. Sections 3–4 cover architecture and fine-tuning clearly.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener">RoBERTa — Liu et al. (2019)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">BERT was undertrained. RoBERTa shows that removing NSP, using dynamic masking, and training longer consistently improves all tasks. Essential for understanding what actually matters in BERT pre-training.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/1910.10683" target="_blank" rel="noopener">Exploring the Limits of Transfer Learning with T5 — Raffel et al. (2019)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The most thorough architecture + objective comparison in NLP. Unifies everything as text-to-text. Section 3's ablation table is the best guide to understanding what choices matter and why.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">Let's build GPT from scratch — Andrej Karpathy (2023)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 2hr · The clearest hands-on derivation of the decoder architecture available. Builds a miniGPT from scratch in ~250 lines of PyTorch. Essential viewing for anyone who wants to truly understand how GPT works.</em></p>
+  <p>🔗 <a href="https://jalammar.github.io/illustrated-bert/" target="_blank" rel="noopener">The Illustrated BERT — Jay Alammar</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">Visual step-by-step walkthrough of BERT's pre-training and fine-tuning. The diagrams for MLM, NSP, and the fine-tuning paradigm are the best available.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#BERT</span><span class="tag">#GPT</span><span class="tag">#Encoder</span><span class="tag">#Decoder</span><span class="tag">#MLM</span><span class="tag">#CLM</span><span class="tag">#Transformer</span><span class="tag">#PreTraining</span><span class="tag">#FineTuning</span><span class="tag">#T5</span><span class="tag">#BART</span><span class="tag">#RoBERTa</span><span class="tag">#LLaMA</span><span class="tag">#NLP</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="positional-encodings.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 25</span>
+    <span class="post-nav-title">Positional Encodings</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+
+// Attention mask visualisers
+(function(){
+  var tokens = ['The','cat','sat','on'];
+  var n = tokens.length;
+
+  function makeGrid(id, causal){
+    var el = document.getElementById(id);
+    if(!el) return;
+    el.style.gridTemplateColumns = 'repeat('+(n+1)+', 1fr)';
+
+    // Header row
+    var corner = document.createElement('div');
+    corner.className='attn-cell';
+    corner.style.cssText='background:transparent;font-size:.65rem;color:var(--text-muted)';
+    corner.textContent='Q↓ K→';
+    el.appendChild(corner);
+    for(var j=0;j<n;j++){
+      var h=document.createElement('div');
+      h.className='attn-cell';
+      h.style.cssText='background:var(--surface);color:var(--text-muted);font-size:.68rem';
+      h.textContent=tokens[j];
+      el.appendChild(h);
+    }
+
+    for(var i=0;i<n;i++){
+      var rowLabel=document.createElement('div');
+      rowLabel.className='attn-cell';
+      rowLabel.style.cssText='background:var(--surface);color:var(--text-muted);font-size:.68rem';
+      rowLabel.textContent=tokens[i];
+      el.appendChild(rowLabel);
+      for(var jj=0;jj<n;jj++){
+        var cell=document.createElement('div');
+        cell.className='attn-cell';
+        var allowed = causal ? (jj<=i) : true;
+        if(allowed){
+          cell.style.background='rgba(88,166,255,0.25)';
+          cell.style.border='1px solid rgba(88,166,255,0.4)';
+          cell.style.color='#58a6ff';
+          cell.textContent='✓';
+        } else {
+          cell.style.background='rgba(248,81,73,0.1)';
+          cell.style.border='1px solid rgba(248,81,73,0.25)';
+          cell.style.color='#484f58';
+          cell.textContent='✗';
+        }
+        el.appendChild(cell);
+      }
+    }
+  }
+
+  makeGrid('bertGrid', false);
+  makeGrid('gptGrid',  true);
+})();
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
