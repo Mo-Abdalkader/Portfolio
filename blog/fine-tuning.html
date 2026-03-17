@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 28 — Fine-Tuning LLMs | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="Full fine-tuning, LoRA, and QLoRA explained from first principles — why each exists, the math behind low-rank decomposition, 4-bit quantisation, and complete PyTorch training code. Fine-tune a 7B model on a single consumer GPU." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mg{color:#3fb950;font-weight:600}
+    .math-block .mw{color:#f85149;font-weight:600}
+
+    /* Memory bar visualisation */
+    .mem-bar-wrap{margin:1.25rem 0}
+    .mem-bar-label{font-size:.82rem;color:var(--text-muted);margin-bottom:.4rem;font-family:'JetBrains Mono',monospace;display:flex;justify-content:space-between}
+    .mem-bar-track{height:22px;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative}
+    .mem-bar-fill{height:100%;display:flex;align-items:center;padding-left:.5rem;font-size:.72rem;font-weight:700;color:#0d1117;font-family:'JetBrains Mono',monospace;transition:width .4s ease}
+
+    /* LoRA matrix diagram */
+    .lora-diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.25rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.9;overflow-x:auto}
+    .lora-orig{color:#f85149;font-weight:700}
+    .lora-new{color:#3fb950;font-weight:700}
+    .lora-rank{color:#e3b341;font-weight:700}
+
+    /* Method pill */
+    .method-pill{display:inline-block;padding:.2rem .6rem;border-radius:999px;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace;border:1px solid}
+    .pill-full{background:rgba(248,81,73,.12);border-color:rgba(248,81,73,.4);color:#f85149}
+    .pill-lora{background:rgba(63,185,80,.12);border-color:rgba(63,185,80,.4);color:#3fb950}
+    .pill-qlora{background:rgba(88,166,255,.12);border-color:rgba(88,166,255,.4);color:#58a6ff}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 28 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Practical Guide</span><span class="meta-sep">·</span>
+      <span>Mar 18, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">26 min read</span><span class="meta-sep">·</span>
+      <span>LLMs · Fine-Tuning</span>
+    </div>
+    <h1>Fine-Tuning LLMs:<br>Full Fine-Tuning, LoRA &amp; QLoRA</h1>
+    <p class="post-hero-lead">A pre-trained LLM knows almost everything about language. But it doesn't know your company's tone, your medical domain's terminology, or how to answer your customers' specific questions. Fine-tuning is the process of adapting a general-purpose model to a specific task — teaching it new habits without making it forget everything it already knows. This guide covers all three approaches in production use today: full fine-tuning (change everything), LoRA (change almost nothing but still get most of the benefit), and QLoRA (run it on a single consumer GPU with 4-bit precision) — with the math, plain-English analogies, and complete working code.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>GPT-4 is extraordinarily general.<br>
+  It knows history, science, poetry, and code.<br>
+  But it doesn't know your product documentation.<br>
+  It doesn't speak with your brand voice.<br>
+  It doesn't know the specialist vocabulary of retinal imaging.<br><br>
+  Pre-training gives a model the world.<br>
+  Fine-tuning gives it a job.</p>
+</blockquote>
+
+<!-- §01 -->
+<h2>01 — What Is Fine-Tuning and Why Do We Need It?</h2>
+
+<p>Pre-training builds a foundation. A model trained on hundreds of billions of tokens from the internet, books, and code develops a deep general understanding of language, facts, and reasoning. But general understanding is not the same as specific usefulness. A doctor who knows everything about medicine still needs orientation training before working at a specific hospital.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🎓 Non-Tech Analogy: The New Hire</span>
+  <p>Imagine hiring a highly educated graduate — top of their class, reads widely, speaks eloquently. They know an enormous amount. But they've never worked at your company specifically. They don't know your processes, your clients, your preferred way of writing emails, or the industry-specific terms your team uses every day.</p>
+  <p style="margin-top:.75rem">Fine-tuning is their onboarding programme. You don't re-educate them from scratch — that would take years and destroy everything they already know. Instead, you expose them to examples of how <em>your</em> company operates, let them practise with feedback, and adjust their behaviour precisely where needed. They keep everything they learned at university; they gain what they need for the job.</p>
+</div>
+
+<p>Fine-tuning works because of a key insight: <strong>the knowledge encoded in a pre-trained model's weights is largely general and reusable</strong>. The layers that detect grammar, understand references, reason through logic — all of that transfers. What changes is the model's <em>behaviour</em>: how it formats responses, what terminology it uses, what tasks it prioritises. These behavioural changes require adjusting far fewer parameters than starting from scratch.</p>
+
+<h3>When Do You Actually Need Fine-Tuning?</h3>
+<p>Not always. Many tasks can be solved with good prompting. Fine-tuning is worth the investment when:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">📋 Consistent format required</div>
+    <div class="prose-kv-val">Your output must always follow a specific structure — JSON schemas, medical reports in a precise format, code with specific style conventions. Prompting gets you close; fine-tuning makes it reliable at scale.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔬 Specialised domain knowledge</div>
+    <div class="prose-kv-val">The model needs vocabulary or conventions that are rare or absent in general pre-training data — clinical trial protocols, legal contract language, proprietary internal documentation.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">💰 Cost and latency at scale</div>
+    <div class="prose-kv-val">A fine-tuned 7B model doing a narrow task can outperform GPT-4 on that task at 1/50th of the cost. If you're running millions of inferences per day, this matters enormously.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔒 Data privacy requirements</div>
+    <div class="prose-kv-val">You cannot send customer data to a cloud API. Fine-tuning an open-weight model that runs on your own infrastructure solves this — the model is yours, the data never leaves your servers.</div>
+  </div>
+</div>
+
+<!-- §02 -->
+<h2>02 — Full Fine-Tuning: Change Everything</h2>
+
+<p>Full fine-tuning is conceptually the simplest approach: take all the model's weights, run your training data through it, compute gradients with respect to every single parameter, and update everything. No frozen layers, no approximations — every weight is a trainable variable.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🖌️ Non-Tech Analogy: Repainting a House</span>
+  <p>Full fine-tuning is like repainting every room in a house simultaneously. Every surface gets a fresh coat. The result can be exactly the colour you want everywhere. But it's expensive, takes a long time, and if you mix the paint badly you've ruined the entire house. You also need access to every room at once — which requires a lot of space (GPU memory).</p>
+</div>
+
+<h3>How It Works</h3>
+<p>The training procedure is identical to pre-training — the only difference is the data and the starting point:</p>
+
+<div class="math-block">
+  <span class="mc">Start: pre-trained weights θ₀ (e.g. LLaMA-3 8B, already trained on 15T tokens)</span><br>
+  <span class="mc">Training data: your labelled dataset — (instruction, response) pairs</span><br><br>
+  <span class="mh">For each batch:</span><br>
+  <span class="mc">  1. Forward pass: compute loss = CrossEntropy(model(input), target_tokens)</span><br>
+  <span class="mc">  2. Backward pass: compute ∂loss/∂θ for ALL parameters</span><br>
+  <span class="mc">  3. Update: θ ← θ − lr × ∂loss/∂θ  (AdamW optimiser)</span><br><br>
+  <span class="mh">Result: θ_finetuned — every weight has changed from θ₀</span>
+</div>
+
+<h3>The Memory Problem</h3>
+<p>Full fine-tuning of a 7B parameter model requires storing significantly more than just the model weights. During training you need:</p>
+
+<div class="mem-bar-wrap">
+  <div class="mem-bar-label"><span>Model weights (7B × fp16)</span><span>~14 GB</span></div>
+  <div class="mem-bar-track"><div class="mem-bar-fill" style="width:22%;background:#e3b341">14 GB</div></div>
+</div>
+<div class="mem-bar-wrap">
+  <div class="mem-bar-label"><span>Gradients (same size as weights)</span><span>~14 GB</span></div>
+  <div class="mem-bar-track"><div class="mem-bar-fill" style="width:22%;background:#f85149">14 GB</div></div>
+</div>
+<div class="mem-bar-wrap">
+  <div class="mem-bar-label"><span>Optimiser states — AdamW stores m and v per param (fp32)</span><span>~56 GB</span></div>
+  <div class="mem-bar-track"><div class="mem-bar-fill" style="width:88%;background:#f85149">56 GB</div></div>
+</div>
+<div class="mem-bar-wrap">
+  <div class="mem-bar-label"><span style="font-weight:700">Total VRAM required</span><span style="font-weight:700;color:#f85149">~80–100 GB</span></div>
+  <div class="mem-bar-track"><div class="mem-bar-fill" style="width:100%;background:linear-gradient(90deg,#e3b341,#f85149)">~80-100 GB minimum</div></div>
+</div>
+
+<p>A single A100 80GB GPU barely handles a 7B model. For 13B or 70B models, full fine-tuning requires multiple high-end GPUs with expensive interconnects. This is out of reach for most researchers and companies. It also risks <strong>catastrophic forgetting</strong> — when a model is trained aggressively on a narrow dataset, it can "forget" its general capabilities. A medical fine-tune trained only on radiology reports might degrade badly at writing normal English.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">✅ When full fine-tuning IS the right choice</span>
+  <p>Full fine-tuning makes sense when: (1) you have massive compute available (multi-GPU cluster); (2) your domain is so specialised that the pre-trained weights need deep modification — not just behavioural adjustment; (3) you want to permanently change the model's "personality" or output style across all tasks simultaneously; (4) the model is small enough (&lt;1B params) that full fine-tuning fits on a single GPU comfortably. For most practical applications — instruction following, domain adaptation, format alignment — LoRA gives 90–95% of full fine-tuning quality at 5% of the cost.</p>
+</div>
+
+<!-- §03 -->
+<h2>03 — LoRA: Train Almost Nothing, Get Almost Everything</h2>
+
+<p>LoRA (Low-Rank Adaptation — Hu et al., 2021) is the most important fine-tuning innovation in recent years. It starts from a deceptively simple observation about how neural networks change during fine-tuning, and builds an elegant solution that makes fine-tuning a 7B model possible on a single modest GPU.</p>
+
+<h3>The Core Insight: Weight Updates Are Low-Rank</h3>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🎵 Non-Tech Analogy: The Band with a New Bassist</span>
+  <p>A rock band has been playing together for ten years. They have a deep repertoire, perfect synchronisation, a signature sound. Now they hire a new bassist with a different style. Do they rebuild the entire band from scratch? Of course not. The bassist learns a small set of adjustments — plays slightly differently on certain songs, emphasises certain notes — and the band's overall sound shifts just enough.</p>
+  <p style="margin-top:.75rem">LoRA does the same thing to a language model. Instead of retraining all 7 billion parameters, it adds a tiny set of new parameters that encode only the <em>changes</em> needed for the new task. The original weights stay completely frozen. Only the small "adjustment module" is trained.</p>
+</div>
+
+<p>The mathematical justification: research found that when you fine-tune a model, the weight update matrix ΔW has <strong>very low intrinsic rank</strong>. A full fine-tune changes a 4096×4096 weight matrix — that's 16.7 million numbers. But the actual information content of that change can be captured with far fewer numbers, because the update ΔW lies in a low-dimensional subspace.</p>
+
+<h3>The LoRA Math</h3>
+
+<p>For each weight matrix W in the attention layers (typically W_q, W_k, W_v, W_o), LoRA adds a parallel low-rank branch:</p>
+
+<div class="math-block">
+  <span class="mh">Original layer: h = W · x</span><br>
+  <span class="mc">W ∈ ℝ^(d_out × d_in) &nbsp;&nbsp; e.g. 4096 × 4096 = 16.7M parameters</span><br><br>
+  <span class="mh">LoRA modification: h = W · x + (B · A) · x · α/r</span><br>
+  <span class="mc">A ∈ ℝ^(r × d_in)   ← down-projection, r &lt;&lt; d_in   (e.g. r=16, so 16×4096 = 65k)</span><br>
+  <span class="mc">B ∈ ℝ^(d_out × r)  ← up-projection                  (e.g. 4096×16 = 65k)</span><br>
+  <span class="mc">α = scaling factor (typically = r, so α/r = 1.0)</span><br><br>
+  <span class="mg">Parameters trained: A and B only</span><br>
+  <span class="mg">W is FROZEN — never updated, never needs a gradient</span><br><br>
+  <span class="mc">At initialisation: A ~ N(0, σ²),  B = 0  → so BA = 0 → no change at start</span><br>
+  <span class="mc">This ensures the model starts from exactly the pre-trained state</span>
+</div>
+
+<div class="lora-diagram">
+  Input x (d_in)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;├──────────────────────────────┐<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;│                              │<br>
+  &nbsp;&nbsp;W·x &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  <span class="lora-rank">A·x</span>  (rank r, tiny)<br>
+  <span class="lora-orig">[FROZEN]</span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  │<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;│                       <span class="lora-rank">B·(Ax)</span> (up-project)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;│                              │<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;└──────────────── + ───────────┘<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; h = <span class="lora-orig">W·x</span> + <span class="lora-new">BA·x</span> &nbsp;&nbsp;&nbsp;← output
+</div>
+
+<h3>Why This Works: The Numbers</h3>
+<p>For a 7B model (LLaMA-2 7B), the attention weight matrices have shape 4096 × 4096. Let's compare the trainable parameters:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Approach</th><th>Trainable params per layer</th><th>Total trainable (32 layers)</th><th>% of model</th></tr></thead>
+  <tbody>
+    <tr><td><span class="method-pill pill-full">Full fine-tune</span></td><td>4096 × 4096 = 16.7M per matrix</td><td>~7,000M (all params)</td><td class="cross">100%</td></tr>
+    <tr><td><span class="method-pill pill-lora">LoRA r=16</span></td><td>2 × (16 × 4096) = 131k per matrix</td><td>~40M (4 matrices/layer)</td><td class="tick">0.57%</td></tr>
+    <tr><td><span class="method-pill pill-lora">LoRA r=4</span></td><td>2 × (4 × 4096) = 32k per matrix</td><td>~10M</td><td class="tick">0.14%</td></tr>
+  </tbody>
+</table>
+
+<p>Training 0.57% of parameters means: gradient computation is 175× cheaper. Optimiser states (the biggest memory consumer in full fine-tuning) shrink by 175×. The frozen W weights don't need gradients — PyTorch skips backpropagation through them entirely. A fine-tune that needed 80GB VRAM now needs ~16GB.</p>
+
+<h3>Choosing Rank r</h3>
+<p>Rank r is the most important LoRA hyperparameter. It controls the expressiveness of the adaptation — higher rank can model more complex changes but uses more memory and risks overfitting on small datasets:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Rank r</th><th>Use case</th><th>Trainable params (7B model)</th></tr></thead>
+  <tbody>
+    <tr><td><strong>r = 4</strong></td><td>Simple style/format changes, very small datasets (&lt;1k examples)</td><td>~10M</td></tr>
+    <tr><td><strong>r = 8</strong></td><td>Moderate domain adaptation, most instruction-tuning tasks</td><td>~20M</td></tr>
+    <tr><td><strong>r = 16</strong></td><td>Complex domain adaptation, larger datasets (10k+ examples)</td><td>~40M — most common default</td></tr>
+    <tr><td><strong>r = 64</strong></td><td>Near-full-fine-tune quality; large datasets; high compute budget</td><td>~160M</td></tr>
+    <tr><td><strong>r = 128+</strong></td><td>Approaching full fine-tune; rarely needed for behavioural changes</td><td>~320M+</td></tr>
+  </tbody>
+</table>
+
+<h3>Which Layers to Apply LoRA To?</h3>
+<p>By default, LoRA is applied to the query (W_q) and value (W_v) attention matrices. Research shows adding key (W_k) and output (W_o) projections gives a small additional boost. The MLP (feed-forward) layers contain most of the model's factual knowledge — applying LoRA there helps with domain-specific facts but risks more forgetting of general knowledge. In practice, <code>target_modules=["q_proj", "k_proj", "v_proj", "o_proj"]</code> is a reliable starting point.</p>
+
+<!-- §04 -->
+<h2>04 — QLoRA: Fine-Tune a 70B Model on One GPU</h2>
+
+<p>LoRA solved the gradient/optimizer memory problem. But a 7B model's frozen weights still consume 14GB in float16. For 13B models that's 26GB; for 70B it's 140GB. QLoRA (Dettmers et al., 2023) adds one more trick: <strong>quantise the frozen base model to 4 bits</strong>.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📦 Non-Tech Analogy: Vacuum-Packing Your Wardrobe</span>
+  <p>You have a large wardrobe that takes up most of your bedroom. You're not going to wear most of those clothes today — they're just stored there. Vacuum-packing compresses them down to a fraction of the space. You still have all the clothes. When you need one, you unpack it, wear it, then pack it back. The wardrobe is now tiny.</p>
+  <p style="margin-top:.75rem">QLoRA vacuum-packs the frozen model weights into 4-bit format. They're all still there, still usable for inference — just stored more compactly. The tiny LoRA adapter (the clothes you actually wear daily) stays in full precision. Result: a 70B model that would need 140GB in fp16 fits in ~35GB — a single A100 80GB GPU, or two consumer 24GB GPUs.</p>
+</div>
+
+<h3>NF4: A Smarter Way to Use 4 Bits</h3>
+
+<p>Standard int4 quantisation (just rounding weights to the nearest 1 of 16 levels) introduces significant precision loss. QLoRA uses a custom <strong>NF4 (NormalFloat4)</strong> data type, designed specifically for neural network weights:</p>
+
+<div class="math-block">
+  <span class="mh">Key insight: neural network weights follow a roughly normal (Gaussian) distribution.</span><br><br>
+  <span class="mc">Standard int4: 16 evenly-spaced levels from -8 to +7</span><br>
+  <span class="mc">Problem: weights cluster near zero, wasting most of the 16 levels on rare large values</span><br><br>
+  <span class="mh">NF4: 16 levels placed at the quantiles of N(0,1)</span><br>
+  <span class="mc">Each level represents an equal probability mass of the weight distribution</span><br>
+  <span class="mc">Levels are dense near zero (where most weights live) and sparse at extremes</span><br>
+  <span class="mc">Result: same 4 bits, but optimal representation for the actual distribution of weights</span><br><br>
+  <span class="mg">NF4 is information-theoretically optimal for normally-distributed weights.</span>
+</div>
+
+<h3>Double Quantisation</h3>
+<p>QLoRA adds a second trick called <strong>double quantisation</strong>: quantise the quantisation constants themselves. When you quantise a weight tensor, you need to store a scaling factor (one per block of ~64 weights) to recover the original scale. These scaling factors are stored in fp32 — and there are many of them. Double quantisation quantises these scaling factors too (from fp32 to fp8), saving an additional ~0.37 bits per parameter. Small, but it adds up across billions of parameters.</p>
+
+<h3>The QLoRA Pipeline</h3>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 1: Load in 4-bit NF4</div>
+    <div class="prose-kv-val">Load the base model weights in 4-bit NF4 format using bitsandbytes. A 7B model shrinks from 14GB (fp16) to ~4GB (4-bit). The weights are decompressed to bf16 on the fly during forward passes only.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 2: Add LoRA adapters</div>
+    <div class="prose-kv-val">Inject LoRA A/B matrices into the attention layers. These stay in full bf16 precision — they're the parts that actually get trained, so precision matters here.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 3: Train only LoRA</div>
+    <div class="prose-kv-val">Gradients flow only through the LoRA adapters. The frozen 4-bit weights act as a fixed lookup — they participate in forward passes but never accumulate gradients. Optimiser states exist only for the small LoRA parameters.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Step 4: Merge or keep separate</div>
+    <div class="prose-kv-val">At inference time you can either: (a) keep the 4-bit base + LoRA adapter for minimal memory, or (b) dequantise the base to fp16, merge the LoRA weights (W_new = W + BA), and get a single clean model. Merging is cleaner for deployment; keeping separate is more flexible for switching adapters.</div>
+  </div>
+</div>
+
+<h3>Memory Comparison: The Numbers That Matter</h3>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Model size</th>
+      <th>Training VRAM</th>
+      <th>GPU needed</th>
+      <th>Trainable params</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="method-pill pill-full">Full fine-tune</span> 7B</td>
+      <td>14 GB (fp16)</td>
+      <td class="cross">~80 GB</td>
+      <td>A100 80GB ×1</td>
+      <td>7,000M (100%)</td>
+    </tr>
+    <tr>
+      <td><span class="method-pill pill-lora">LoRA r=16</span> 7B</td>
+      <td>14 GB (fp16)</td>
+      <td class="mid">~18 GB</td>
+      <td>RTX 3090/4090</td>
+      <td>~40M (0.57%)</td>
+    </tr>
+    <tr>
+      <td><span class="method-pill pill-qlora">QLoRA r=16</span> 7B</td>
+      <td>~4 GB (4-bit)</td>
+      <td class="tick">~10 GB</td>
+      <td>RTX 3080 / Colab T4</td>
+      <td>~40M (0.57%)</td>
+    </tr>
+    <tr>
+      <td><span class="method-pill pill-lora">LoRA r=16</span> 13B</td>
+      <td>26 GB (fp16)</td>
+      <td class="cross">~35 GB</td>
+      <td>A100 40GB</td>
+      <td>~80M (0.6%)</td>
+    </tr>
+    <tr>
+      <td><span class="method-pill pill-qlora">QLoRA r=16</span> 13B</td>
+      <td>~7 GB (4-bit)</td>
+      <td class="tick">~15 GB</td>
+      <td>RTX 3090/4090</td>
+      <td>~80M (0.6%)</td>
+    </tr>
+    <tr>
+      <td><span class="method-pill pill-qlora">QLoRA r=64</span> 70B</td>
+      <td>~35 GB (4-bit)</td>
+      <td class="mid">~48 GB</td>
+      <td>A100 80GB ×1</td>
+      <td>~400M (0.57%)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §05 -->
+<h2>05 — Training Data: What You Feed the Model</h2>
+
+<p>The training algorithm matters less than the data you train on. Every fine-tuning run is ultimately a question of: <em>what examples do I show the model, and in what format?</em></p>
+
+<h3>Instruction Fine-Tuning Format</h3>
+<p>The dominant format for chat and instruction models is <strong>instruction–response pairs</strong>. Every training example consists of an instruction (what to do) and a target response (what the ideal answer looks like). The model is trained to maximise the probability of the response given the instruction — exactly CLM, just on carefully curated pairs.</p>
+
+<div class="math-block">
+  <span class="mc">Single-turn format:</span><br>
+  <span class="mh">{"instruction": "Summarise this medical report in plain English.",</span><br>
+  <span class="mh">&nbsp;"input": "Patient presents with...",</span><br>
+  <span class="mh">&nbsp;"output": "The patient has a mild case of..."}</span><br><br>
+  <span class="mc">Chat / multi-turn format (Alpaca/LLaMA-2):</span><br>
+  <span class="mh">[INST] Summarise this report: Patient presents with... [/INST]</span><br>
+  <span class="mh">The patient has a mild case of... &lt;/s&gt;</span><br><br>
+  <span class="mc">Loss computed only on the response tokens — NOT on the instruction tokens</span><br>
+  <span class="mc">(instruction tokens are masked during loss calculation)</span>
+</div>
+
+<h3>How Much Data Do You Need?</h3>
+
+<table class="prose-table">
+  <thead><tr><th>Task type</th><th>Data needed</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>Style / tone alignment</td><td>100–500 examples</td><td>Make the model respond more concisely, or in a brand voice</td></tr>
+    <tr><td>Simple instruction following</td><td>500–2,000 examples</td><td>Always return JSON, follow a specific template</td></tr>
+    <tr><td>Domain adaptation (shallow)</td><td>2,000–10,000 examples</td><td>Medical Q&amp;A, legal document analysis</td></tr>
+    <tr><td>Domain adaptation (deep)</td><td>10,000–100,000 examples</td><td>Full clinical note generation, code in proprietary language</td></tr>
+    <tr><td>Full capability alignment (RLHF)</td><td>100k+ preference pairs</td><td>ChatGPT-level helpfulness and safety</td></tr>
+  </tbody>
+</table>
+
+<p>Quality beats quantity. 500 perfectly curated examples that consistently demonstrate the target behaviour often outperform 50,000 noisy examples. GPT-4-generated synthetic data has become a standard technique: use the large model to create training examples for the smaller one. This is how Alpaca, Vicuna, and most open instruction-following models were built.</p>
+
+<!-- §06 -->
+<h2>06 — Code: LoRA and QLoRA with HuggingFace + PEFT</h2>
+
+<p>Complete working code — from loading a model to training a LoRA adapter to saving and merging. Uses HuggingFace <code>transformers</code>, <code>peft</code>, and <code>trl</code> (which provides the <code>SFTTrainer</code> that handles instruction masking automatically).</p>
+
+<pre><code><span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Install: pip install transformers peft trl bitsandbytes accelerate datasets
+# ─────────────────────────────────────────────────────────────────────────</span>
+
+<span class="t-key">import</span> torch
+<span class="t-key">from</span> transformers <span class="t-key">import</span> (
+    AutoModelForCausalLM, AutoTokenizer,
+    BitsAndBytesConfig, TrainingArguments
+)
+<span class="t-key">from</span> peft <span class="t-key">import</span> LoraConfig, get_peft_model, TaskType, PeftModel
+<span class="t-key">from</span> trl  <span class="t-key">import</span> SFTTrainer, DataCollatorForCompletionOnlyLM
+<span class="t-key">from</span> datasets <span class="t-key">import</span> Dataset
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 1: Prepare training data
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-cmt"># Example: medical Q&A dataset (replace with your own data)</span>
+training_data = [
+    {<span class="t-str">"instruction"</span>: <span class="t-str">"What is diabetic retinopathy?"</span>,
+     <span class="t-str">"output"</span>: <span class="t-str">"Diabetic retinopathy is a diabetes complication that damages blood vessels in the retina..."</span>},
+    {<span class="t-str">"instruction"</span>: <span class="t-str">"Describe the stages of diabetic retinopathy."</span>,
+     <span class="t-str">"output"</span>: <span class="t-str">"There are four main stages: mild NPDR, moderate NPDR, severe NPDR, and PDR..."</span>},
+    <span class="t-cmt"># ... hundreds more examples</span>
+]
+
+<span class="t-key">def</span> <span class="t-def">format_prompt</span>(example):
+    <span class="t-str">"""Convert instruction/output dict to training string."""</span>
+    <span class="t-key">return</span> {
+        <span class="t-str">"text"</span>: <span class="t-str">f"### Instruction:\n{example['instruction']}\n\n### Response:\n{example['output']}"</span>
+    }
+
+dataset = Dataset.from_list(training_data).map(format_prompt)
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 2a: LoRA config (fp16 base model, ~18 GB VRAM for 7B)
+# ─────────────────────────────────────────────────────────────────────────</span>
+model_id = <span class="t-str">"meta-llama/Llama-2-7b-hf"</span>
+
+lora_config = LoraConfig(
+    r=<span class="t-num">16</span>,                                    <span class="t-cmt"># rank — higher = more expressive, more params</span>
+    lora_alpha=<span class="t-num">32</span>,                             <span class="t-cmt"># scaling factor (α/r = 2.0 here)</span>
+    target_modules=[<span class="t-str">"q_proj"</span>, <span class="t-str">"k_proj"</span>,
+                    <span class="t-str">"v_proj"</span>, <span class="t-str">"o_proj"</span>],     <span class="t-cmt"># which layers to adapt</span>
+    lora_dropout=<span class="t-num">0.05</span>,                         <span class="t-cmt"># regularisation</span>
+    bias=<span class="t-str">"none"</span>,                              <span class="t-cmt"># don't add bias to LoRA layers</span>
+    task_type=TaskType.CAUSAL_LM,
+)
+
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+tokenizer.pad_token = tokenizer.eos_token   <span class="t-cmt"># LLaMA has no pad token by default</span>
+
+<span class="t-cmt"># Load base model in fp16 (LoRA — no quantisation)</span>
+base_model = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    torch_dtype=torch.float16,
+    device_map=<span class="t-str">"auto"</span>
+)
+lora_model = get_peft_model(base_model, lora_config)
+lora_model.print_trainable_parameters()
+<span class="t-cmt"># → trainable params: 39,976,960 || all params: 6,778,318,848 || trainable%: 0.5899</span>
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 2b: QLoRA config (4-bit NF4 base, ~10 GB VRAM for 7B)
+# ─────────────────────────────────────────────────────────────────────────</span>
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=<span class="t-key">True</span>,
+    bnb_4bit_quant_type=<span class="t-str">"nf4"</span>,               <span class="t-cmt"># NormalFloat4 — optimal for weight distributions</span>
+    bnb_4bit_compute_dtype=torch.bfloat16,  <span class="t-cmt"># dequantise to bf16 during forward pass</span>
+    bnb_4bit_use_double_quant=<span class="t-key">True</span>,          <span class="t-cmt"># quantise the quantisation constants too</span>
+)
+
+qlora_base = AutoModelForCausalLM.from_pretrained(
+    model_id,
+    quantization_config=bnb_config,
+    device_map=<span class="t-str">"auto"</span>
+)
+
+<span class="t-cmt"># Prepare model for k-bit training (gradient checkpointing + frozen BN layers)</span>
+<span class="t-key">from</span> peft <span class="t-key">import</span> prepare_model_for_kbit_training
+qlora_base = prepare_model_for_kbit_training(qlora_base)
+qlora_model = get_peft_model(qlora_base, lora_config)
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 3: Training with SFTTrainer
+# ─────────────────────────────────────────────────────────────────────────</span>
+training_args = TrainingArguments(
+    output_dir=<span class="t-str">"./qlora-medical-llama2"</span>,
+    num_train_epochs=<span class="t-num">3</span>,
+    per_device_train_batch_size=<span class="t-num">4</span>,
+    gradient_accumulation_steps=<span class="t-num">4</span>,          <span class="t-cmt"># effective batch size = 4 × 4 = 16</span>
+    learning_rate=<span class="t-num">2e-4</span>,
+    lr_scheduler_type=<span class="t-str">"cosine"</span>,
+    warmup_ratio=<span class="t-num">0.03</span>,
+    fp16=<span class="t-key">True</span>,                              <span class="t-cmt"># mixed precision training</span>
+    logging_steps=<span class="t-num">10</span>,
+    save_strategy=<span class="t-str">"epoch"</span>,
+    report_to=<span class="t-str">"none"</span>,
+)
+
+<span class="t-cmt"># SFTTrainer handles: chat template formatting, loss masking on instructions,
+# gradient accumulation, and packing short examples together efficiently</span>
+trainer = SFTTrainer(
+    model=qlora_model,
+    tokenizer=tokenizer,
+    args=training_args,
+    train_dataset=dataset,
+    dataset_text_field=<span class="t-str">"text"</span>,
+    max_seq_length=<span class="t-num">512</span>,
+    packing=<span class="t-key">True</span>,    <span class="t-cmt"># pack multiple short examples into one sequence for efficiency</span>
+)
+
+trainer.train()
+trainer.model.save_pretrained(<span class="t-str">"./qlora-adapter"</span>)
+tokenizer.save_pretrained(<span class="t-str">"./qlora-adapter"</span>)
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 4a: Inference with adapter (keep base + adapter separate)
+# ─────────────────────────────────────────────────────────────────────────</span>
+model_for_inference = PeftModel.from_pretrained(qlora_base, <span class="t-str">"./qlora-adapter"</span>)
+model_for_inference.eval()
+
+prompt = <span class="t-str">"### Instruction:\nExplain macular oedema in simple terms.\n\n### Response:\n"</span>
+inputs = tokenizer(prompt, return_tensors=<span class="t-str">"pt"</span>).to(<span class="t-str">"cuda"</span>)
+
+<span class="t-key">with</span> torch.no_grad():
+    output = model_for_inference.generate(
+        **inputs, max_new_tokens=<span class="t-num">200</span>, temperature=<span class="t-num">0.7</span>, do_sample=<span class="t-key">True</span>
+    )
+<span class="t-key">print</span>(tokenizer.decode(output[<span class="t-num">0</span>], skip_special_tokens=<span class="t-key">True</span>))
+
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Step 4b: Merge LoRA weights into base model (for clean single-file deployment)
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-cmt"># Load base in fp16 for merging (can't merge into 4-bit)</span>
+base_fp16 = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype=torch.float16)
+merged_model = PeftModel.from_pretrained(base_fp16, <span class="t-str">"./qlora-adapter"</span>)
+merged_model = merged_model.merge_and_unload()   <span class="t-cmt"># W_new = W_frozen + B·A</span>
+merged_model.save_pretrained(<span class="t-str">"./qlora-merged"</span>)
+<span class="t-cmt"># Result: a single 7B model in fp16 with the fine-tuning baked in</span></code></pre>
+<div class="code-output">
+  <span class="out-head">── QLoRA Training Output ────────────────────────────────────────────────</span><br>
+  trainable params: <span class="out-good">39,976,960</span> || all params: 6,778,318,848 || trainable%: <span class="out-val">0.5899</span><br><br>
+  <span class="out-dim">Step &nbsp;10/750 | loss: 2.341 | lr: 1.87e-04 | grad_norm: 0.842</span><br>
+  <span class="out-dim">Step &nbsp;20/750 | loss: 1.876 | lr: 1.98e-04 | grad_norm: 0.721</span><br>
+  <span class="out-dim">Step &nbsp;50/750 | loss: 1.203 | lr: 2.00e-04 | grad_norm: 0.534</span><br>
+  <span class="out-dim">Step 100/750 | loss: 0.891 | lr: 1.94e-04 | grad_norm: 0.412</span><br>
+  <span class="out-dim">Step 500/750 | loss: 0.512 | lr: 0.71e-04 | grad_norm: 0.298</span><br>
+  <span class="out-dim">Step 750/750 | loss: 0.441 | lr: 0.00e+00 | grad_norm: 0.271</span><br><br>
+  Peak VRAM usage: <span class="out-good">9.8 GB</span> <span class="out-dim">← 7B model, QLoRA r=16, batch=4, seq=512</span><br>
+  Training time (3 epochs, 500 examples): <span class="out-val">~22 min</span> on RTX 3090 (24GB)<br><br>
+  Merging LoRA adapter into base model...<br>
+  <span class="out-good">Saved merged model to ./qlora-merged</span> <span class="out-dim">(13.5 GB, fp16)</span>
+</div>
+
+<!-- §07 -->
+<h2>07 — Head-to-Head: Full vs LoRA vs QLoRA</h2>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Dimension</th>
+      <th><span class="method-pill pill-full">Full Fine-Tune</span></th>
+      <th><span class="method-pill pill-lora">LoRA</span></th>
+      <th><span class="method-pill pill-qlora">QLoRA</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Trainable params</strong></td>
+      <td>100% of model</td>
+      <td>0.1 – 1% of model</td>
+      <td>0.1 – 1% of model</td>
+    </tr>
+    <tr>
+      <td><strong>Base model precision</strong></td>
+      <td>fp16 / bf16</td>
+      <td>fp16 / bf16</td>
+      <td>4-bit NF4</td>
+    </tr>
+    <tr>
+      <td><strong>VRAM for 7B model</strong></td>
+      <td class="cross">~80 GB</td>
+      <td class="mid">~18 GB</td>
+      <td class="tick">~10 GB</td>
+    </tr>
+    <tr>
+      <td><strong>VRAM for 70B model</strong></td>
+      <td class="cross">~800 GB</td>
+      <td class="cross">~140 GB</td>
+      <td class="mid">~48 GB</td>
+    </tr>
+    <tr>
+      <td><strong>Catastrophic forgetting risk</strong></td>
+      <td class="cross">High — aggressive changes can overwrite general knowledge</td>
+      <td class="tick">Low — frozen base preserves general knowledge</td>
+      <td class="tick">Low — same as LoRA</td>
+    </tr>
+    <tr>
+      <td><strong>Quality vs full fine-tune</strong></td>
+      <td class="tick">Baseline (100%)</td>
+      <td class="tick">90–95% on most tasks</td>
+      <td class="mid">85–93% — small penalty from 4-bit quantisation</td>
+    </tr>
+    <tr>
+      <td><strong>Training speed</strong></td>
+      <td class="cross">Slowest</td>
+      <td class="mid">Faster — fewer param updates</td>
+      <td class="tick">Fastest per GPU — smallest memory footprint</td>
+    </tr>
+    <tr>
+      <td><strong>Multiple task adapters?</strong></td>
+      <td class="cross">Need separate full model per task</td>
+      <td class="tick">One base, many adapters — swap at inference</td>
+      <td class="tick">Same — lightweight adapters, one base</td>
+    </tr>
+    <tr>
+      <td><strong>Deployment</strong></td>
+      <td>Single file — clean</td>
+      <td>Base + adapter, or merge before deploy</td>
+      <td>4-bit base + adapter, or merge into fp16</td>
+    </tr>
+    <tr>
+      <td><strong>Best for</strong></td>
+      <td>Deep domain shift; large compute available; &lt;1B models</td>
+      <td>Instruction tuning; domain adaptation; standard GPU available</td>
+      <td>Large models (7B–70B) on consumer hardware; Colab / single A100</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §08 -->
+<h2>08 — Common Mistakes and How to Avoid Them</h2>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Training on the instruction text</div>
+    <div class="prose-kv-val">The loss should only be computed on the response tokens — not the instruction. If you train the model to "predict" the instruction it already has as input, you're wasting capacity and can cause the model to start repeating prompts. Use SFTTrainer's <code>DataCollatorForCompletionOnlyLM</code> which automatically masks instruction tokens from the loss.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Learning rate too high</div>
+    <div class="prose-kv-val">Fine-tuning learning rates are typically 10–100× lower than pre-training: 1e-4 to 3e-4 for LoRA (vs 3e-3 for pre-training). Too high and you'll destroy the pre-trained weights rapidly. Use cosine decay with a short warmup (3–5% of steps).</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Overfitting on a small dataset</div>
+    <div class="prose-kv-val">With only 200 examples and 3 epochs, the model sees each example 3 times — this can cause memorisation rather than generalisation. Watch the validation loss carefully. Use early stopping. Consider LoRA dropout (0.05–0.1) for regularisation. Lower rank r also reduces overfitting risk.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Wrong chat template</div>
+    <div class="prose-kv-val">Every chat model has a specific prompt format (LLaMA-2's [INST], LLaMA-3's &lt;|im_start|&gt;, Mistral's [INST]). If your training data uses LLaMA-2 format but you're fine-tuning LLaMA-3, the model's behaviour will be unpredictable. Always use <code>tokenizer.apply_chat_template()</code> with the correct model's tokenizer.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Forgetting to set pad token</div>
+    <div class="prose-kv-val">LLaMA models have no pad token by default. If you try to batch sequences of different lengths without setting <code>tokenizer.pad_token = tokenizer.eos_token</code>, training will crash or produce garbage. Always set this before creating the dataset.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Not merging before deployment</div>
+    <div class="prose-kv-val">Keeping the base model + LoRA adapter separate works but adds latency at inference — the adapter computation runs in addition to the base forward pass. For production, merge with <code>merge_and_unload()</code> to get a single clean model with no additional inference overhead.</div>
+  </div>
+</div>
+
+<!-- §09 -->
+<h2>09 — Real-World Example: Fine-Tuning for Medical Q&amp;A</h2>
+
+<p>This is close to what was done in the Medical VLM project described in this portfolio — fine-tuning Qwen 2.5 7B with LoRA rank-32 on 35,000 retinal imaging Q&amp;A pairs. The approach achieved a 240% accuracy gain (20% → 68% on diabetic retinopathy classification) while reducing VRAM from 17GB to 7GB via 4-bit QLoRA.</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">📋 Real Fine-Tune Config: Medical VLM (Qwen 2.5 7B + QLoRA)</span>
+  <p>
+    Base model: Qwen 2.5 7B VLM &nbsp;·&nbsp; Quantisation: 4-bit NF4 (bitsandbytes)<br>
+    LoRA rank: 32 &nbsp;·&nbsp; LoRA alpha: 64 &nbsp;·&nbsp; Target: q_proj, k_proj, v_proj, o_proj<br>
+    Dataset: 35,000 retinal imaging (image + report) Q&amp;A pairs<br>
+    Batch size: 8 &nbsp;·&nbsp; Gradient accumulation: 4 (effective = 32)<br>
+    Learning rate: 2e-4 with cosine decay &nbsp;·&nbsp; Epochs: 3<br>
+    Peak VRAM: 7 GB (vs 17 GB for fp16 base) &nbsp;·&nbsp; Training time: ~6 hours on A100 40GB<br>
+    Result: diabetic retinopathy accuracy 20% → 68% &nbsp;·&nbsp; hallucination rate 18% → 5%
+  </p>
+</div>
+
+<!-- §10 -->
+<h2>10 — Other PEFT Methods Worth Knowing</h2>
+
+<p>LoRA and QLoRA are the dominant approaches, but several other Parameter-Efficient Fine-Tuning (PEFT) methods are worth understanding:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Method</th><th>Core idea</th><th>Best for</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><strong>LoRA-FA</strong></td>
+      <td>Freeze matrix A (random init), only train B. Saves more memory at slight quality cost.</td>
+      <td>Memory-constrained training on large models</td>
+    </tr>
+    <tr>
+      <td><strong>DoRA</strong></td>
+      <td>Decomposes weight update into magnitude and direction components. More expressive than LoRA at same rank.</td>
+      <td>Tasks needing fine-grained control; drop-in LoRA replacement</td>
+    </tr>
+    <tr>
+      <td><strong>Prefix Tuning</strong></td>
+      <td>Prepend trainable "virtual tokens" to each layer's key and value — no weight modification at all.</td>
+      <td>Quick task-specific adaptation without touching any weights</td>
+    </tr>
+    <tr>
+      <td><strong>Adapter layers</strong></td>
+      <td>Insert small bottleneck modules (down → nonlinear → up) inside transformer blocks.</td>
+      <td>Multi-task fine-tuning; each task gets its own adapters</td>
+    </tr>
+    <tr>
+      <td><strong>IA³</strong></td>
+      <td>Learns scaling vectors for key, value, and FFN outputs — just 3 vectors per layer, extremely parameter-efficient.</td>
+      <td>Few-shot learning; extremely limited compute</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §11 -->
+<h2>11 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>LoRA's key finding is that the weight changes needed for fine-tuning are low-rank — they live in a small subspace of the full parameter space. This implies that a model's "knowledge" and its "behaviour" are to some degree separable: behaviour can be adjusted with tiny, targeted changes while knowledge remains intact in the frozen weights.</p>
+  <p style="margin-top:.75rem"><strong>If this is true, what does it say about how knowledge is stored in a neural network? Is the knowledge truly in the original weights, and is the adapter just a "style layer" on top? Or is the line between knowledge and behaviour blurrier than it appears — and we are simply fortunate that the fine-tuning updates happen to be compressible, regardless of what they represent?</strong></p>
+</div>
+
+<!-- §12 -->
+<h2>12 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 29: RAG — Retrieval-Augmented Generation Pipeline.</strong> Fine-tuning teaches a model new habits. RAG gives it long-term memory. Instead of baking knowledge into weights, RAG retrieves relevant documents at inference time and feeds them into the context window — so the model can answer questions about things that happened after its training cutoff, or about private documents it has never seen. We build the full pipeline: document ingestion, chunking strategy, embedding, vector database, retrieval, and grounded generation — all from scratch.</p>
+
+<!-- §13 -->
+<h2>13 — Go Deeper</h2>
+<p>📄 <a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (2021)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The LoRA paper. Section 4 (the low-rank update formulation) is the core contribution. Table 2 comparing full fine-tune vs LoRA quality on GPT-3 is the key empirical result. Very readable.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2305.14314" target="_blank" rel="noopener">QLoRA: Efficient Finetuning of Quantized LLMs — Dettmers et al. (2023)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The QLoRA paper. Sections 2–3 cover NF4, double quantisation, and paged optimisers. Figure 1 showing the memory comparison is the clearest single illustration of why QLoRA matters.</em></p>
+<p>🔗 <a href="https://huggingface.co/docs/peft/index" target="_blank" rel="noopener">HuggingFace PEFT Documentation</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The reference implementation of LoRA, QLoRA, and all other PEFT methods. The LoRA quickstart guide is the fastest path from zero to a working fine-tune.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2312.12148" target="_blank" rel="noopener">DoRA: Weight-Decomposed Low-Rank Adaptation</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The DoRA paper — improves on LoRA by separately adapting weight magnitude and direction. Used in LLaMA-3 fine-tuning workflows. Worth reading after understanding standard LoRA.</em></p>
+<p>▶ <a href="https://www.youtube.com/watch?v=dA-NhCtrrVE" target="_blank" rel="noopener">Fine-tuning LLMs with PEFT and LoRA — Weights &amp; Biases</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube · 45 min · End-to-end walkthrough of a real LoRA fine-tune with experiment tracking. Shows hyperparameter sweeps, evaluation, and deployment — the closest thing to a production tutorial.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. What is the fundamental difference between full fine-tuning, LoRA, and QLoRA? At what level does each approach operate?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Full fine-tuning operates on all parameters: every weight in every layer receives gradients and is updated. No distinction between "important" and "unimportant" parameters — 100% of the model changes. This maximises expressiveness but requires enormous memory (weights + gradients + optimiser states for every parameter). LoRA operates on the weight update: instead of modifying W directly, it adds a parallel low-rank branch B·A alongside the frozen W. Only A and B are trained — typically 0.1–1% of total parameters. The key insight is that weight changes during fine-tuning are empirically low-rank, so this approximation loses little quality while saving 99% of trainable parameters and their associated memory. QLoRA adds one more level — it operates on the storage format of the frozen weights: they are compressed to 4-bit NF4 format, reducing their memory footprint by 4×. The LoRA adapters themselves remain in bf16. So QLoRA = LoRA's selective training + 4-bit storage for the frozen base. Each method is strictly additive: QLoRA contains LoRA contains the base fine-tuning concept.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. Explain the LoRA math. Why does initialising B=0 matter, and what happens if you initialise both A and B randomly?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">LoRA replaces a weight update ΔW ∈ ℝ^(d_out × d_in) with a low-rank factorisation: ΔW = B·A where B ∈ ℝ^(d_out × r) and A ∈ ℝ^(r × d_in). The full layer becomes h = W·x + B·A·x·(α/r). A is initialised from a normal distribution N(0, σ²); B is initialised to all zeros. The B=0 initialisation ensures that B·A = 0 at the start of training, meaning the LoRA modification contributes exactly zero to the output. The model begins fine-tuning from precisely the pre-trained state — no random perturbation, no disruption of the already-good representations. If you initialised both A and B randomly, B·A ≠ 0, which would inject random noise into every layer's output before training has begun. This would corrupt the pre-trained representations immediately and require many more training steps just to recover to the pre-trained baseline. The B=0 trick is a subtle but crucial design choice that makes LoRA converge reliably with very small datasets — you start from a good point and make incremental improvements, rather than starting from a corrupted point and fighting to recover.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. What is NF4 and why is it better than standard int4 quantisation for neural network weights?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Both NF4 and int4 represent each weight using 4 bits, giving 2⁴ = 16 distinct levels. The difference is in how those 16 levels are distributed across the value range. Standard int4 places the 16 levels evenly: for example -8, -7.06, -6.12, ..., +7.06. Neural network weights, however, are not uniformly distributed — they follow a roughly normal (Gaussian) distribution, heavily concentrated near zero. Most of the weight mass is in the range [-0.5, +0.5], while values near ±7 are very rare. Even int4 wastes most of its 16 levels on rarely-occurring extreme values while cramming all the near-zero weights into just a few central levels — causing significant quantisation error in the most populated part of the distribution. NF4 places its 16 levels at the quantiles of N(0,1): each level represents an equal fraction of the probability mass. This concentrates levels densely near zero (where most weights are) and spaces them sparsely at the extremes. The result is that each weight is represented with the same expected quantisation error regardless of its value — NF4 is information-theoretically optimal for normally-distributed data. In practice, QLoRA showed that NF4 produces significantly less quality degradation than int8, LLM.int8(), or standard int4 for the same number of bits.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. You're fine-tuning LLaMA-2 7B for customer support Q&A. You have 800 labelled examples. Walk through the key decisions: method, rank, learning rate, epochs, and what to watch for during training.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Method: QLoRA if you have a consumer GPU (≤24GB VRAM), LoRA if you have an A100 40GB. Full fine-tune is unnecessary — 800 examples is a small dataset and the main risk is overfitting, not underfitting. Rank r: use r=8 or r=16. With only 800 examples, a high rank (r=64+) will overfit. r=8 gives ~20M trainable parameters — well-matched to the dataset size. r=16 is also reasonable with good regularisation. Learning rate: 1e-4 to 2e-4 with cosine decay. Use a warmup of ~5% of steps (about 15–20 steps at batch size 8 for 3 epochs over 800 examples). Epochs: start with 3. With 800 examples and batch size 8, you get ~100 gradient steps per epoch. Monitor validation loss carefully — if it starts increasing after epoch 1 or 2, stop early. Things to watch during training: (1) Training loss decreasing but validation loss increasing → overfitting, reduce epochs or rank; (2) Loss not decreasing at all → learning rate too low or wrong chat template; (3) Loss oscillates wildly → learning rate too high; (4) Loss goes to near-zero on training set → memorisation, reduce epochs. Also verify with manual inspection: after each checkpoint, run 10–20 test prompts and check the outputs look correct and natural — automated metrics can miss format regressions or new hallucinations the model has learned to generate.</div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. What is catastrophic forgetting, and why is LoRA better at avoiding it than full fine-tuning? Are there cases where even LoRA can cause forgetting?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">Catastrophic forgetting is when a model trained on a new task "overwrites" the representations that made it good at previous tasks. For example, a general-purpose LLM fine-tuned aggressively on clinical radiology reports might start producing radiology-style language even for normal conversational tasks, or might lose the ability to write coherent general English because those patterns were overwritten by the radiology-heavy training distribution. Full fine-tuning is most susceptible because every parameter is updated — repeated gradient steps on narrow data move all weights toward the fine-tuning distribution, away from the broad pre-training distribution. LoRA avoids this structurally: the original weights W are frozen and never change. All the fine-tuning information is encoded in the small B·A adapters. The pre-trained knowledge is literally still in the same bits it was before. At inference, the output is W·x + BA·x — the full pre-trained knowledge (W) plus a small task-specific adjustment (BA). However, LoRA is not immune: if you apply LoRA to the MLP layers which store factual knowledge, you can overwrite facts in those layers. If the LoRA rank is very high (r=256+) and the dataset is very narrow, the adapters can specialise so strongly that they interfere with the frozen weights' representations. If the training examples contain errors or biases, the adapter learns those. And if the fine-tuning examples cover only a narrow topic distribution, the model's general conversational quality can degrade even without weight modification — because the LoRA component now strongly pushes every response toward the training distribution regardless of the input.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Fine-Tuning LLMs</div>
+  <ol>
+    <li><strong>Why fine-tune:</strong> pre-training gives general language understanding; fine-tuning adjusts behaviour for specific tasks, formats, or domains. Worth doing when you need consistent output format, specialised vocabulary, lower cost at scale, or data privacy.</li>
+    <li><strong>Full fine-tuning:</strong> update all parameters. Maximum quality. Requires ~80GB VRAM for 7B (weights + gradients + AdamW states). Risk of catastrophic forgetting on narrow datasets. Right choice only for deep domain shifts or small models.</li>
+    <li><strong>LoRA:</strong> freeze all base weights W. Add trainable low-rank matrices A (r×d) and B (d×r). Only 0.1–1% of parameters are trained. Initialise B=0 so the model starts exactly at the pre-trained state. VRAM ~18GB for 7B. Quality within 5–10% of full fine-tune on most tasks.</li>
+    <li><strong>QLoRA:</strong> LoRA + 4-bit NF4 quantisation of the frozen base. NF4 places quantisation levels at the quantiles of N(0,1) — optimal for normally-distributed weights. Double quantisation compresses scaling factors further. VRAM ~10GB for 7B; ~48GB for 70B.</li>
+    <li><strong>Rank r:</strong> controls LoRA expressiveness. r=16 is the standard default. Lower (r=4–8) for small datasets or simple tasks. Higher (r=64–128) for complex adaptation with lots of data.</li>
+    <li><strong>Training data format:</strong> instruction–response pairs. Loss computed only on response tokens (instruction is masked). Quality beats quantity — 500 clean examples can outperform 50k noisy ones.</li>
+    <li><strong>Common mistakes:</strong> computing loss on instruction tokens; learning rate too high; wrong chat template; forgetting to set pad_token; not merging before deployment.</li>
+    <li><strong>Deployment options:</strong> keep base + adapter separate (flexible, switch adapters per request), or merge with <code>merge_and_unload()</code> for a clean single-file model with no inference overhead.</li>
+    <li><strong>Other PEFT methods:</strong> DoRA (decomposes magnitude + direction), Prefix Tuning (trainable virtual tokens), Adapter layers (bottleneck modules), IA³ (scalar scaling vectors). LoRA dominates in practice.</li>
+    <li><strong>Key tools:</strong> HuggingFace PEFT + bitsandbytes + TRL's SFTTrainer. These three libraries handle 95% of practical fine-tuning needs and work together seamlessly.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW Q&A -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is LoRA and why does it work? Explain the low-rank assumption.</strong><br>
+    <em>LoRA (Low-Rank Adaptation) decomposes the weight update ΔW into two small matrices: ΔW = B·A where rank r ≪ d. This is justified by the empirical finding that weight changes during fine-tuning are intrinsically low-rank — they lie in a small subspace of the full parameter space. Rather than updating all d_out × d_in weights, LoRA trains only d_out×r + r×d_in parameters (typically 0.57% of the full model). The frozen base weights preserve general pre-trained knowledge; the adapters encode task-specific adjustments. B is initialised to zero so training starts from the unmodified pre-trained state.</em></li>
+
+    <li><strong>What is catastrophic forgetting and how does LoRA mitigate it?</strong><br>
+    <em>Catastrophic forgetting is when learning a new task overwrites the representations that enabled performance on old tasks. Full fine-tuning is prone to this because gradient descent on narrow task data pushes all weights toward the new distribution. LoRA mitigates it structurally: the base weights W are completely frozen and never modified. All learned changes are in the small B·A adapters. At inference, the output is W·x (all pre-trained knowledge intact) plus B·A·x (task-specific adjustment). The original knowledge cannot be overwritten because it's never touched.</em></li>
+
+    <li><strong>A company wants to fine-tune LLaMA-3 8B for 10 different customer support use cases. They have 1 A100 80GB GPU. What approach would you recommend?</strong><br>
+    <em>Use QLoRA with a shared base model and separate LoRA adapters per use case. Workflow: (1) Load the base LLaMA-3 8B in 4-bit NF4 (~5GB). (2) Train a separate LoRA adapter (r=16, ~40M params, ~0.3GB) for each of the 10 use cases — sequential training, reusing the same base model. (3) At inference, load the 4-bit base once and hot-swap adapters depending on which use case is requested. Total storage: one 5GB base + 10 × 0.3GB adapters = ~8GB. This is far more efficient than 10 separate full models (10 × 16GB = 160GB). The A100 80GB comfortably handles the 4-bit base plus one adapter in memory simultaneously.</em></li>
+
+    <li><strong>What is the difference between LoRA rank r and alpha? How do you set them?</strong><br>
+    <em>Rank r controls the dimensionality of the low-rank adaptation — higher r means more trainable parameters and more expressive adaptation. Alpha (α) is a scaling factor: the LoRA output is multiplied by α/r before being added to the frozen weight output. If α = r (the default in many implementations), the scaling is 1.0 — the adapter output is added at full weight. If α = 2r, the adapter output is doubled. In practice: set r to match your dataset size and task complexity (r=16 is a reliable default). Set α = r (scaling 1.0) or α = 2r (scaling 2.0 to increase adapter influence). Avoid very high α/r ratios (>4) as they can destabilise training. The most common stable configuration is r=16, α=32 — giving scaling 2.0, which slightly emphasises the adapter updates.</em></li>
+
+    <li><strong>When would you choose full fine-tuning over LoRA? Are there real cases where LoRA is not sufficient?</strong><br>
+    <em>LoRA is insufficient when: (1) Deep architectural change is needed — if the model needs to learn genuinely new capabilities not representable as a low-rank perturbation of existing weights; for example, adding new language support when the base was trained on almost no examples of that language. (2) The task requires modifying many layers simultaneously in highly correlated ways — for example, training a model to produce a completely new output format where every layer needs significant adjustment. (3) The model is small enough that full fine-tuning is feasible — for models under 1B parameters, full fine-tuning fits on a consumer GPU and provides full expressiveness. (4) Research requires measuring the full fine-tuning upper bound — for ablation studies comparing PEFT methods against the theoretically optimal baseline. In practice, for instruction following, domain adaptation, and style alignment on models of 7B+ parameters, LoRA/QLoRA provides sufficient quality in 95%+ of cases and full fine-tuning is rarely justified given the cost differential.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>📄 <a href="https://arxiv.org/abs/2106.09685" target="_blank" rel="noopener">LoRA: Low-Rank Adaptation of Large Language Models — Hu et al. (2021)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The foundational paper. Section 4 (low-rank update) is the key contribution. Table 2 comparing LoRA to full fine-tune on GPT-3 shows the quality–efficiency tradeoff that convinced the field.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/2305.14314" target="_blank" rel="noopener">QLoRA: Efficient Finetuning of Quantized LLMs — Dettmers et al. (2023)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The QLoRA paper. NF4 derivation in Section 3.1 is the most technically interesting part. The Guanaco models trained on a single A100 in 24 hours showed the community what was now possible.</em></p>
+  <p>🔗 <a href="https://huggingface.co/docs/peft/index" target="_blank" rel="noopener">HuggingFace PEFT — Official Docs</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">Reference implementation. The LoRA and QLoRA quickstart guides are the fastest path to a working fine-tune. The conceptual guides section explains each PEFT method clearly.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/2312.12148" target="_blank" rel="noopener">DoRA: Weight-Decomposed Low-Rank Adaptation</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The next step after LoRA — decomposes weight updates into magnitude and direction. Better quality at same rank in many experiments. Increasingly used in production fine-tuning workflows.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=dA-NhCtrrVE" target="_blank" rel="noopener">Fine-tuning LLMs with PEFT and LoRA — Weights &amp; Biases (2023)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 45 min · Complete end-to-end walkthrough with experiment tracking. Shows the practical decisions — hyperparameter sweeps, choosing rank, evaluating outputs — that papers don't cover.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#FineTuning</span><span class="tag">#LoRA</span><span class="tag">#QLoRA</span><span class="tag">#PEFT</span><span class="tag">#NF4</span><span class="tag">#Quantization</span><span class="tag">#LLaMA</span><span class="tag">#HuggingFace</span><span class="tag">#LLM</span><span class="tag">#TransferLearning</span><span class="tag">#NLP</span><span class="tag">#DeepLearning</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="tokenization-deep-dive.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 27</span>
+    <span class="post-nav-title">Tokenization Deep Dive</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
