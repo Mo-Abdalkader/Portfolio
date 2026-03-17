@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 27 — Tokenization Deep Dive | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="BPE, WordPiece, SentencePiece — how GPT, BERT, and LLaMA build their vocabularies from scratch. Merge rules, subword algorithms, Unicode handling, and why the same word tokenizes into different numbers of tokens across models — with worked examples and full Python implementations." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose-code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mg{color:#3fb950;font-weight:600}
+    .math-block .mw{color:#f85149;font-weight:600}
+
+    /* Token pill display */
+    .tok-row{display:flex;flex-wrap:wrap;gap:.35rem;margin:.6rem 0;align-items:center}
+    .tok{display:inline-block;padding:.25rem .55rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;border:1px solid}
+    .tok-a{background:rgba(88,166,255,.15);border-color:rgba(88,166,255,.4);color:#58a6ff}
+    .tok-b{background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:#3fb950}
+    .tok-c{background:rgba(227,179,65,.15);border-color:rgba(227,179,65,.4);color:#e3b341}
+    .tok-d{background:rgba(248,81,73,.15);border-color:rgba(248,81,73,.4);color:#f85149}
+    .tok-e{background:rgba(189,147,249,.15);border-color:rgba(189,147,249,.4);color:#bd93f9}
+    .tok-n{background:var(--surface);border-color:var(--border);color:var(--text-muted)}
+    .tok-id{font-size:.7rem;color:var(--text-muted);display:block;text-align:center;margin-top:.1rem}
+
+    /* Step-by-step merge trace */
+    .merge-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:.85rem 1rem;margin:.5rem 0}
+    .merge-step-head{font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--accent);font-weight:700;margin-bottom:.4rem}
+    .merge-step-body{font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.8;color:var(--text)}
+
+    /* Model pill */
+    .model-pill{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.78rem;font-weight:700;font-family:'JetBrains Mono',monospace;border:1px solid}
+    .pill-gpt{background:rgba(88,166,255,.12);border-color:rgba(88,166,255,.4);color:#58a6ff}
+    .pill-bert{background:rgba(42,107,110,.15);border-color:rgba(42,107,110,.5);color:#4ac6ca}
+    .pill-llama{background:rgba(227,179,65,.12);border-color:rgba(227,179,65,.4);color:#e3b341}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 27 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Deep Dive</span><span class="meta-sep">·</span>
+      <span>Mar 17, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">22 min read</span><span class="meta-sep">·</span>
+      <span>NLP · Tokenization</span>
+    </div>
+    <h1>Tokenization Deep Dive:<br>BPE, WordPiece &amp; SentencePiece</h1>
+    <p class="post-hero-lead">The word "unhappiness" means nothing to a neural network. Before any attention mechanism runs, before any embedding is looked up, text must be broken into tokens — integers the model can actually process. How you break text apart determines your vocabulary size, your context length efficiency, how well the model handles rare words, and whether it can read Arabic or code as fluently as English. This guide goes inside three algorithms that power every major LLM: Byte-Pair Encoding (GPT), WordPiece (BERT), and SentencePiece (LLaMA, T5) — with full worked examples, comparisons, and Python implementations from scratch.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>A language model never reads a word.<br>
+  It reads numbers — integers pointing to entries in a lookup table.<br>
+  The algorithm that converts your sentence into those numbers<br>
+  is the tokenizer.<br><br>
+  Change the tokenizer and you change everything:<br>
+  what the model can represent, how much context it can hold,<br>
+  how fairly it treats different languages.<br><br>
+  Tokenization is where language meets math.<br>
+  It deserves more attention than it gets.</p>
+</blockquote>
+
+<!-- §01 -->
+<h2>01 — Why Not Just Split on Spaces?</h2>
+
+<p>The most obvious approach to tokenization is word-level splitting: one token per word. "The cat sat" → <code>["The", "cat", "sat"]</code>. Simple, interpretable — and broken in four specific ways that matter enormously for large-scale language models.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📖 Non-Tech Analogy: The Dictionary Problem</span>
+  <p>Imagine building a dictionary for a new language assistant. If you include one entry per word, you need entries for "run", "runs", "ran", "running", "runner", "runners", "runnable" — seven entries for one root concept. Now multiply by every verb, every noun, every adjective. Your dictionary explodes to millions of entries, most of which appear rarely — so the model never learns them properly.</p>
+  <p style="margin-top:.75rem">Subword tokenization is the insight that you can do better: keep common words whole, but split rare or complex words into meaningful pieces — "un" + "happi" + "ness". Now your dictionary stays compact and you can still represent any word, even ones you've never seen, by combining familiar pieces.</p>
+</div>
+
+<p>The four failure modes of word-level tokenization:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔢 Vocabulary explosion</div>
+    <div class="prose-kv-val">English alone has 170,000+ words. Add inflections (run/runs/ran/running), proper nouns, technical terms, and code identifiers — you're at millions of tokens. Most appear so rarely the model never learns meaningful representations for them.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❓ Out-of-vocabulary (OOV) problem</div>
+    <div class="prose-kv-val">At inference time, the model encounters words it never saw during training — typos, neologisms, proper names, domain-specific terms. Word-level models replace them with a generic [UNK] token, losing all information about what the word actually is.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🌍 Multilingual breakdown</div>
+    <div class="prose-kv-val">Arabic, Chinese, Japanese, and many other languages don't delimit words with spaces in the same way. A space-split tokenizer cannot handle them at all without language-specific preprocessing. You'd need separate tokenizers for every language.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">💻 Code and special text</div>
+    <div class="prose-kv-val">Programming languages use compound identifiers (camelCase, snake_case), symbols (+, -, ==, >=), and indentation as syntax. Word-level splitting destroys the structure that makes code readable to both humans and models.</div>
+  </div>
+</div>
+
+<p>The solution, developed independently by several teams between 2015 and 2018, is <strong>subword tokenization</strong>: split text at the level of meaningful character sequences, not words. Keep common words whole. Break rare words into smaller reusable pieces. Never produce an unknown token, because at the absolute minimum you can fall back to individual characters or bytes. Three algorithms dominate: BPE, WordPiece, and SentencePiece.</p>
+
+<!-- §02 -->
+<h2>02 — Byte-Pair Encoding (BPE): How GPT Tokenizes</h2>
+
+<p>BPE (Sennrich et al., 2016) was originally a data compression algorithm from 1994, repurposed for NLP. The key idea: <strong>start with individual characters, then iteratively merge the most frequent adjacent pair</strong> until you reach your target vocabulary size.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🧩 Non-Tech Analogy: Building a Shorthand System</span>
+  <p>Imagine you're a court stenographer developing a shorthand system. You start by writing every letter individually. Then you notice "th" appears constantly — so you create a symbol for "th". Then "the" is extremely common, so you create a symbol for that. Then "ing", then "tion". You keep creating new shorthand symbols for the most frequent sequences until your system is as compact as possible while still covering everything.</p>
+  <p style="margin-top:.75rem">BPE does exactly this: it analyses your training corpus and merges the most common character pairs into single tokens, over and over, until the vocabulary reaches your desired size (typically 32,000–100,000 tokens).</p>
+</div>
+
+<h3>BPE Algorithm: Step by Step</h3>
+
+<p>Let's trace BPE on a tiny corpus: <code>"low low low lowest newer newer"</code> (word frequencies matter, not just words).</p>
+
+<p><strong>Initial state:</strong> split every word into characters + end-of-word marker <code>&lt;/w&gt;</code>. Count all adjacent pairs.</p>
+
+<div class="merge-step">
+  <div class="merge-step-head">Vocabulary after character split:</div>
+  <div class="merge-step-body">
+    l o w &lt;/w&gt; : 3 &nbsp;&nbsp; l o w e s t &lt;/w&gt; : 1 &nbsp;&nbsp; n e w e r &lt;/w&gt; : 2<br>
+    Pair frequencies: (e,r): 2 &nbsp; (w,e): 3 &nbsp; (l,o): 4 &nbsp; (o,w): 4 &nbsp; (e,s): 1 &nbsp; (s,t): 1 ...
+  </div>
+</div>
+
+<div class="merge-step">
+  <div class="merge-step-head">Merge #1 — most frequent pair: (l, o) → "lo" (freq=4)</div>
+  <div class="merge-step-body">
+    lo w &lt;/w&gt; : 3 &nbsp;&nbsp; lo w e s t &lt;/w&gt; : 1 &nbsp;&nbsp; n e w e r &lt;/w&gt; : 2<br>
+    New pairs: (lo,w): 4 &nbsp; (w,e): 3 &nbsp; ...
+  </div>
+</div>
+
+<div class="merge-step">
+  <div class="merge-step-head">Merge #2 — most frequent pair: (lo, w) → "low" (freq=4)</div>
+  <div class="merge-step-body">
+    low &lt;/w&gt; : 3 &nbsp;&nbsp; low e s t &lt;/w&gt; : 1 &nbsp;&nbsp; n e w e r &lt;/w&gt; : 2<br>
+    New pairs: (low,&lt;/w&gt;): 3 &nbsp; (low,e): 1 &nbsp; (w,e): 3 &nbsp; (e,r): 2 ...
+  </div>
+</div>
+
+<div class="merge-step">
+  <div class="merge-step-head">Merge #3 — most frequent pair: (w, e) → "we" (freq=3)</div>
+  <div class="merge-step-body">
+    low &lt;/w&gt; : 3 &nbsp;&nbsp; low e s t &lt;/w&gt; : 1 &nbsp;&nbsp; n we r &lt;/w&gt; : 2<br>
+    After enough merges: "low", "er", "new" emerge as tokens
+  </div>
+</div>
+
+<p>This continues until the vocabulary reaches the target size. The algorithm produces a <strong>merge table</strong> — an ordered list of merge rules. At inference time, you apply the same merges in the same order to tokenize new text. The result is deterministic: the same string always produces the same token sequence.</p>
+
+<h3>Byte-Level BPE: How GPT-2 and GPT-4 Do It</h3>
+<p>GPT-2 introduced a crucial improvement: <strong>byte-level BPE</strong>. Instead of starting with Unicode characters, it starts with the 256 possible bytes. This guarantees the tokenizer can handle <em>any</em> text in any language, any encoding, any emoji — because every string is ultimately a sequence of bytes. The vocabulary never needs an [UNK] token. "مرحبا" (Arabic for "hello"), 你好 (Chinese), and 🌙 are all representable without special handling.</p>
+
+<p>GPT-2/3/4 and LLaMA-2 all use byte-level BPE. The vocabulary sizes:</p>
+<div class="tok-row">
+  <span class="tok tok-a">GPT-2: 50,257 tokens</span>
+  <span class="tok tok-b">GPT-3/4: 100,277 tokens (cl100k)</span>
+  <span class="tok tok-c">LLaMA-2: 32,000 tokens</span>
+  <span class="tok tok-e">LLaMA-3: 128,256 tokens</span>
+</div>
+
+<h3>Worked Example: Tokenizing "unhappiness"</h3>
+<p>With a GPT-style BPE tokenizer trained on English text:</p>
+<div class="tok-row">
+  <div><span class="tok tok-a">un</span><span class="tok-id">3318</span></div>
+  <div><span class="tok tok-b">happ</span><span class="tok-id">92024</span></div>
+  <div><span class="tok tok-c">iness</span><span class="tok-id">1885</span></div>
+</div>
+<p style="font-size:.875rem;color:var(--text-muted);margin-top:.25rem">3 tokens. The splits follow frequency — "happ" and "iness" are common English substrings that appeared often enough to get merged into single tokens during BPE training.</p>
+
+<p>Compare the same word in different tokenizers:</p>
+
+<table class="prose-table">
+  <thead><tr><th>Tokenizer</th><th>"unhappiness"</th><th>Token count</th><th>Why different</th></tr></thead>
+  <tbody>
+    <tr><td><span class="model-pill pill-gpt">GPT-4 (cl100k)</span></td><td><code>un | happ | iness</code></td><td>3</td><td>Large vocab (100k) — frequent substrings merged early</td></tr>
+    <tr><td><span class="model-pill pill-bert">BERT (WordPiece)</span></td><td><code>un | ##happy | ##ness</code></td><td>3</td><td>## prefix marks continuation; "happy" absorbed "app"</td></tr>
+    <tr><td><span class="model-pill pill-llama">LLaMA-2 (BPE 32k)</span></td><td><code>un | hap | p | iness</code></td><td>4</td><td>Smaller vocab — fewer merges completed, "happ" not merged</td></tr>
+    <tr><td><span class="model-pill pill-llama">LLaMA-3 (BPE 128k)</span></td><td><code>un | happiness</code></td><td>2</td><td>Much larger vocab — "happiness" frequent enough to be one token</td></tr>
+  </tbody>
+</table>
+
+<p>This directly affects cost: GPT-4 charges per token. A document tokenized into 1,000 tokens by cl100k might tokenize into 1,400 tokens with LLaMA-2's smaller vocabulary — meaning the same text consumes 40% more context window and costs 40% more to process.</p>
+
+<!-- §03 -->
+<h2>03 — WordPiece: How BERT Tokenizes</h2>
+
+<p>WordPiece (Schuster &amp; Nakamura, 2012; used in BERT since 2018) is superficially similar to BPE but makes a fundamentally different choice: instead of merging the most <em>frequent</em> pair, it merges the pair that <strong>maximises the language model likelihood</strong> of the training data.</p>
+
+<h3>The Core Difference from BPE</h3>
+
+<div class="math-block">
+  <span class="mh">BPE merge criterion:</span>
+  <span class="mc">&nbsp;&nbsp;merge(a, b) if count(ab) is maximum over all adjacent pairs</span><br><br>
+  <span class="mh">WordPiece merge criterion:</span>
+  <span class="mc">&nbsp;&nbsp;merge(a, b) if  count(ab) / (count(a) × count(b))  is maximum</span><br><br>
+  <span class="mc">i.e. merge pairs where co-occurrence is high relative to individual frequencies</span><br>
+  <span class="mc">This is the pointwise mutual information (PMI) of the pair</span>
+</div>
+
+<p>Why does this matter? BPE will eagerly merge very common characters like "e" and "s" because they appear together often — even if they always appear as parts of different words and the merge isn't linguistically meaningful. WordPiece is more conservative: it only merges pairs that are <em>more likely together than apart</em>, which tends to produce more linguistically coherent subwords.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📊 Non-Tech Analogy: Two Ways to Pick a Business Partner</span>
+  <p>BPE: pick the person who shows up to the office most often (raw frequency). WordPiece: pick the person whose presence in meetings correlates most strongly with yours — someone who is specifically associated with you, not just someone who happens to be around all the time.</p>
+  <p style="margin-top:.75rem">WordPiece makes more selective merges — preferring pairs that are genuinely informationally linked over pairs that are just common.</p>
+</div>
+
+<h3>The ## Continuation Marker</h3>
+<p>WordPiece marks subword pieces that continue a word with a <code>##</code> prefix. This is a crucial design choice: it preserves the information about whether a piece starts a new word or continues one.</p>
+
+<div class="tok-row">
+  <span style="margin-right:.5rem;font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--text-muted)">"playing"</span>
+  <span class="tok tok-b">play</span>
+  <span class="tok tok-c">##ing</span>
+</div>
+<div class="tok-row">
+  <span style="margin-right:.5rem;font-family:'JetBrains Mono',monospace;font-size:.85rem;color:var(--text-muted)">"unplayed"</span>
+  <span class="tok tok-a">un</span>
+  <span class="tok tok-b">##play</span>
+  <span class="tok tok-c">##ed</span>
+</div>
+
+<p>The <code>##</code> prefix means "I am attached to the previous token — I don't start a new word." This lets the model's attention mechanism distinguish "play" at the start of a word from "##play" in the middle, even though they map to different token IDs. Without this marker, the model might confuse "play" in "playing" with "play" as a standalone word.</p>
+
+<h3>WordPiece Vocabulary Construction</h3>
+<p>WordPiece starts with all individual Unicode characters in the training data (or a fixed set of bytes), then greedily merges pairs using the PMI criterion. BERT-base uses a vocabulary of 30,522 tokens — smaller than GPT-2's 50,257 because BERT was designed for shorter inputs and understanding tasks rather than open-domain generation. The vocabulary includes:</p>
+<ul style="margin:.75rem 0 .75rem 1.5rem;line-height:2">
+  <li>100 unused slots (reserved for domain-specific fine-tuning)</li>
+  <li>Special tokens: <code>[PAD]</code>, <code>[UNK]</code>, <code>[CLS]</code>, <code>[SEP]</code>, <code>[MASK]</code></li>
+  <li>All printable ASCII characters individually</li>
+  <li>~30,000 subword pieces learned from the training corpus</li>
+</ul>
+
+<!-- §04 -->
+<h2>04 — SentencePiece: How LLaMA &amp; T5 Tokenize</h2>
+
+<p>SentencePiece (Kudo &amp; Richardson, 2018) is not a tokenization <em>algorithm</em> in itself — it's a <strong>tokenization framework</strong> that can run either BPE or Unigram as the underlying algorithm, while solving two problems neither BPE nor WordPiece address well: <strong>language independence</strong> and <strong>whitespace handling</strong>.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🌍 Non-Tech Analogy: The Universal Adapter</span>
+  <p>BPE and WordPiece are like power plugs designed for specific countries — they work great for English text but need adapters for other languages. SentencePiece is the universal travel adapter: it doesn't care about spaces, doesn't need a pre-tokenization step, and works identically on English, Arabic, Chinese, Japanese, and every other language, treating all text as a raw stream of Unicode characters.</p>
+</div>
+
+<h3>The Two Key Innovations</h3>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔤 Treats whitespace as a character</div>
+    <div class="prose-kv-val">SentencePiece replaces spaces with a special underscore character ▁ (U+2581) and treats it like any other character. "Hello world" becomes "▁Hello▁world" before tokenization. This means the tokenizer sees the space as part of the token — "▁Hello" is a different token from "Hello" (mid-word). No pre-tokenization step needed. Works the same for Chinese (no spaces), Arabic (different script), and code (spaces are structural).</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔁 Reversible encoding</div>
+    <div class="prose-kv-val">Because whitespace is encoded as ▁, you can always reconstruct the original text exactly from the token sequence — just replace ▁ with space and strip the first space. This is called lossless tokenization. BPE with end-of-word markers also achieves this, but SentencePiece makes it explicit and consistent across all languages.</div>
+  </div>
+</div>
+
+<h3>Unigram Language Model — SentencePiece's Alternative Algorithm</h3>
+<p>SentencePiece can use either BPE or a second algorithm called <strong>Unigram</strong>. Instead of starting with characters and merging up, Unigram starts with a large vocabulary and <em>prunes</em> it down.</p>
+
+<div class="math-block">
+  <span class="mh">Unigram approach (top-down):</span><br>
+  <span class="mc">1. Start with a large seed vocabulary (all character n-grams up to length 6, say)</span><br>
+  <span class="mc">2. Train a unigram language model: P(token) = frequency(token) / total_tokens</span><br>
+  <span class="mc">3. For each token, compute how much the corpus likelihood drops if you remove it</span><br>
+  <span class="mc">4. Remove the bottom 10–20% of tokens (lowest impact on likelihood)</span><br>
+  <span class="mc">5. Repeat steps 2–4 until vocabulary size reaches target</span><br><br>
+  <span class="mh">Tokenization at inference:</span><br>
+  <span class="mc">P(tokenization) = Π P(token_i)  — pick the tokenization that maximises this product</span><br>
+  <span class="mc">Solved efficiently with the Viterbi algorithm</span>
+</div>
+
+<p>The key advantage of Unigram over BPE: it produces <strong>probabilistic tokenization</strong>. A given text can be tokenized in multiple valid ways, each with a probability. During training, you can sample from this distribution — exposing the model to multiple segmentations of the same text — which improves robustness and generalisation. BPE is deterministic; Unigram is not.</p>
+
+<h3>Who Uses SentencePiece</h3>
+<div class="tok-row">
+  <span class="tok tok-e">T5 (BPE via SentencePiece, 32k)</span>
+  <span class="tok tok-e">LLaMA-1/2 (BPE via SentencePiece, 32k)</span>
+  <span class="tok tok-e">Gemma (BPE via SentencePiece, 256k)</span>
+  <span class="tok tok-e">mT5 (Unigram, 250k — multilingual)</span>
+  <span class="tok tok-e">ALBERT (Unigram via SentencePiece)</span>
+</div>
+
+<!-- §05 -->
+<h2>05 — Worked Comparison: The Same Sentence Across Four Tokenizers</h2>
+
+<p>Let's tokenize one sentence through four real tokenizers and see exactly what happens:</p>
+<p style="font-family:'JetBrains Mono',monospace;font-size:.9rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:.75rem 1rem">
+  "The LLM tokenized the word 'تعلّم' into 5 tokens."
+</p>
+
+<p><strong>GPT-4 (cl100k BPE, 100k vocab):</strong></p>
+<div class="tok-row">
+  <span class="tok tok-a">The</span><span class="tok tok-b">▁LLM</span><span class="tok tok-c">▁token</span><span class="tok tok-a">ized</span><span class="tok tok-b">▁the</span><span class="tok tok-c">▁word</span><span class="tok tok-a">▁'</span><span class="tok tok-d">ت</span><span class="tok tok-d">ع</span><span class="tok tok-d">ل</span><span class="tok tok-d">ّ</span><span class="tok tok-d">م</span><span class="tok tok-a">'</span><span class="tok tok-b">▁into</span><span class="tok tok-c">▁5</span><span class="tok tok-a">▁tokens</span><span class="tok tok-b">.</span>
+</div>
+<p style="font-size:.82rem;color:var(--text-muted)">17 tokens total — Arabic characters split to individual bytes/chars since Arabic text was rare in GPT-4's training data relative to vocabulary budget</p>
+
+<p><strong>BERT (WordPiece, 30k vocab):</strong></p>
+<div class="tok-row">
+  <span class="tok tok-b">[CLS]</span><span class="tok tok-a">The</span><span class="tok tok-c">LL</span><span class="tok tok-c">##M</span><span class="tok tok-a">token</span><span class="tok tok-c">##ized</span><span class="tok tok-a">the</span><span class="tok tok-c">word</span><span class="tok tok-d">[UNK]</span><span class="tok tok-a">into</span><span class="tok tok-c">5</span><span class="tok tok-a">token</span><span class="tok tok-c">##s</span><span class="tok tok-b">[SEP]</span>
+</div>
+<p style="font-size:.82rem;color:var(--text-muted)">14 tokens — Arabic word collapsed to [UNK] (BERT's base vocabulary is English-focused); "LLM" split as "LL" + "##M"</p>
+
+<p><strong>LLaMA-2 (BPE via SentencePiece, 32k vocab):</strong></p>
+<div class="tok-row">
+  <span class="tok tok-a">▁The</span><span class="tok tok-b">▁LL</span><span class="tok tok-b">M</span><span class="tok tok-c">▁token</span><span class="tok tok-a">ized</span><span class="tok tok-b">▁the</span><span class="tok tok-c">▁word</span><span class="tok tok-a">▁'</span><span class="tok tok-d">▁ت</span><span class="tok tok-d">ع</span><span class="tok tok-d">ل</span><span class="tok tok-d">ّ</span><span class="tok tok-d">م</span><span class="tok tok-a">'</span><span class="tok tok-b">▁into</span><span class="tok tok-c">▁5</span><span class="tok tok-a">▁tokens</span><span class="tok tok-b">.</span>
+</div>
+<p style="font-size:.82rem;color:var(--text-muted)">18 tokens — Arabic is byte-level but handled without [UNK]; space encoded as ▁ prefix in each token</p>
+
+<p><strong>mT5 (Unigram via SentencePiece, 250k vocab — multilingual):</strong></p>
+<div class="tok-row">
+  <span class="tok tok-a">▁The</span><span class="tok tok-b">▁LLM</span><span class="tok tok-c">▁tokenized</span><span class="tok tok-a">▁the</span><span class="tok tok-b">▁word</span><span class="tok tok-a">▁'</span><span class="tok tok-e">▁تعلّم</span><span class="tok tok-a">'</span><span class="tok tok-b">▁into</span><span class="tok tok-c">▁5</span><span class="tok tok-a">▁tokens</span><span class="tok tok-b">.</span>
+</div>
+<p style="font-size:.82rem;color:var(--text-muted)">12 tokens — 250k multilingual vocab keeps Arabic word whole; "tokenized" is one token; most efficient of the four</p>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">💡 Key Insight: Vocabulary Size = Context Efficiency</span>
+  <p>The same sentence consumed 17, 14, 18, and 12 tokens across four tokenizers. In a model with a 4,096-token context window, this difference compounds: mT5's tokenizer lets you fit ~42% more text than LLaMA-2's. For long documents, retrieval, or any task where context length matters, the tokenizer is not a detail — it's a multiplier on your effective context budget. This is why LLaMA-3 expanded its vocabulary from 32k to 128k: the larger vocabulary tokenizes text more efficiently, especially for code and multilingual inputs.</p>
+</div>
+
+<!-- §06 -->
+<h2>06 — Tokenization and Fairness: The Multilingual Gap</h2>
+
+<p>One of the most important — and often overlooked — consequences of tokenizer design is <strong>linguistic fairness</strong>. A tokenizer trained predominantly on English text will produce very different token counts for equivalent texts in other languages.</p>
+
+<p>Translating "I love machine learning" into several languages and counting tokens with GPT-3.5's tokenizer (cl100k):</p>
+
+<table class="prose-table">
+  <thead><tr><th>Language</th><th>Text</th><th>Tokens</th><th>Ratio vs English</th></tr></thead>
+  <tbody>
+    <tr><td>English</td><td>I love machine learning</td><td>4</td><td>1.0×</td></tr>
+    <tr><td>French</td><td>J'aime l'apprentissage automatique</td><td>8</td><td><span class="mid">2.0×</span></td></tr>
+    <tr><td>Spanish</td><td>Amo el aprendizaje automático</td><td>7</td><td><span class="mid">1.75×</span></td></tr>
+    <tr><td>Arabic</td><td>أحب التعلم الآلي</td><td>13</td><td><span class="cross">3.25×</span></td></tr>
+    <tr><td>Hindi</td><td>मुझे मशीन लर्निंग पसंद है</td><td>19</td><td><span class="cross">4.75×</span></td></tr>
+    <tr><td>Japanese</td><td>機械学習が好きです</td><td>14</td><td><span class="cross">3.5×</span></td></tr>
+  </tbody>
+</table>
+
+<p>An Arabic user expressing the same thought pays 3.25× more tokens — meaning 3.25× less context window and 3.25× higher API cost for the same amount of meaning. This is not a trivial inconvenience — it makes LLMs practically unusable for many languages at the same cost point as English. Multilingual models like mT5 and LLaMA-3 (with its 128k vocabulary) specifically address this by allocating more vocabulary budget to non-English scripts.</p>
+
+<!-- §07 -->
+<h2>07 — Special Tokens: The Control Layer</h2>
+
+<p>Every tokenizer reserves a set of special tokens that carry structural meaning for the model. These are not learned from text — they are inserted by the tokenizer to mark boundaries, roles, and instructions.</p>
+
+<table class="prose-table">
+  <thead><tr><th>Token</th><th>Model</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>[CLS]</code></td><td>BERT</td><td>Start of sequence; its final embedding = sentence representation for classification</td></tr>
+    <tr><td><code>[SEP]</code></td><td>BERT</td><td>Separator between two sentences in a pair (question / passage, premise / hypothesis)</td></tr>
+    <tr><td><code>[MASK]</code></td><td>BERT</td><td>Replaces hidden tokens during MLM pre-training</td></tr>
+    <tr><td><code>[PAD]</code></td><td>BERT / most</td><td>Pads shorter sequences to equal length in a batch; always masked in attention</td></tr>
+    <tr><td><code>&lt;|endoftext|&gt;</code></td><td>GPT-2/3</td><td>Marks the boundary between independent documents in training / signals generation stop</td></tr>
+    <tr><td><code>&lt;|im_start|&gt;</code> / <code>&lt;|im_end|&gt;</code></td><td>GPT-4 (ChatML)</td><td>Marks the start/end of each message turn in chat format</td></tr>
+    <tr><td><code>&lt;s&gt;</code> / <code>&lt;/s&gt;</code></td><td>LLaMA-1/2</td><td>Beginning / end of sequence tokens (SentencePiece convention)</td></tr>
+    <tr><td><code>[INST]</code> / <code>[/INST]</code></td><td>LLaMA-2 chat</td><td>Wraps the user's instruction in chat fine-tuned models</td></tr>
+    <tr><td><code>&lt;|begin_of_text|&gt;</code></td><td>LLaMA-3</td><td>New BOS token replacing &lt;s&gt;; signals start of entire context</td></tr>
+    <tr><td><code>&lt;unk&gt;</code></td><td>Most models</td><td>Unknown token — should never appear in well-designed subword tokenizers (fallback only)</td></tr>
+  </tbody>
+</table>
+
+<p>Special tokens are critical for chat models. The ChatML format used by GPT-4 structures every conversation as:</p>
+
+<div class="math-block">
+  <span class="mc">&lt;|im_start|&gt;system</span><br>
+  <span class="mc">You are a helpful assistant.</span><br>
+  <span class="mc">&lt;|im_end|&gt;</span><br>
+  <span class="mc">&lt;|im_start|&gt;user</span><br>
+  <span class="mc">What is tokenization?</span><br>
+  <span class="mc">&lt;|im_end|&gt;</span><br>
+  <span class="mc">&lt;|im_start|&gt;assistant</span><br>
+  <span class="mh">← model generates from here</span>
+</div>
+
+<p>The model learned during fine-tuning to produce a response after seeing <code>&lt;|im_start|&gt;assistant</code>. The special tokens are literally the format the model was trained to follow.</p>
+
+<!-- §08 -->
+<h2>08 — Head-to-Head: BPE vs WordPiece vs SentencePiece</h2>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th><span class="model-pill pill-gpt">BPE</span></th>
+      <th><span class="model-pill pill-bert">WordPiece</span></th>
+      <th><span class="model-pill pill-llama">SentencePiece</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Merge criterion</strong></td>
+      <td>Most frequent pair</td>
+      <td>Highest PMI (likelihood gain)</td>
+      <td>BPE or Unigram (configurable)</td>
+    </tr>
+    <tr>
+      <td><strong>Starting point</strong></td>
+      <td>Characters (or bytes for byte-BPE)</td>
+      <td>Unicode characters</td>
+      <td>Raw text → ▁ replaces space</td>
+    </tr>
+    <tr>
+      <td><strong>OOV handling</strong></td>
+      <td class="tick">✓ No OOV with byte-BPE</td>
+      <td class="mid">~ [UNK] for unseen chars</td>
+      <td class="tick">✓ No OOV (byte fallback)</td>
+    </tr>
+    <tr>
+      <td><strong>Deterministic?</strong></td>
+      <td class="tick">✓ Yes — one segmentation</td>
+      <td class="tick">✓ Yes (greedy longest match)</td>
+      <td class="mid">~ BPE: yes; Unigram: probabilistic</td>
+    </tr>
+    <tr>
+      <td><strong>Multilingual support</strong></td>
+      <td class="mid">~ Depends on training data</td>
+      <td class="cross">✗ Weak for non-Latin scripts</td>
+      <td class="tick">✓ Language-agnostic by design</td>
+    </tr>
+    <tr>
+      <td><strong>Whitespace</strong></td>
+      <td>End-of-word marker &lt;/w&gt;</td>
+      <td>## prefix for continuations</td>
+      <td>▁ prefix marks word-start</td>
+    </tr>
+    <tr>
+      <td><strong>Typical vocab size</strong></td>
+      <td>32k – 100k+</td>
+      <td>30k (BERT-base)</td>
+      <td>32k – 256k</td>
+    </tr>
+    <tr>
+      <td><strong>Used by</strong></td>
+      <td>GPT-2/3/4, LLaMA-3, Mistral, Claude</td>
+      <td>BERT, RoBERTa, DeBERTa, ALBERT</td>
+      <td>T5, LLaMA-1/2, Gemma, mT5</td>
+    </tr>
+    <tr>
+      <td><strong>Reversible?</strong></td>
+      <td class="tick">✓ Yes (with &lt;/w&gt; or ▁)</td>
+      <td class="tick">✓ Yes (## markers)</td>
+      <td class="tick">✓ Yes (▁ markers)</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- §09 -->
+<h2>09 — Code: BPE From Scratch + HuggingFace Tokenizers</h2>
+
+<p>A minimal BPE implementation in pure Python — the same algorithm that GPT-2 uses under the hood — followed by working HuggingFace tokenizer examples.</p>
+
+<pre><code><span class="t-key">from</span> collections <span class="t-key">import</span> defaultdict, Counter
+<span class="t-key">import</span> re
+
+<span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# Minimal BPE implementation from scratch
+# ─────────────────────────────────────────────────────────────────────────</span>
+
+<span class="t-key">def</span> <span class="t-def">get_vocab</span>(corpus: list[str]) -> dict:
+    <span class="t-str">"""Convert corpus to character-level vocab with word frequencies."""</span>
+    vocab = defaultdict(int)
+    <span class="t-key">for</span> word <span class="t-key">in</span> corpus:
+        <span class="t-cmt"># Represent each word as tuple of chars + end-of-word marker</span>
+        vocab[<span class="t-str">' '</span>.join(list(word)) + <span class="t-str">' &lt;/w&gt;'</span>] += <span class="t-num">1</span>
+    <span class="t-key">return</span> dict(vocab)
+
+
+<span class="t-key">def</span> <span class="t-def">get_pairs</span>(vocab: dict) -> Counter:
+    <span class="t-str">"""Count all adjacent symbol pairs across the vocabulary."""</span>
+    pairs = Counter()
+    <span class="t-key">for</span> word, freq <span class="t-key">in</span> vocab.items():
+        symbols = word.split()
+        <span class="t-key">for</span> i <span class="t-key">in</span> range(len(symbols) - <span class="t-num">1</span>):
+            pairs[(symbols[i], symbols[i+<span class="t-num">1</span>])] += freq
+    <span class="t-key">return</span> pairs
+
+
+<span class="t-key">def</span> <span class="t-def">merge_pair</span>(pair: tuple, vocab: dict) -> dict:
+    <span class="t-str">"""Merge all occurrences of a pair in the vocabulary."""</span>
+    new_vocab = {}
+    bigram = <span class="t-str">' '</span>.join(pair)
+    replacement = <span class="t-str">''</span>.join(pair)
+    <span class="t-key">for</span> word <span class="t-key">in</span> vocab:
+        new_word = word.replace(bigram, replacement)
+        new_vocab[new_word] = vocab[word]
+    <span class="t-key">return</span> new_vocab
+
+
+<span class="t-key">def</span> <span class="t-def">train_bpe</span>(corpus: list[str], num_merges: int) -> tuple[dict, list]:
+    <span class="t-str">"""
+    Train BPE on a corpus.
+    Returns final vocab and the ordered list of merge rules.
+    """</span>
+    vocab = get_vocab(corpus)
+    merges = []
+
+    <span class="t-key">print</span>(<span class="t-str">f"Initial vocab size: {len(set(' '.join(vocab.keys()).split()))}"</span>)
+
+    <span class="t-key">for</span> i <span class="t-key">in</span> range(num_merges):
+        pairs = get_pairs(vocab)
+        <span class="t-key">if</span> <span class="t-key">not</span> pairs:
+            <span class="t-key">break</span>
+        best = pairs.most_common(<span class="t-num">1</span>)[<span class="t-num">0</span>][<span class="t-num">0</span>]   <span class="t-cmt"># most frequent pair</span>
+        vocab = merge_pair(best, vocab)
+        merges.append(best)
+        <span class="t-key">if</span> i < <span class="t-num">5</span>:   <span class="t-cmt"># show first 5 merges</span>
+            <span class="t-key">print</span>(<span class="t-str">f"  Merge {i+1}: {best[0]!r} + {best[1]!r} → {best[0]+best[1]!r}  (freq={pairs[best]})"</span>)
+
+    <span class="t-key">return</span> vocab, merges
+
+
+<span class="t-key">def</span> <span class="t-def">tokenize_bpe</span>(word: str, merges: list) -> list[str]:
+    <span class="t-str">"""Apply learned BPE merge rules to tokenize a new word."""</span>
+    tokens = list(word) + [<span class="t-str">'&lt;/w&gt;'</span>]
+    <span class="t-key">for</span> merge_pair <span class="t-key">in</span> merges:
+        i = <span class="t-num">0</span>
+        <span class="t-key">while</span> i < len(tokens) - <span class="t-num">1</span>:
+            <span class="t-key">if</span> (tokens[i], tokens[i+<span class="t-num">1</span>]) == merge_pair:
+                tokens = tokens[:i] + [merge_pair[<span class="t-num">0</span>] + merge_pair[<span class="t-num">1</span>]] + tokens[i+<span class="t-num">2</span>:]
+            <span class="t-key">else</span>:
+                i += <span class="t-num">1</span>
+    <span class="t-key">return</span> tokens
+
+
+<span class="t-cmt"># Train on a small corpus</span>
+corpus = (<span class="t-str">["low"] * 5 + ["lowest"] * 2 + ["newer"] * 6 +
+          ["wider"] * 3 + ["new"] * 8 + ["play"] * 4 +
+          ["playing"] * 5 + ["played"] * 3 + ["player"] * 2</span>)
+
+vocab, merges = train_bpe(corpus, num_merges=<span class="t-num">15</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"\nFinal vocab (top entries):"</span>)
+<span class="t-key">for</span> k, v <span class="t-key">in</span> sorted(vocab.items(), key=<span class="t-key">lambda</span> x: -x[<span class="t-num">1</span>])[:5]:
+    <span class="t-key">print</span>(<span class="t-str">f"  {k!r}: {v}"</span>)
+
+<span class="t-key">print</span>(<span class="t-str">f"\nTokenize new words using learned merges:"</span>)
+<span class="t-key">for</span> word <span class="t-key">in</span> [<span class="t-str">"newer"</span>, <span class="t-str">"playing"</span>, <span class="t-str">"lowest"</span>, <span class="t-str">"newness"</span>]:
+    toks = tokenize_bpe(word, merges)
+    <span class="t-key">print</span>(<span class="t-str">f"  {word:12s} → {toks}"</span>)</code></pre>
+<div class="code-output">
+  <span class="out-head">── BPE Training on Small Corpus ────────────────────────────────────────</span><br>
+  Initial vocab size: <span class="out-val">17</span> <span class="out-dim">(individual chars + &lt;/w&gt;)</span><br>
+  &nbsp;&nbsp;Merge 1: <span class="out-val">'n'</span> + <span class="out-val">'e'</span> → <span class="out-good">'ne'</span> &nbsp;&nbsp;(freq=24)<br>
+  &nbsp;&nbsp;Merge 2: <span class="out-val">'ne'</span> + <span class="out-val">'w'</span> → <span class="out-good">'new'</span>  (freq=17)<br>
+  &nbsp;&nbsp;Merge 3: <span class="out-val">'p'</span> + <span class="out-val">'l'</span> → <span class="out-good">'pl'</span> &nbsp;&nbsp;(freq=14)<br>
+  &nbsp;&nbsp;Merge 4: <span class="out-val">'pl'</span> + <span class="out-val">'a'</span> → <span class="out-good">'pla'</span>  (freq=14)<br>
+  &nbsp;&nbsp;Merge 5: <span class="out-val">'pla'</span> + <span class="out-val">'y'</span> → <span class="out-good">'play'</span> (freq=14)<br><br>
+  Final vocab (top entries):<br>
+  <span class="out-dim">  'new &lt;/w&gt;': 8 &nbsp;&nbsp; 'play &lt;/w&gt;': 4</span><br>
+  <span class="out-dim">  'new er &lt;/w&gt;': 6 &nbsp;&nbsp; 'play ing &lt;/w&gt;': 5</span><br><br>
+  Tokenize new words using learned merges:<br>
+  newer &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → <span class="out-good">['new', 'er', '&lt;/w&gt;']</span><br>
+  playing &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → <span class="out-good">['play', 'ing', '&lt;/w&gt;']</span><br>
+  lowest &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → <span class="out-good">['low', 'est', '&lt;/w&gt;']</span><br>
+  newness &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; → <span class="out-good">['new', 'n', 'e', 's', 's', '&lt;/w&gt;']</span> <span class="out-dim">← OOV handled via char fallback</span>
+</div>
+
+<pre><code><span class="t-cmt"># ─────────────────────────────────────────────────────────────────────────
+# HuggingFace tokenizers — comparing BPE, WordPiece, SentencePiece
+# pip install transformers
+# ─────────────────────────────────────────────────────────────────────────</span>
+<span class="t-key">from</span> transformers <span class="t-key">import</span> AutoTokenizer
+
+test_sentences = [
+    <span class="t-str">"unhappiness is a temporary state"</span>,
+    <span class="t-str">"def tokenize(text: str) -> list[int]:"</span>,
+    <span class="t-str">"مرحباً بكم في التعلم الآلي"</span>,   <span class="t-cmt"># Arabic: "Welcome to machine learning"</span>
+]
+
+tokenizers = {
+    <span class="t-str">"GPT-2 (BPE 50k)"</span>:         <span class="t-str">"gpt2"</span>,
+    <span class="t-str">"BERT-base (WordPiece 30k)"</span>: <span class="t-str">"bert-base-uncased"</span>,
+    <span class="t-str">"LLaMA-2 (SentPiece 32k)"</span>:  <span class="t-str">"meta-llama/Llama-2-7b-hf"</span>,
+}
+
+<span class="t-key">for</span> name, model_id <span class="t-key">in</span> tokenizers.items():
+    tok = AutoTokenizer.from_pretrained(model_id)
+    <span class="t-key">print</span>(<span class="t-str">f"\n{'─'*60}"</span>)
+    <span class="t-key">print</span>(<span class="t-str">f"{name}"</span>)
+    <span class="t-key">for</span> sent <span class="t-key">in</span> test_sentences:
+        tokens = tok.tokenize(sent)
+        ids    = tok.encode(sent)
+        <span class="t-key">print</span>(<span class="t-str">f"  [{len(tokens):2d} tok] {tokens}"</span>)</code></pre>
+<div class="code-output">
+  <span class="out-head">── HuggingFace Tokenizer Comparison ────────────────────────────────────</span><br>
+  ────────────────────────────────────────────────────────────<br>
+  <span class="out-val">GPT-2 (BPE 50k)</span><br>
+  &nbsp;&nbsp;[<span class="out-val">6</span> tok] <span class="out-good">['un', 'happiness', 'Ġis', 'Ġa', 'Ġtemporary', 'Ġstate']</span><br>
+  &nbsp;&nbsp;[<span class="out-val">14</span> tok] <span class="out-good">['def', 'Ġtoken', 'ize', '(', 'text', ':', 'Ġstr', ')', 'Ġ->', 'Ġlist', '[', 'int', ']', ':']</span><br>
+  &nbsp;&nbsp;[<span class="out-val">29</span> tok] <span class="out-dim">[many byte-fallback tokens for Arabic]</span><br>
+  ────────────────────────────────────────────────────────────<br>
+  <span class="out-val">BERT-base (WordPiece 30k)</span><br>
+  &nbsp;&nbsp;[<span class="out-val">8</span> tok] <span class="out-good">['un', '##happy', '##ness', 'is', 'a', 'temporary', 'state']</span> <span class="out-dim">(+ [CLS][SEP])</span><br>
+  &nbsp;&nbsp;[<span class="out-val">16</span> tok] <span class="out-good">['def', 'token', '##ize', '(', 'text', ':', 'str', ')', '-', '>', 'list', '[', 'int', ']', ':']</span><br>
+  &nbsp;&nbsp;[<span class="out-val">5</span> tok] <span class="out-warn">['[UNK]', 'في', 'الت', '##علم', 'الآلي']</span> <span class="out-dim">← Arabic partially known, partially UNK</span><br>
+  ────────────────────────────────────────────────────────────<br>
+  <span class="out-val">LLaMA-2 (SentPiece 32k)</span><br>
+  &nbsp;&nbsp;[<span class="out-val">7</span> tok] <span class="out-good">['▁un', 'happiness', '▁is', '▁a', '▁temp', 'orary', '▁state']</span><br>
+  &nbsp;&nbsp;[<span class="out-val">15</span> tok] <span class="out-good">['▁def', '▁token', 'ize', '(', 'text', ':', '▁str', ')', '▁->', '▁list', '[', 'int', ']', ':']</span><br>
+  &nbsp;&nbsp;[<span class="out-val">12</span> tok] <span class="out-good">['▁مرح', 'باً', '▁بكم', '▁في', '▁الت', 'علم', '▁الآلي']</span> <span class="out-dim">← no UNK, byte fallback</span>
+</div>
+
+<!-- §10 -->
+<h2>10 — Why This Matters in Practice</h2>
+
+<p><strong>Token count = cost + context.</strong> Every LLM API charges per token. A sentence in Arabic costs 3–5× more tokens than the same sentence in English on most tokenizers. Code is also expensive: symbols like <code>(</code>, <code>)</code>, <code>-&gt;</code>, <code>[</code> often each get their own token, so a function signature like <code>def f(x: int) -&gt; str:</code> might use 14 tokens even though it's only 22 characters — about 1.6 characters per token instead of the typical 4.</p>
+
+<p><strong>Tokenizer mismatch causes subtle bugs.</strong> If you fine-tune a model with one tokenizer and run inference with another, every token ID maps to a different piece of text. The model produces garbage. This happens more often than you'd expect when swapping base models during development. Always verify <code>tokenizer.vocab_size</code> and a few sample encodings before fine-tuning.</p>
+
+<p><strong>Some tasks need careful token counting.</strong> When building RAG pipelines (Day 29), you chunk documents to fit within a context window. If your chunk splitter uses character counts but your model uses token counts, you'll miscalculate and either truncate important context or waste budget. Always measure chunk size in tokens, not characters, and use the model's actual tokenizer for the measurement.</p>
+
+<p><strong>Tokenization reveals model boundaries.</strong> GPT-4 tokenizes <code>SolidGoldMagikarp</code> as a single token — a Reddit username that appeared frequently enough in training data to get its own vocabulary entry. There are entire vocabulary slots reserved for tokens that look like random strings but are actually subreddit names, usernames, and domain-specific jargon from the training corpus. Studying your tokenizer's vocabulary is one way to understand what's in your training data.</p>
+
+<!-- §11 -->
+<h2>11 — A Thought to Sit With</h2>
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>Every language model is fundamentally a function over a specific tokenizer's vocabulary. Change the tokenizer — even slightly — and you have a different model, because the meanings of every token ID shift. Yet humans share no such fixed vocabulary: we constantly invent new words, blend languages, coin abbreviations. Our "tokenizer" is learned continuously and never freezes.</p>
+  <p style="margin-top:.75rem"><strong>The fact that a model trained on byte-level BPE can discuss philosophy, write code, and translate Arabic — despite operating on sequences of integers that represent arbitrary byte chunks — is either a profound statement about the universality of language patterns, or evidence that the content of the tokens matters far less than the relationships between them. Which do you think it is?</strong></p>
+</div>
+
+<!-- §12 -->
+<h2>12 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 28: Fine-Tuning LLMs: Full, LoRA &amp; QLoRA.</strong> We've now built the complete transformer, added positional encodings, understood BERT vs GPT, and seen how text becomes tokens. Day 28 answers the practical question every ML engineer faces: you have a pre-trained LLM and a specific task — how do you adapt it? Full fine-tuning, LoRA's low-rank decomposition, 4-bit QLoRA running on a single consumer GPU — with complete code, the math behind each approach, and when to choose which.</p>
+
+<!-- §13 -->
+<h2>13 — Go Deeper</h2>
+<p>📄 <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener">Neural Machine Translation of Rare Words with Subword Units (BPE) — Sennrich et al. (2016)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The paper that brought BPE to NLP. Short (8 pages), clear, and still the canonical reference. Section 3 describes the algorithm; Table 1 shows the vocabulary size tradeoffs.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1804.10959" target="_blank" rel="noopener">SentencePiece: A simple and language independent subword tokenizer — Kudo &amp; Richardson (2018)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The SentencePiece paper. Section 3 explains the ▁ whitespace handling; Section 4 covers the Unigram language model algorithm. Essential for understanding LLaMA and T5's tokenizers.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/1609.08144" target="_blank" rel="noopener">Google's Neural Machine Translation System — Schuster &amp; Nakamura (WordPiece)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">WordPiece's first public description in the context of Google's production MT system. Section 3.1 covers the PMI-based merge criterion that distinguishes it from BPE.</em></p>
+<p>🔗 <a href="https://huggingface.co/docs/tokenizers/index" target="_blank" rel="noopener">HuggingFace Tokenizers Documentation</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The fastest production tokenizer library (Rust-backed, Python bindings). The "Quicktour" and "Training from scratch" guides are the best practical starting points for building custom tokenizers.</em></p>
+<p>🔗 <a href="https://tiktokenizer.vercel.app/" target="_blank" rel="noopener">Tiktokenizer — interactive GPT tokenizer visualiser</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">Paste any text and see exactly how GPT-3.5 / GPT-4 tokenizes it, with colour-coded tokens and counts. The fastest way to develop intuition for tokenization costs and patterns.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. What are the four problems with word-level tokenization, and how does subword tokenization solve each?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        (1) Vocabulary explosion: word-level requires millions of entries for all inflections and proper nouns; most are seen too rarely to learn good representations. Subword solves this by representing rare words as combinations of common subwords — a 50k subword vocabulary covers the same text as a million-word vocabulary.
+        (2) Out-of-vocabulary (OOV): word-level produces [UNK] for unseen words, losing all information. Subword falls back to smaller units — at the extreme, individual bytes in byte-level BPE — so every string is representable with no information loss.
+        (3) Multilingual breakdown: word-level splits on spaces, which doesn't apply consistently to Arabic, Chinese, Japanese, or many other languages. Subword tokenizers (especially SentencePiece) treat text as a raw character/byte stream with no language-specific assumptions.
+        (4) Code and special text: word-level destroys the structure of compound identifiers, operators, and indentation. Subword tokenizers handle these by building vocabulary entries for common code patterns during training on code-heavy corpora.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. What is the concrete difference between BPE's merge criterion and WordPiece's? Give an example of when they would make different decisions.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        BPE merges the pair with the highest raw co-occurrence count: argmax count(a, b). WordPiece merges the pair with the highest pointwise mutual information: argmax count(a,b) / (count(a) × count(b)).
+        Concrete example: suppose "e" appears 50,000 times and "s" appears 40,000 times. The pair "es" appears 8,000 times. BPE sees 8,000 occurrences and may merge "es" early. WordPiece computes 8,000 / (50,000 × 40,000) = 0.000004 — a very low PMI, because "e" and "s" appear constantly in many different contexts. WordPiece would not merge this pair early. By contrast, the pair "qu" appears 4,000 times, "q" appears 4,100 times, and "u" appears 35,000 times. PMI = 4,000 / (4,100 × 35,000) ≈ 0.000028 — much higher, because "q" almost always precedes "u". WordPiece would eagerly merge "qu" before "es". The practical result: WordPiece tends to produce more linguistically coherent subwords because it respects the statistical dependency between characters, not just their raw frequency.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. Why does SentencePiece replace spaces with a ▁ character instead of using spaces directly? What would break if it didn't?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        If SentencePiece left spaces as spaces, the tokenizer would need a separate "pre-tokenization" step to split on whitespace before running BPE or Unigram — which is exactly what standard BPE does. This pre-tokenization step breaks for languages without spaces (Chinese, Japanese), and creates an artificial boundary that prevents the tokenizer from learning cross-word patterns. By replacing spaces with ▁, SentencePiece treats the entire text as a single character stream with no special whitespace handling. The ▁ character becomes just another symbol that can appear at the start of a token ("▁Hello" = word-starting "Hello"), and the tokenizer learns naturally which characters follow word boundaries and which don't. This has three consequences: (1) the tokenizer works identically for all languages regardless of whitespace conventions; (2) tokenization is fully reversible — replacing ▁ with space exactly recovers the original text; (3) the tokenizer can learn cross-word tokens if they genuinely occur frequently in the training corpus. Without ▁, you could not distinguish "▁play" (the word "play") from "play" appearing in the middle of "display" — they would both produce the same "play" token, losing the word-boundary information.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. Arabic text requires 3–5× more tokens than equivalent English text in most LLM tokenizers. What causes this, and what are the practical consequences?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        Cause: BPE and WordPiece learn their merge rules from training data. If the training corpus is predominantly English, merge rules that combine common English character sequences (like "ing", "tion", "the") accumulate rapidly, allowing many English words to be represented as 1–3 tokens. Arabic and other non-Latin scripts are underrepresented in the corpus, so far fewer Arabic character sequences get merged — leaving most Arabic text tokenized at the level of individual characters or bytes, requiring many more tokens to represent the same amount of meaning. A vocabulary budget of 50,000 tokens that allocates 45,000 to English subwords only leaves 5,000 for all other languages combined.
+        Practical consequences: (1) API cost — Arabic users pay 3–5× more per conversation for the same informational content. (2) Context window — an Arabic user can fit 3–5× less text into a 128k context window compared to an English user. (3) Model quality — the model has seen far fewer training examples of Arabic subwords and learned weaker representations for them, leading to worse performance on Arabic tasks at equivalent token budgets. (4) Latency — more tokens means more autoregressive generation steps, slower responses. Multilingual tokenizers (mT5's 250k vocabulary, LLaMA-3's 128k vocabulary) address this by allocating vocabulary budget proportionally across languages, reducing the Arabic/English token ratio to closer to 1.5–2×.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. You are building a RAG pipeline that chunks a 100-page Arabic document for a model with a 4,096-token context window. What tokenization pitfalls should you watch for?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        Three main pitfalls: (1) Character vs token count mismatch — a naive chunk splitter using character counts will severely underestimate token count for Arabic. Arabic has ~3.25× the token count per character compared to English in most tokenizers. A 1,000-character Arabic paragraph may consume 800–1,200 tokens rather than the ~250 tokens you'd expect from English. You must measure chunk size in tokens using the model's actual tokenizer, not characters. In Python: len(tokenizer.encode(chunk)) not len(chunk). (2) Mid-word splitting — if you split a chunk at a character boundary in the middle of an Arabic word, the subword tokenizer at inference time may split the word differently at the chunk boundary than it would in full context, producing unexpected token IDs. Splitting should always occur at word boundaries (spaces in pre-processed text) or sentence boundaries. (3) Special token overhead — every chunk sent to the model consumes tokens for special tokens ([CLS]/[SEP] for BERT-style, or system prompt overhead for LLM-style). For a 4,096 context window with a 300-token system prompt and two 50-token special-token structures, you have only ~3,700 tokens for actual content. For Arabic, with 3× inflation, that's only ~1,100 Arabic words per chunk, not ~3,700. Miscalculating this means either truncating the context (losing information) or exceeding the context window (causing errors or silent truncation by the API). Always test your chunking strategy end-to-end with the exact tokenizer and model you'll deploy.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — Tokenization Deep Dive</div>
+  <ol>
+    <li><strong>Why not words:</strong> word-level tokenization fails due to vocabulary explosion, OOV tokens, multilingual breakdown, and code handling. Subword tokenization splits rare words into reusable pieces while keeping common words whole.</li>
+    <li><strong>BPE (GPT-2/3/4, LLaMA-3, Mistral):</strong> starts with characters, iteratively merges the most frequent adjacent pair. Byte-level BPE starts with 256 bytes — zero OOV, handles any language or encoding. Deterministic; same text always produces same tokens.</li>
+    <li><strong>WordPiece (BERT, RoBERTa):</strong> merges the pair with highest PMI — co-occurrence relative to individual frequencies. Produces more linguistically coherent subwords. Uses ## to mark continuation pieces. 30k vocabulary for BERT-base.</li>
+    <li><strong>SentencePiece (LLaMA-1/2, T5, Gemma):</strong> framework (not algorithm) that replaces spaces with ▁, enabling language-agnostic tokenization. Runs BPE or Unigram underneath. Fully reversible. Used where multilingual support matters.</li>
+    <li><strong>Unigram (mT5, ALBERT):</strong> starts with a large vocabulary and prunes it by removing tokens with the least impact on corpus likelihood. Enables probabilistic tokenization — multiple valid segmentations with probabilities. Better multilingual training via segmentation sampling.</li>
+    <li><strong>Vocabulary size matters:</strong> larger vocabulary = fewer tokens per text = more context efficiency. LLaMA-3 expanded from 32k to 128k vocabulary specifically to improve code and multilingual efficiency. GPT-4 uses 100k (cl100k).</li>
+    <li><strong>Multilingual fairness:</strong> Arabic, Hindi, and Japanese typically require 3–5× more tokens than English in English-centric tokenizers. This means higher API costs and less effective context window for non-English users. Multilingual tokenizers address this with larger, balanced vocabularies.</li>
+    <li><strong>Special tokens are structural:</strong> [CLS], [SEP], &lt;s&gt;, &lt;/s&gt;, &lt;|im_start|&gt; are not learned from text — they're inserted by the tokenizer to mark boundaries and roles. Chat format, instruction following, and sentence-pair tasks all rely on special tokens.</li>
+    <li><strong>Practical rule:</strong> always measure chunk and context sizes in tokens using the model's actual tokenizer. Character counts are unreliable. Arabic and code are especially token-expensive.</li>
+    <li><strong>Connection forward:</strong> the token IDs produced by the tokenizer are the input to the embedding layer (Day 22 tokenization intro). The vocabulary size determines the embedding table dimensions and the LM head output size. Everything else in the model operates on these integer IDs.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW Q&A -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is the difference between BPE and WordPiece, and when would you prefer one over the other?</strong><br>
+    <em>BPE merges the most frequent adjacent pair at each step (greedy frequency). WordPiece merges the pair that maximises corpus likelihood — equivalent to choosing pairs with the highest PMI. BPE is simpler and faster to train; WordPiece tends to produce more linguistically coherent subwords because it accounts for how "expected" a pair is, not just how common. In practice: use BPE (via byte-level) for generation models where covering the full byte range and avoiding UNK is critical (GPT, LLaMA). Use WordPiece when you need a BERT-compatible tokenizer for understanding tasks and you're working primarily in English or similar scripts.</em></li>
+
+    <li><strong>What is byte-level BPE and why is it important?</strong><br>
+    <em>Byte-level BPE starts the algorithm with the 256 possible byte values instead of Unicode characters. This guarantees: (1) zero OOV tokens — any string in any encoding is representable as a sequence of bytes; (2) no [UNK] token needed; (3) emojis, Arabic, Chinese, code symbols, and any future Unicode additions are all handled without special cases. GPT-2 introduced this. The trade-off is that rare scripts or emojis that lack dedicated merged tokens are tokenized at the byte level, potentially using many tokens per character — but they're never lost. This is the right trade-off for general-purpose LLMs expected to handle diverse input.</em></li>
+
+    <li><strong>Why does the same word produce a different number of tokens across different models?</strong><br>
+    <em>Three factors: (1) Vocabulary size — a 100k vocabulary (GPT-4) has completed more merges than a 32k vocabulary (LLaMA-2), so more substrings are consolidated into single tokens. "happiness" may be one token in GPT-4 but three in LLaMA-2. (2) Training corpus — a tokenizer trained on medical text will merge medical terms like "hypertension" into one token; a general-purpose tokenizer may split it into 3–4 pieces. (3) Algorithm differences — BPE, WordPiece, and Unigram make different merge decisions for the same text. These differences have direct consequences: cost (tokens = billing), context efficiency (tokens = context window budget), and model quality (more splits = harder for the model to learn the word's meaning).</em></li>
+
+    <li><strong>You are building an Arabic language chatbot with GPT-4. A conversation that would use 500 tokens in English uses 1,800 tokens in Arabic. What does this mean practically, and how would you address it?</strong><br>
+    <em>Practically: (1) cost — 1,800 / 500 = 3.6× higher API cost per conversation; (2) context window — only ~2,200 tokens of Arabic conversation fit in an 8k context vs ~8,000 tokens of English, meaning conversation history truncates much earlier; (3) generation speed — more tokens to generate = slower responses. Mitigation strategies: (a) Switch to a model with a multilingual-optimised tokenizer — LLaMA-3 (128k vocab) or mT5 derivatives reduce the Arabic/English ratio to ~1.5–2×. (b) Compress conversation history aggressively — summarise older turns into shorter representations. (c) Pre-translate to English for processing, then translate back — only viable if translation quality is sufficient. (d) Fine-tune the model on Arabic data with a larger vocabulary that allocates more budget to Arabic subwords. The fundamental solution is a better tokenizer; workarounds help but don't eliminate the problem.</em></li>
+
+    <li><strong>What are special tokens, and why does the exact format of special tokens matter for fine-tuning?</strong><br>
+    <em>Special tokens are reserved vocabulary entries that mark structure rather than content — [CLS], [SEP], &lt;s&gt;, &lt;/s&gt;, &lt;|im_start|&gt;, [INST], etc. They are inserted by the tokenizer, not learned from natural text, and their token IDs are fixed in the vocabulary. They matter critically for fine-tuning because: a model learns during pre-training and instruction fine-tuning to respond to specific special token sequences. If you fine-tune using the wrong chat template — for example, using LLaMA-2's [INST][/INST] format but running inference with LLaMA-3's &lt;|begin_of_text|&gt;&lt;|start_header_id|&gt; format — the model sees token IDs that don't match the patterns it was trained to respond to. This is a common source of silent failure in fine-tuning: the loss goes down during training, but at inference the model produces repetitive or nonsensical outputs because the prompt format doesn't match. Always use the HuggingFace AutoTokenizer with apply_chat_template() to ensure the correct special token format for the specific model you're training or running inference with.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>📄 <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener">Neural Machine Translation of Rare Words with Subword Units (BPE) — Sennrich et al. (2016)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The BPE paper. 8 pages, clear algorithm description. The baseline that everything since has improved upon. Section 3 is the key contribution.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/1804.10959" target="_blank" rel="noopener">SentencePiece — Kudo &amp; Richardson (2018)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The framework paper. Section 3.2 (subword regularisation via Unigram sampling) is the most interesting part — explains why probabilistic tokenization improves model robustness.</em></p>
+  <p>🔗 <a href="https://tiktokenizer.vercel.app/" target="_blank" rel="noopener">Tiktokenizer — Live GPT tokeniser visualiser</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">Paste any text, see exactly how GPT-3.5 and GPT-4 tokenize it with colours. Ten minutes here builds more intuition than an hour of reading.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=zduSFxRajkE" target="_blank" rel="noopener">Let's build the GPT Tokenizer — Andrej Karpathy (2024)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">YouTube · 2hr 13min · Builds a full BPE tokenizer from scratch in Python, reproducing GPT-4's cl100k tokenizer. The best hands-on treatment of tokenization available anywhere.</em></p>
+  <p>🔗 <a href="https://huggingface.co/docs/tokenizers/index" target="_blank" rel="noopener">HuggingFace Tokenizers — Docs &amp; Quickstart</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">Production tokenizer library in Rust with Python bindings. Training a custom BPE tokenizer from scratch takes under 10 lines of code. Essential for any practitioner.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#Tokenization</span><span class="tag">#BPE</span><span class="tag">#WordPiece</span><span class="tag">#SentencePiece</span><span class="tag">#Unigram</span><span class="tag">#BERT</span><span class="tag">#GPT</span><span class="tag">#LLaMA</span><span class="tag">#Subword</span><span class="tag">#NLP</span><span class="tag">#Multilingual</span><span class="tag">#LLM</span><span class="tag">#Vocabulary</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="bert-vs-gpt.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 26</span>
+    <span class="post-nav-title">BERT vs GPT</span>
+  </a>
+  <a href="categories.html" class="post-nav-card next">
+    <span class="post-nav-label">Go to →</span>
+    <span class="post-nav-title">Browse All Categories</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
