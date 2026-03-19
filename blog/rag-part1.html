@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Day 29 — RAG: Retrieval-Augmented Generation | 31-Day AI Ramadan Series</title>
+  <meta name="description" content="RAG explained simply — what it is, why it exists, and how the full pipeline works: ingest, chunk, embed, store, retrieve, generate. With plain-English analogies, a complete working code example, and a comparison with fine-tuning." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-6JXJJ6Y1ZC');</script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    [data-theme="light"] .post-hero{background:linear-gradient(180deg,#f0ebe0 0%,#f5f3ed 100%);border-bottom:1px solid #ddd5c4}
+    [data-theme="light"] .post-hero h1{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .post-hero-lead{color:#5a5248}
+    [data-theme="light"] .post-article{background:#f7f3ec}
+    [data-theme="light"] .prose{color:#2e2b25}
+    [data-theme="light"] .prose h2{font-family:'Playfair Display',serif;color:#0f0e0c;border-top-color:#ddd5c4}
+    [data-theme="light"] .prose h3{font-family:'Playfair Display',serif;color:#0f0e0c}
+    [data-theme="light"] .prose strong{color:#0f0e0c}
+    [data-theme="light"] .prose blockquote{background:#ede8dc;border-left-color:#c8a94b;border-radius:0 var(--radius-md) var(--radius-md) 0}
+    [data-theme="light"] .prose blockquote p{font-family:'Playfair Display',serif;font-style:italic;color:#0f0e0c}
+    [data-theme="light"] .prose-callout{background:#ede8dc;border-color:#c0b89c}
+    [data-theme="light"] .prose-callout.accent{background:#d4eaeb;border-color:#9fcccf}
+    [data-theme="light"] .prose-callout.gold{background:#f0ebe0;border-color:#c8a94b}
+    [data-theme="light"] .prose-callout.warn{background:#fdf3e0;border-color:#e3a833}
+    [data-theme="light"] .prose-kv{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .prose-kv-val{color:#0f0e0c}
+    [data-theme="light"] .prose code{background:#ede8dc;border-color:#c0b89c;color:#2a6b6e}
+    [data-theme="light"] .prose pre{background:#1b1a17;border-color:#2e2b24}
+    [data-theme="light"] .prose pre code{background:none;border:none;color:#d4cfc6}
+    [data-theme="light"] .post-footer-nav{border-top-color:#ddd5c4;background:#f7f3ec}
+    [data-theme="light"] .post-nav-card{background:#f0ebe0;border-color:#ddd5c4}
+    [data-theme="light"] .post-nav-card:hover{background:#ede8dc;border-color:#c8a94b}
+    [data-theme="light"] .post-series-badge{background:rgba(200,169,75,0.12);border-color:rgba(200,169,75,0.35);color:#7a5c10}
+    [data-theme="light"] .reading-progress{background:linear-gradient(90deg,#c8a94b,#2a6b6e)}
+    [data-theme="light"] .tag{background:#ede8dc;border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .post-hero-actions .btn-ghost:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .copy-link-btn{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .copy-link-btn:hover{background:#ede8dc;color:#0f0e0c}
+    [data-theme="light"] .post-nav-label{color:#7a7062}
+    [data-theme="light"] .post-nav-title{color:#0f0e0c}
+    [data-theme="light"] .category-pill{background:rgba(42,107,110,0.1);border-color:rgba(42,107,110,0.3);color:#1a4547}
+    [data-theme="light"] .prose-callout-label{color:#7a7062}
+    [data-theme="light"] .footer{background:#ede8dc;border-top-color:#ddd5c4}
+    [data-theme="light"] .footer-nav a,[data-theme="light"] .footer-tagline,[data-theme="light"] .footer-copy,[data-theme="light"] .footer-built{color:#5a5248}
+    [data-theme="light"] .social-link{border-color:#c0b89c;color:#5a5248}
+    [data-theme="light"] .social-link:hover{color:#2a6b6e;border-color:#2a6b6e;background:rgba(42,107,110,0.08)}
+
+    .code-output{background:#0d1117;border:1px solid #30363d;border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.6;color:#8b949e;overflow-x:auto}
+    .code-output .out-head{color:#58a6ff;font-weight:500}
+    .code-output .out-good{color:#3fb950}
+    .code-output .out-val{color:#e3b341}
+    .code-output .out-dim{color:#484f58}
+    .code-output .out-warn{color:#f85149}
+    pre{border-radius:var(--radius-md) var(--radius-md) 0 0 !important;margin-bottom:0 !important}
+    pre+.code-output+*{margin-top:1.5rem}
+    pre:not(:has(+.code-output)){border-radius:var(--radius-md) !important;margin-bottom:1.5rem !important}
+
+    .knowledge-check{margin-top:2.5rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .knowledge-check-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .knowledge-check-body{padding:1.2rem;display:flex;flex-direction:column;gap:1rem}
+    .quiz-item{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+    .quiz-question{padding:.85rem 1rem;font-size:.925rem;line-height:1.6;font-weight:500}
+    .quiz-reveal-btn{display:block;width:100%;text-align:left;padding:.6rem 1rem;background:var(--surface);border:none;border-top:1px solid var(--border);color:var(--accent);font-family:inherit;font-size:.85rem;cursor:pointer;transition:background .15s}
+    .quiz-reveal-btn:hover{background:var(--surface-hover,rgba(255,255,255,.04))}
+    .quiz-answer{padding:.85rem 1rem;background:var(--surface);border-top:1px solid var(--border);font-size:.9rem;line-height:1.7;color:var(--text-muted)}
+
+    .quick-recap{margin-top:2rem;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+    .quick-recap-header{background:var(--surface);padding:.9rem 1.2rem;font-weight:700;font-size:.95rem;border-bottom:1px solid var(--border)}
+    .quick-recap ol{margin:0;padding:1.2rem 1.2rem 1.2rem 2.2rem;display:flex;flex-direction:column;gap:.65rem}
+    .quick-recap ol li{font-size:.9rem;line-height:1.65}
+
+    .prose-table{width:100%;border-collapse:collapse;font-size:.9rem;margin:1.5rem 0}
+    .prose-table th{background:var(--surface);color:var(--text-muted);font-weight:600;text-align:left;padding:.65rem .85rem;border:1px solid var(--border);font-size:.8rem;letter-spacing:.05em;text-transform:uppercase}
+    .prose-table td{padding:.65rem .85rem;border:1px solid var(--border);vertical-align:top;line-height:1.55}
+    .prose-table tr:nth-child(even) td{background:var(--surface)}
+    .prose-table .tick{color:#3fb950;font-weight:700}
+    .prose-table .cross{color:#f85149;font-weight:700}
+    .prose-table .mid{color:#e3b341;font-weight:700}
+
+    .math-block{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent,#58a6ff);border-radius:var(--radius-md);padding:.9rem 1.2rem;font-family:'JetBrains Mono',monospace;font-size:.88rem;line-height:1.9;margin:1.25rem 0;overflow-x:auto}
+    .math-block .mh{color:#58a6ff;font-weight:600}
+    .math-block .mc{color:#484f58;font-size:.82rem}
+    .math-block .mg{color:#3fb950;font-weight:600}
+    .math-block .mw{color:#f85149;font-weight:600}
+
+    /* Pipeline flow */
+    .pipeline{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1.5rem 0}
+    .pipeline-step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:.65rem 1rem;font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;text-align:center;flex:1;min-width:90px}
+    .pipeline-step.active{border-color:var(--accent);color:var(--accent)}
+    .pipeline-arrow{color:var(--text-muted);font-size:1.1rem;flex-shrink:0}
+
+    /* Vector similarity visual */
+    .vec-vis{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:1.1rem 1.2rem;margin:1.25rem 0;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:2}
+    .vec-close{color:#3fb950;font-weight:700}
+    .vec-far{color:#f85149;font-weight:700}
+
+    /* Use-case card */
+    .usecase-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid #3fb950;border-radius:var(--radius-md);padding:1.2rem 1.4rem;margin:1.5rem 0}
+    .usecase-card h4{margin:0 0 .6rem;font-size:1rem;color:#3fb950}
+    .usecase-card p{margin:.35rem 0;font-size:.9rem;line-height:1.7}
+  </style>
+</head>
+<body class="blog-post-page">
+<div class="reading-progress" id="readingProgress"></div>
+
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content"><span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 31-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
+  <div class="eid-content"><p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p></div>
+  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html" class="nav-link">Home</a></li>
+      <li><a href="../projects.html" class="nav-link">Projects</a></li>
+      <li><a href="../blog.html" class="nav-link active">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html" class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html" class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html" class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<header class="post-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="post-hero-inner">
+    <div class="post-series-badge">🌙 31-Day AI Ramadan Series &nbsp;·&nbsp; Day 29 of 31</div>
+    <div class="post-hero-meta">
+      <span class="category-pill">Practical Guide</span><span class="meta-sep">·</span>
+      <span>Mar 19, 2026</span><span class="meta-sep">·</span>
+      <span id="readTimeCalc">22 min read</span><span class="meta-sep">·</span>
+      <span>RAG · LLMs</span>
+    </div>
+    <h1>RAG: Retrieval-Augmented<br>Generation Pipeline</h1>
+    <p class="post-hero-lead">A language model knows everything it was trained on — and nothing else. It can't read your company's documents. It doesn't know what happened last week. Ask it about your internal policy handbook and it will hallucinate a confident-sounding answer. RAG solves this by giving the model a reference library it can consult at any time. This guide explains every stage of the RAG pipeline — simply, clearly, with a real working example — and connects everything back to the word embeddings and similarity concepts from Day 23.</p>
+    <div class="post-hero-actions">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+      <a href="categories.html" class="btn btn-ghost btn-sm">☰ Categories</a>
+      <button class="copy-link-btn" onclick="copyPostLink(this)">⎘ Copy Link</button>
+    </div>
+  </div>
+</header>
+
+<article class="post-article">
+<div class="prose">
+
+<blockquote>
+  <p>You wouldn't expect a brilliant colleague to know the contents<br>
+  of a document they've never read.<br>
+  But you would expect them to read it quickly if you handed it to them,<br>
+  then answer your questions accurately based on what it says.<br><br>
+  RAG is how you hand documents to a language model.</p>
+</blockquote>
+
+<!-- §01 -->
+<h2>01 — The Problem RAG Solves</h2>
+
+<p>Every LLM has a knowledge cutoff — a date after which it knows nothing. GPT-4's cutoff is early 2024. LLaMA-3's is early 2024. Whatever happened after that date, whatever lives in your private documents, whatever is in your company's internal wiki — the model has never seen any of it. Ask about it and it will either say "I don't know" or, worse, invent something plausible-sounding that is completely wrong.</p>
+
+<p>The obvious solution is to put the relevant information in the prompt. If you want the model to answer questions about a specific document, just paste the document in. For a short document, this works fine. But what if you have 500 documents? Or 10,000? You can't paste them all in — most models have a context window of 8k–128k tokens, and even a moderate knowledge base blows past that immediately. And even if you could fit everything in, it would be incredibly slow and expensive to process the entire library on every single question.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📚 Non-Tech Analogy: The Research Assistant</span>
+  <p>Imagine you hire a research assistant who has read everything in the world but doesn't have access to your company's private files. You give them a question. Instead of asking them to memorise your entire file room, you have a filing system: you quickly locate the 3 most relevant files, hand them to the assistant, and they answer based on what those files say.</p>
+  <p style="margin-top:.75rem">RAG is that filing system. When a question comes in, you find the most relevant pieces of your knowledge base and hand them to the model. The model answers based on what you handed it — not based on what it vaguely remembers from training. It is grounded, accurate, and up to date.</p>
+</div>
+
+<p>RAG solves three problems at once:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">📅 Knowledge cutoff</div>
+    <div class="prose-kv-val">Your documents can be updated any time. The model doesn't need retraining — it just reads the new documents at query time. Tomorrow's news is automatically available tomorrow.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🔒 Private knowledge</div>
+    <div class="prose-kv-val">Your internal documentation never needs to leave your servers for training. The model reads it only when asked, and only the relevant pieces are shared.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">🎯 Hallucination reduction</div>
+    <div class="prose-kv-val">When the model is grounded in retrieved text, it has something concrete to cite and stay faithful to. "I don't know" becomes less likely; "Here's what the document says" becomes the default.</div>
+  </div>
+</div>
+
+<!-- §02 -->
+<h2>02 — The RAG Pipeline at a Glance</h2>
+
+<p>RAG has two distinct phases. The first happens once, offline, before any questions arrive. The second happens on every single query in real time.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">🏗️ Offline (done once): Build the knowledge base</span>
+  <p style="margin:.5rem 0 0">Load documents → Split into chunks → Convert to vectors → Store in vector database</p>
+</div>
+
+<div class="pipeline">
+  <div class="pipeline-step active">📄 Load</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">✂️ Chunk</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">🔢 Embed</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">🗄️ Store</div>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">⚡ Online (every query): Answer the question</span>
+  <p style="margin:.5rem 0 0">Embed question → Find similar chunks → Build prompt → Generate answer</p>
+</div>
+
+<div class="pipeline">
+  <div class="pipeline-step active">❓ Question</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">🔢 Embed</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">🔍 Retrieve</div>
+  <div class="pipeline-arrow">→</div>
+  <div class="pipeline-step active">✍️ Generate</div>
+</div>
+
+<p>That's the whole pipeline. Every RAG system — from a quick weekend project to a production enterprise search engine — follows this exact shape. The details differ; the structure doesn't.</p>
+
+<!-- §03 -->
+<h2>03 — Stage by Stage: What Each Component Does</h2>
+
+<h3>Stage 1 — Load: Getting Text Into the Pipeline</h3>
+<p>The first step is simply reading your documents. PDFs, Word files, web pages, Markdown files, database exports — everything needs to be converted to plain text before anything else can happen. Libraries like <strong>LangChain</strong> provide loaders for almost every format. <strong>PyMuPDF</strong> handles PDFs reliably. <strong>Unstructured</strong> extracts clean text from mixed-format documents including tables and headers.</p>
+
+<p>The goal of this stage is simple: <em>get the text out</em>. Clean it up — remove page headers, footers, duplicate whitespace — and you're ready for the next step.</p>
+
+<h3>Stage 2 — Chunk: Splitting Into Manageable Pieces</h3>
+
+<p>You cannot embed an entire document as a single unit. If a user asks about one specific policy in a 50-page handbook, you don't want to retrieve all 50 pages — you want to retrieve the 3 paragraphs that actually answer the question. Chunking splits your documents into smaller, self-contained pieces that can be individually retrieved.</p>
+
+<div class="prose-callout gold">
+  <span class="prose-callout-label">📰 Non-Tech Analogy: The Index Card System</span>
+  <p>Before digital search, researchers used index card systems. Instead of storing entire books on cards, they wrote one key idea per card — a sentence, a definition, a finding. When they needed to answer a question, they flipped through the cards to find the relevant ones, pulled those out, and worked from them.</p>
+  <p style="margin-top:.75rem">Chunks are index cards. Each one captures a coherent piece of information. The smaller the card, the more precisely you can match it to a specific question. The larger the card, the more context it carries but the less precise the match.</p>
+</div>
+
+<p>The most common approach is <strong>recursive character chunking</strong>: split at paragraph breaks first, then at sentence breaks, then at word breaks — only splitting smaller if the chunk still exceeds the target size. A typical chunk size for RAG is 300–500 tokens with a 50–100 token overlap between adjacent chunks, so that a sentence split across a boundary doesn't lose its context.</p>
+
+<h3>Stage 3 — Embed: Turning Text into Numbers</h3>
+
+<p>This is where Day 23 (Word Embeddings) comes back in full force. Once you have your chunks, you convert each one into a vector — a list of numbers that represents its meaning. The embedding model is trained so that <strong>similar text produces similar vectors</strong>. Two chunks that talk about "refund policy" will have vectors that point in nearly the same direction in the high-dimensional space, even if they use slightly different words.</p>
+
+<div class="vec-vis">
+  chunk: "Refunds are processed within 5 business days."<br>
+  vector: <span class="vec-close">[0.82, -0.14, 0.33, 0.61, ...]</span> (384 dimensions)<br><br>
+  chunk: "We issue refunds in under a week."<br>
+  vector: <span class="vec-close">[0.79, -0.11, 0.35, 0.58, ...]</span> ← <span class="vec-close">very close → high similarity</span><br><br>
+  chunk: "The quarterly revenue report is attached."<br>
+  vector: <span class="vec-far">[-0.21, 0.67, -0.43, 0.12, ...]</span> ← <span class="vec-far">very different → low similarity</span>
+</div>
+
+<p>Popular embedding models: <strong>BGE-M3</strong> and <strong>E5-large</strong> (open-source, excellent quality), <strong>Sentence-BERT</strong> (lightweight, fast), <strong>OpenAI text-embedding-3-small</strong> (cloud API, easy to use). All of these are BERT-style encoders — exactly the architecture from Day 26 — producing a fixed-size vector from the mean-pooled token outputs.</p>
+
+<h3>Stage 4 — Store: The Vector Database</h3>
+
+<p>The embeddings are stored in a <strong>vector database</strong> — a specialised database that is optimised for one specific operation: <em>given a query vector, find the stored vectors that are most similar to it</em>. This is called Approximate Nearest Neighbour (ANN) search, and it's what makes retrieval fast even across millions of chunks.</p>
+
+<table class="prose-table">
+  <thead><tr><th>Tool</th><th>Best for</th><th>Where it runs</th></tr></thead>
+  <tbody>
+    <tr><td><strong>FAISS</strong></td><td>Fast local search, research, no infra needed</td><td>In-memory / local file</td></tr>
+    <tr><td><strong>Chroma</strong></td><td>Prototyping, small projects, easy setup</td><td>Local or Docker</td></tr>
+    <tr><td><strong>Pinecone</strong></td><td>Production at scale, managed service</td><td>Cloud (managed)</td></tr>
+    <tr><td><strong>Weaviate</strong></td><td>Hybrid search (vectors + keyword), open-source</td><td>Self-hosted or cloud</td></tr>
+    <tr><td><strong>Qdrant</strong></td><td>Rust-backed, high performance, open-source</td><td>Self-hosted or cloud</td></tr>
+  </tbody>
+</table>
+
+<p>For a first project, FAISS or Chroma will take you further than you think. Move to a managed service like Pinecone only when you have millions of documents and need guaranteed uptime.</p>
+
+<h3>Stage 5 — Retrieve: Finding What's Relevant</h3>
+
+<p>When a question arrives, you embed it using the <em>same embedding model</em> used to embed the chunks. The resulting query vector is then compared to every stored chunk vector using <strong>cosine similarity</strong> — the same metric from Day 23. The chunks with the highest similarity scores are the most relevant ones and get retrieved.</p>
+
+<div class="math-block">
+  <span class="mh">cosine_similarity(query_vec, chunk_vec) = (query_vec · chunk_vec) / (|query_vec| × |chunk_vec|)</span><br><br>
+  <span class="mc">Result: a number between -1 and 1</span><br>
+  <span class="mc">1.0 = identical meaning &nbsp;&nbsp; 0.0 = unrelated &nbsp;&nbsp; -1.0 = opposite meaning</span><br><br>
+  <span class="mg">Top-k chunks (typically k=3 to 5) are selected and passed to the LLM</span>
+</div>
+
+<p>The beauty of this connection: it's the exact same vector similarity concept from Day 23, just applied at scale. "king − man + woman ≈ queen" used the same cosine distance to find the closest vector. Here, "What is the refund policy?" finds the chunk whose vector is closest to the query vector. Same math, same intuition, production use case.</p>
+
+<h3>Stage 6 — Generate: The Grounded Answer</h3>
+
+<p>The retrieved chunks are assembled into a prompt — along with the original question and a clear instruction to answer only based on the provided context. This prompt is sent to an LLM (GPT-4, LLaMA-3, Claude — whatever you're using) which generates the final answer.</p>
+
+<div class="math-block">
+  <span class="mc">Prompt structure:</span><br><br>
+  <span class="mh">You are a helpful assistant. Answer the question using ONLY</span><br>
+  <span class="mh">the provided context. If the answer is not in the context,</span><br>
+  <span class="mh">say "I don't have that information."</span><br><br>
+  <span class="mc">Context:</span><br>
+  <span class="mc">[Chunk 1: "Refunds are processed within 5 business days..."]</span><br>
+  <span class="mc">[Chunk 2: "To request a refund, contact support@company.com..."]</span><br>
+  <span class="mc">[Chunk 3: "Refunds are not available for digital downloads..."]</span><br><br>
+  <span class="mc">Question: How long do refunds take?</span><br><br>
+  <span class="mg">Answer: Based on our policy, refunds are processed within 5 business days.</span>
+</div>
+
+<!-- §04 -->
+<h2>04 — The Simplest Possible Working RAG System</h2>
+
+<p>Below is the simplest end-to-end RAG pipeline that actually works — no LangChain abstractions, no external APIs required. Pure Python with two libraries: <code>sentence-transformers</code> for embeddings and <code>faiss-cpu</code> for vector search. This is the clearest way to see exactly what's happening at each step.</p>
+
+<pre><code><span class="t-cmt"># pip install sentence-transformers faiss-cpu
+# That's all you need. No LangChain, no API keys, no cloud service.</span>
+
+<span class="t-key">import</span> numpy <span class="t-key">as</span> np
+<span class="t-key">import</span> faiss
+<span class="t-key">from</span> sentence_transformers <span class="t-key">import</span> SentenceTransformer
+
+<span class="t-cmt"># ── Your "knowledge base" (in a real system: loaded from PDFs/docs) ──────</span>
+documents = [
+    <span class="t-str">"Refunds are processed within 5 business days of the approved request."</span>,
+    <span class="t-str">"To request a refund, email support@company.com with your order number."</span>,
+    <span class="t-str">"Refunds are not available for digital downloads or subscription plans."</span>,
+    <span class="t-str">"Shipping typically takes 3-7 business days within the country."</span>,
+    <span class="t-str">"Express shipping takes 1-2 days and costs an additional $15."</span>,
+    <span class="t-str">"Our office hours are Monday to Friday, 9am to 6pm."</span>,
+    <span class="t-str">"You can track your order using the link sent to your email."</span>,
+]
+
+<span class="t-cmt"># ── Stage 1: Embed all documents (done once, offline) ────────────────────</span>
+model = SentenceTransformer(<span class="t-str">"all-MiniLM-L6-v2"</span>)   <span class="t-cmt"># small, fast, free</span>
+doc_embeddings = model.encode(documents)            <span class="t-cmt"># shape: (7, 384)</span>
+
+<span class="t-cmt"># ── Stage 2: Build the vector index ──────────────────────────────────────</span>
+dim = doc_embeddings.shape[<span class="t-num">1</span>]                       <span class="t-cmt"># 384 dimensions</span>
+index = faiss.IndexFlatL2(dim)                      <span class="t-cmt"># exact nearest-neighbour search</span>
+index.add(doc_embeddings.astype(np.float32))        <span class="t-cmt"># store all vectors</span>
+<span class="t-key">print</span>(<span class="t-str">f"Index built: {index.ntotal} documents stored\n"</span>)
+
+<span class="t-cmt"># ── Stage 3: Answer a question ───────────────────────────────────────────</span>
+<span class="t-key">def</span> <span class="t-def">ask</span>(question: str, k: int = <span class="t-num">3</span>) -> str:
+    <span class="t-str">"""Retrieve top-k relevant chunks and build a grounded answer."""</span>
+
+    <span class="t-cmt"># Embed the question using the SAME model</span>
+    q_vec = model.encode([question]).astype(np.float32)
+
+    <span class="t-cmt"># Find k most similar document vectors</span>
+    distances, indices = index.search(q_vec, k)
+
+    <span class="t-cmt"># Collect the retrieved chunks</span>
+    retrieved = [documents[i] <span class="t-key">for</span> i <span class="t-key">in</span> indices[<span class="t-num">0</span>]]
+
+    <span class="t-cmt"># Build a simple grounded answer (in production: send to an LLM)</span>
+    context = <span class="t-str">"\n"</span>.join([<span class="t-str">f"  • {c}"</span> <span class="t-key">for</span> c <span class="t-key">in</span> retrieved])
+    <span class="t-key">return</span> <span class="t-str">f"Question: {question}\n\nRelevant context found:\n{context}"</span>
+
+
+<span class="t-cmt"># Try it out</span>
+<span class="t-key">print</span>(ask(<span class="t-str">"How long does a refund take?"</span>))
+<span class="t-key">print</span>(<span class="t-str">"\n"</span> + <span class="t-str">"─"</span>*55 + <span class="t-str">"\n"</span>)
+<span class="t-key">print</span>(ask(<span class="t-str">"Can I track my delivery?"</span>))
+<span class="t-key">print</span>(<span class="t-str">"\n"</span> + <span class="t-str">"─"</span>*55 + <span class="t-str">"\n"</span>)
+<span class="t-key">print</span>(ask(<span class="t-str">"Is express delivery available?"</span>))</code></pre>
+<div class="code-output">
+  <span class="out-head">── Minimal RAG System Output ────────────────────────────────────────────</span><br>
+  Index built: <span class="out-val">7</span> documents stored<br><br>
+  Question: How long does a refund take?<br><br>
+  Relevant context found:<br>
+  &nbsp;&nbsp;• <span class="out-good">Refunds are processed within 5 business days of the approved request.</span><br>
+  &nbsp;&nbsp;• <span class="out-good">To request a refund, email support@company.com with your order number.</span><br>
+  &nbsp;&nbsp;• <span class="out-dim">Refunds are not available for digital downloads or subscription plans.</span><br>
+  ───────────────────────────────────────────────<br>
+  Question: Can I track my delivery?<br><br>
+  Relevant context found:<br>
+  &nbsp;&nbsp;• <span class="out-good">You can track your order using the link sent to your email.</span><br>
+  &nbsp;&nbsp;• <span class="out-dim">Shipping typically takes 3-7 business days within the country.</span><br>
+  &nbsp;&nbsp;• <span class="out-dim">Express shipping takes 1-2 days and costs an additional $15.</span><br>
+  ───────────────────────────────────────────────<br>
+  Question: Is express delivery available?<br><br>
+  Relevant context found:<br>
+  &nbsp;&nbsp;• <span class="out-good">Express shipping takes 1-2 days and costs an additional $15.</span><br>
+  &nbsp;&nbsp;• <span class="out-dim">Shipping typically takes 3-7 business days within the country.</span><br>
+  &nbsp;&nbsp;• <span class="out-dim">You can track your order using the link sent to your email.</span>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">💡 This is the simplest RAG system you can build</span>
+  <p>Two libraries. No API keys. No database server. No framework. The entire pipeline — embed, index, retrieve — is 25 lines of code. In a production system you would replace the "Relevant context found" section with a real LLM call (swap in OpenAI, LLaMA, or any model), replace the in-memory FAISS index with a persistent vector database, and replace the hardcoded list with a document loader that reads real PDFs. But the core logic is identical to what you see here. Every enterprise RAG system is this, with more engineering around it.</p>
+</div>
+
+<!-- §05 -->
+<h2>05 — A Real Use Case: The Personal AI Assistant</h2>
+
+<p>Let's make this concrete with the simplest possible real-world scenario. You have a folder of documents about yourself — your CV, portfolio projects, publications, a personal bio. You want to build a chatbot that can answer questions about you accurately, without hallucinating.</p>
+
+<div class="usecase-card">
+  <h4>🧑‍💻 Use Case: Personal Branding Chatbot</h4>
+  <p><strong>The problem:</strong> Someone visits your portfolio and asks "What projects has Mohamed worked on in medical AI?" or "What is Mohamed's tech stack?" A generic LLM either says "I don't know" or invents something. Neither is acceptable.</p>
+  <p><strong>The solution:</strong> A RAG system over your own documents — CV, project descriptions, GitHub README files, blog posts. Every question gets answered from your actual documented work. The model is grounded; the answers are accurate; and the system stays up to date whenever you update your documents.</p>
+  <p><strong>The pipeline:</strong></p>
+  <p>📄 Load your CV + project READMEs + bio as plain text<br>
+  ✂️ Chunk into ~300-token pieces (one chunk per project, one per skill section)<br>
+  🔢 Embed with BGE-M3 or sentence-transformers<br>
+  🗄️ Store in Chroma (runs locally, no cloud needed)<br>
+  ❓ User asks: "What has Mohamed built in computer vision?"<br>
+  🔍 Retrieve: top-3 chunks mentioning brain tumour CNN, face recognition, object detection<br>
+  ✍️ Generate: LLaMA-3 answers from those specific chunks — accurate, cited, grounded</p>
+  <p><strong>Result:</strong> A chatbot that represents you faithfully, available 24/7, and that gets smarter every time you add a new project to your docs.</p>
+</div>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">🚀 Project Coming Soon</span>
+  <p>I am currently building a full personal branding RAG project — an AI assistant trained on my own portfolio, CV, and project documentation. It will demonstrate the complete production pipeline: document loading, semantic chunking, BGE-M3 embeddings, FAISS/Chroma vector store, retrieval with re-ranking, and grounded generation with LLaMA-3. Follow along on <a href="https://github.com/Mo-Abdalkader" target="_blank" rel="noopener">GitHub</a> — the repo will go live soon.</p>
+</div>
+
+<!-- §06 -->
+<h2>06 — The Connection to Word Embeddings (Day 23)</h2>
+
+<p>RAG is not a new idea — it's the same vector similarity from Day 23, applied at scale with a purpose. Let's trace the exact connection:</p>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">Day 23 — Word Embeddings</div>
+    <div class="prose-kv-val">We learned that words and sentences can be represented as vectors in a high-dimensional space, and that similar meanings produce similar vectors. "King − man + woman ≈ queen" worked because cosine similarity in that space reflects semantic relationships.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">Day 29 — RAG</div>
+    <div class="prose-kv-val">RAG takes exactly that insight and applies it to retrieval. Each document chunk becomes a vector. The user's question becomes a vector. We find the chunks whose vectors are closest to the question vector — and those are the semantically relevant chunks. Same math, same intuition, production scale.</div>
+  </div>
+</div>
+
+<p>The only difference between "find the word closest to 'king − man + woman'" and "find the document chunk closest to 'What is the refund policy?'" is the scale and the purpose. The underlying operation — cosine similarity in an embedding space — is identical. This is why understanding word embeddings first makes RAG immediately intuitive: you've already seen how meaning maps to geometry. RAG just applies that geometry to search.</p>
+
+<!-- §07 -->
+<h2>07 — RAG vs Fine-Tuning: Which One Do You Need?</h2>
+
+<p>After Day 28 (Fine-Tuning) and Day 29 (RAG), you now know both major approaches to making a model domain-specific. They are not alternatives — they serve fundamentally different purposes and are often used together.</p>
+
+<table class="prose-table">
+  <thead>
+    <tr>
+      <th>Question</th>
+      <th>Use RAG</th>
+      <th>Use Fine-Tuning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Does the model need to know specific facts?</td>
+      <td class="tick">✓ RAG — facts live in documents, always up to date</td>
+      <td class="cross">✗ Fine-tuning bakes facts in, which go stale</td>
+    </tr>
+    <tr>
+      <td>Does the model need a specific writing style or format?</td>
+      <td class="cross">✗ Prompting or fine-tuning better for this</td>
+      <td class="tick">✓ Fine-tuning — teach consistent behaviour</td>
+    </tr>
+    <tr>
+      <td>Do you need to update the knowledge frequently?</td>
+      <td class="tick">✓ RAG — add new documents anytime, no retraining</td>
+      <td class="cross">✗ Fine-tuning requires re-training for each update</td>
+    </tr>
+    <tr>
+      <td>Do you need to cite sources?</td>
+      <td class="tick">✓ RAG — you know exactly which chunk was used</td>
+      <td class="cross">✗ Fine-tuning — no traceability</td>
+    </tr>
+    <tr>
+      <td>Is the knowledge private and sensitive?</td>
+      <td class="tick">✓ RAG — data only accessed at query time</td>
+      <td class="mid">~ Fine-tuning exposes data during training</td>
+    </tr>
+    <tr>
+      <td>Does the model need to follow a complex task format?</td>
+      <td class="cross">✗ RAG doesn't change model behaviour</td>
+      <td class="tick">✓ Fine-tuning — teach structured output reliably</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="prose-callout accent">
+  <span class="prose-callout-label">💡 The Best Systems Use Both</span>
+  <p>The medical VLM project in this portfolio used both: <strong>fine-tuning</strong> (QLoRA on Qwen 2.5 7B) to teach the model to reason about retinal images and use clinical vocabulary, and <strong>RAG</strong> (FAISS + LangChain) over 20+ medical textbooks to ground the model's answers in cited clinical sources. Fine-tuning taught the model <em>how to think</em> about the domain. RAG gave it <em>what to think about</em> — the specific facts, guidelines, and cases it needs to answer accurately. Neither alone was sufficient.</p>
+</div>
+
+<!-- §08 -->
+<h2>08 — What Makes a RAG System Fail (and How to Fix It)</h2>
+
+<div class="prose-kv-grid">
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Chunks too large</div>
+    <div class="prose-kv-val">A 2,000-token chunk that answers 10 different questions will always be retrieved when any of those 10 questions is asked — even if only one sentence is relevant. Keep chunks to 300–500 tokens. More precise chunks = better retrieval precision.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Wrong embedding model</div>
+    <div class="prose-kv-val">Embedding documents with one model and questions with another is a guaranteed failure — the vector spaces are incompatible. Always use the same model for both. For multilingual content, use a multilingual model (BGE-M3, mE5).</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ No overlap between chunks</div>
+    <div class="prose-kv-val">If a sentence is split across two chunks with no overlap, neither chunk contains the complete thought. Use a 50–100 token overlap so boundary sentences appear in both adjacent chunks.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ Trusting retrieval blindly</div>
+    <div class="prose-kv-val">The top-k chunks by similarity are not always the top-k by relevance. A re-ranking step (a cross-encoder model that scores each chunk against the query directly) significantly improves answer quality at modest additional cost.</div>
+  </div>
+  <div class="prose-kv">
+    <div class="prose-kv-key">❌ No "I don't know" behaviour</div>
+    <div class="prose-kv-val">If no chunk is relevant to the question, the model should say so — not hallucinate an answer from the irrelevant context it was handed. Include explicit instruction: "If the answer is not in the provided context, say I don't have that information."</div>
+  </div>
+</div>
+
+<!-- §09 -->
+<h2>09 — A Thought to Sit With</h2>
+
+<div class="prose-callout">
+  <span class="prose-callout-label">💬 For You to Consider</span>
+  <p>RAG gives a language model access to external knowledge by finding documents whose <em>meaning</em> is close to the question's meaning. It doesn't understand the documents — it retrieves them based on geometric proximity in a learned vector space, then hands them to a model that generates text based on patterns in its weights.</p>
+  <p style="margin-top:.75rem"><strong>At no point in this pipeline does anyone actually "understand" anything in the way a human does. Yet the outputs are often more accurate than a human working from memory. Is this a profound result about the nature of understanding — or just a very sophisticated pattern-matching system dressed up in terminology that implies comprehension? Does the distinction matter, as long as the answers are good?</strong></p>
+</div>
+
+<!-- §10 -->
+<h2>10 — Coming Up Next</h2>
+<p>Tomorrow — <strong>Day 30: Prompt Engineering.</strong> You now know how to build systems that retrieve the right information. Day 30 covers how to talk to the model once you have it: zero-shot and few-shot prompting, chain-of-thought, system prompts, and the full picture of how prompt design affects output quality — including what can go wrong when prompts are manipulated.</p>
+
+<!-- §11 -->
+<h2>11 — Go Deeper</h2>
+<p>📄 <a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks — Lewis et al. (2020)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The original RAG paper from Facebook AI. Introduced the term and the architecture. Section 2 (model) and Section 4 (results) are the essential parts.</em></p>
+<p>🔗 <a href="https://python.langchain.com/docs/tutorials/rag/" target="_blank" rel="noopener">LangChain RAG Tutorial — Official Docs</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The clearest step-by-step tutorial for building a production RAG system with LangChain, including document loaders, text splitters, embeddings, and retrieval chains.</em></p>
+<p>🔗 <a href="https://docs.trychroma.com/" target="_blank" rel="noopener">Chroma — Getting Started</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The easiest vector database to start with. Runs locally, integrates with LangChain and LlamaIndex out of the box. The quickstart takes under 10 minutes.</em></p>
+<p>📄 <a href="https://arxiv.org/abs/2312.10997" target="_blank" rel="noopener">RAGAS: Automated Evaluation of RAG — Es et al. (2023)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">The evaluation framework for RAG systems — faithfulness, answer relevancy, context precision. Essential reading before deploying a RAG system in production.</em></p>
+<p>▶ <a href="https://www.youtube.com/watch?v=sVcwVQRHIc8" target="_blank" rel="noopener">RAG from Scratch — LangChain (2024)</a><br>
+<em style="font-size:.875rem;color:var(--text-muted)">YouTube series building RAG from first principles in short focused videos. The best hands-on companion to this post.</em></p>
+
+<!-- QUIZ -->
+<div class="knowledge-check">
+  <div class="knowledge-check-header">🧠 Check Your Understanding</div>
+  <div class="knowledge-check-body">
+
+    <div class="quiz-item">
+      <div class="quiz-question">1. What three problems does RAG solve that a standard LLM cannot?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        (1) Knowledge cutoff — LLMs are frozen at their training date. RAG's documents can be updated anytime without retraining the model. Tomorrow's news is accessible tomorrow. (2) Private knowledge — proprietary documents, internal wikis, and confidential data can never be used to train a public model for privacy reasons. RAG accesses them only at query time, only the relevant chunks, without ever exposing the full dataset to training infrastructure. (3) Hallucination reduction — when the model is grounded in retrieved text, it has a concrete source to cite. The probability of confidently fabricating an answer drops significantly because the model is explicitly instructed to base its response on the provided context. Hallucinations don't disappear entirely, but they become much rarer and easier to detect.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">2. Why do we chunk documents before embedding them? What happens if we skip this step and embed whole documents?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        Two reasons to chunk: (1) Retrieval precision — a 50-page document covers many topics. If you embed it as a single vector, that vector represents an average of all the topics in the document, not any specific one. A question about refund policy would retrieve a document that also contains unrelated shipping, careers, and contact information — all of which then gets included in the context, wasting context window budget and potentially confusing the model. Chunking ensures each vector represents a single coherent topic, so retrieval is precise. (2) Context window limits — you cannot paste an entire 50-page document into the LLM's context window. Even at 128k tokens, a large knowledge base (say, 500 documents) would far exceed any context window. Chunking lets you select only the 3–5 most relevant pieces, fitting comfortably in the context while still covering the answer. If you skip chunking: retrieval returns documents instead of passages, the context window fills with mostly irrelevant text, the model struggles to identify the single relevant sentence buried in thousands of words, and answer quality degrades significantly.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">3. How is RAG retrieval connected to the word embeddings and cosine similarity from Day 23?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        The connection is direct and exact — RAG is word embeddings applied to retrieval. In Day 23, we learned that embedding models convert text into vectors where semantically similar text produces geometrically similar vectors, and that cosine similarity (the dot product of two normalised vectors) measures this similarity as a number between -1 and 1. RAG uses this property operationally: (1) Each document chunk is converted to a vector by an embedding model — the same type of BERT-style encoder from Day 26. (2) The user's question is converted to a vector using the same model. (3) Cosine similarity is computed between the question vector and every stored chunk vector. (4) The top-k highest-similarity chunks are retrieved. The "king − man + woman ≈ queen" example and "find the refund policy chunk" are the same operation — finding the nearest neighbour in embedding space. The only difference is that Day 23 demonstrated semantic geometry as a curiosity, while RAG uses it as the core of a production system.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">4. You built a RAG system but users report getting wrong answers. Walk through the most likely causes at each stage of the pipeline.</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        Diagnose stage by stage: (1) Loading — text extraction failed, producing garbled content (common with scanned PDFs). Fix: verify extracted text manually; use OCR for scanned documents. (2) Chunking — chunks too large (one chunk covers many topics, retrieved for wrong questions) or too small (answer split across chunks, neither contains enough context). Fix: experiment with chunk sizes 200–500 tokens; add 50-100 token overlap. (3) Embedding — different embedding model used for indexing vs querying (vectors from different spaces are incompatible). Fix: assert same model_id at index time and query time. Or: embedding model doesn't handle your domain well (technical jargon mapped to wrong vectors). Fix: try a domain-specific model or a larger general model. (4) Retrieval — k too small (the relevant chunk is number 4 but you only retrieve top-3). Fix: increase k to 5–7. Or: similarity threshold too low, retrieving irrelevant chunks. Fix: add a minimum similarity score filter. Or: no re-ranking, so the order of retrieved chunks is suboptimal. Fix: add a cross-encoder re-ranker. (5) Generation — the LLM is ignoring the context and using its parametric knowledge instead. Fix: strengthen the grounding instruction: "Answer ONLY using the provided context. Do not use any outside knowledge." Or: the LLM is hallucinating despite the instruction. Fix: use a stronger model or add a fact-checking step.
+      </div>
+    </div>
+
+    <div class="quiz-item">
+      <div class="quiz-question">5. When should you use RAG, when should you use fine-tuning, and when should you use both?</div>
+      <button class="quiz-reveal-btn" onclick="toggleQuiz(this)">Reveal answer ↓</button>
+      <div class="quiz-answer" style="display:none">
+        Use RAG when: the knowledge changes frequently (news, policies, inventory), you need source traceability (the retrieved chunk is the citation), the knowledge base is too large to fit in context, or you have strict data privacy requirements (documents accessed only at query time, not exposed during training). Use fine-tuning when: you need consistent output format or style the model doesn't produce by default, the model needs to learn a specialised vocabulary or reasoning pattern that isn't well-represented in pre-training data, you're doing a narrow task at massive scale where you want a smaller, faster, cheaper model, or you need to change the model's default behaviour (tone, refusal style, response length). Use both when: you have a specialised domain that requires both deeper behavioural alignment AND access to a large, frequently-updated knowledge base. The medical VLM project is a good example: fine-tuning (QLoRA) taught the model to reason about retinal pathology and produce clinical-style descriptions — behaviour that can't be achieved by just handing it documents. RAG (FAISS over 20+ medical textbooks) grounded those descriptions in specific cited guidelines and case studies that would be impossible to bake into model weights without massive retraining. Fine-tuning = teach the model how to think in your domain. RAG = give it current, precise facts to think about.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- RECAP -->
+<div class="quick-recap">
+  <div class="quick-recap-header">⚡ Quick Recap — RAG Pipeline</div>
+  <ol>
+    <li><strong>The problem:</strong> LLMs have a knowledge cutoff, can't read private documents, and hallucinate when they don't know something. RAG fixes all three without retraining the model.</li>
+    <li><strong>Two phases:</strong> offline (build the knowledge index — load, chunk, embed, store) and online (answer queries — embed question, retrieve chunks, generate answer).</li>
+    <li><strong>Chunking:</strong> documents are split into small, focused pieces (~300–500 tokens) so that retrieval is precise. One chunk = one coherent idea. Overlap (~50 tokens) prevents answers from being split across boundaries.</li>
+    <li><strong>Embeddings:</strong> each chunk is converted to a vector by an embedding model (BGE-M3, E5, sentence-transformers). Similar meaning = similar vector. This is the exact same concept as Day 23 word embeddings — applied to retrieval at scale.</li>
+    <li><strong>Vector database:</strong> stores all chunk vectors for fast similarity search. FAISS for local/research; Chroma for quick prototypes; Pinecone / Qdrant / Weaviate for production scale.</li>
+    <li><strong>Retrieval:</strong> the question is embedded with the same model, then compared to stored chunk vectors using cosine similarity. Top-k most similar chunks are retrieved.</li>
+    <li><strong>Generation:</strong> retrieved chunks + original question are assembled into a prompt. The LLM is instructed to answer only from the provided context. If no relevant chunk exists, it should say so.</li>
+    <li><strong>RAG vs fine-tuning:</strong> RAG gives the model updatable, traceable, private knowledge. Fine-tuning changes the model's behaviour and style. They are complementary — the best systems use both.</li>
+    <li><strong>Common failures:</strong> chunks too large, mismatched embedding models, no chunk overlap, missing re-ranking, and no explicit "I don't know" instruction.</li>
+    <li><strong>Simplest implementation:</strong> <code>sentence-transformers</code> + <code>faiss-cpu</code> + any LLM. Under 30 lines of Python. Every production RAG system is this, with more engineering around it.</li>
+  </ol>
+</div>
+
+<!-- INTERVIEW Q&A -->
+<div class="prose-callout">
+  <span class="prose-callout-label">🎯 Interview Questions</span>
+  <ol>
+    <li><strong>What is RAG and what problem does it solve?</strong><br>
+    <em>RAG (Retrieval-Augmented Generation) solves the problem of LLMs having fixed knowledge — they cannot access private documents, don't know about events after their training cutoff, and hallucinate when asked about things they don't know. RAG adds a retrieval step: before generating an answer, it searches a knowledge base for the most relevant document chunks and injects them into the prompt. The model then generates a grounded response based on retrieved text rather than parametric memory alone. The knowledge base can be updated at any time without retraining.</em></li>
+
+    <li><strong>Explain the role of embeddings in RAG. How does retrieval actually find relevant chunks?</strong><br>
+    <em>Embeddings convert text into dense vectors in a high-dimensional space where semantically similar text produces geometrically close vectors. In RAG: (1) every chunk in the knowledge base is converted to a vector by an embedding model and stored in a vector database; (2) at query time, the user's question is embedded using the same model, producing a query vector; (3) cosine similarity is computed between the query vector and all stored chunk vectors; (4) the top-k highest-similarity chunks are retrieved. This works because the embedding model was trained to map semantically similar text to similar vectors — so "refund processing time" and "How long does a refund take?" will have high cosine similarity even though they share few exact words. It's semantic search, not keyword matching.</em></li>
+
+    <li><strong>What is chunking and why does chunk size matter?</strong><br>
+    <em>Chunking splits documents into smaller pieces that can be individually embedded and retrieved. Chunk size is one of the most impactful RAG hyperparameters: too large, and each chunk covers many topics — retrieval precision drops because an irrelevant chunk gets retrieved whenever it contains a related keyword anywhere in its 2,000 tokens. Too small, and chunks lack context — a 50-token chunk might contain the answer but not enough surrounding information for the model to use it correctly. The sweet spot for most use cases is 300–500 tokens with a 50–100 token overlap between adjacent chunks so that sentences spanning chunk boundaries don't lose context. For technical documentation or code, smaller chunks (150–300 tokens) often work better because information is denser.</em></li>
+
+    <li><strong>How would you evaluate a RAG system? What metrics would you use?</strong><br>
+    <em>RAG evaluation has two components: retrieval quality and generation quality. For retrieval: context precision (were the retrieved chunks actually relevant?) and context recall (were all the relevant chunks in the knowledge base actually retrieved?). For generation: faithfulness (does the answer only use information from the retrieved context, or does it hallucinate?) and answer relevancy (does the answer actually address the question asked?). The RAGAS framework automates these metrics using a small LLM as a judge. In practice: start with human evaluation on a gold standard question set (50–100 Q&A pairs with known correct answers), measure retrieval hit rate (is the correct chunk in top-3?), then measure answer correctness manually or with RAGAS. Never deploy without evaluating — it's easy to build a RAG system that looks reasonable in demos but fails silently on edge cases.</em></li>
+
+    <li><strong>A user asks your RAG chatbot a question and the answer is wrong. How do you debug it?</strong><br>
+    <em>Isolate which stage failed: (1) Log the retrieved chunks — did the correct chunk get retrieved? If not, the problem is in retrieval (embedding model mismatch, chunks too large, k too small, or the answer isn't in the knowledge base at all). (2) If the right chunk was retrieved but the answer is still wrong, the problem is in generation — the model is either ignoring the context (strengthen the grounding instruction) or misinterpreting it (try a stronger model or simplify the chunk). (3) If no chunk scored above a reasonable similarity threshold (say, 0.4), the model should have said "I don't know" — but if it didn't, your fallback instruction is missing or too weak. (4) Check the chunk content itself: is it clean text, or did extraction produce garbage from a scanned PDF? Systematic logging of retrieved chunks, similarity scores, and generated answers for every query is the most valuable investment you can make in a RAG system — without it, debugging is guesswork.</em></li>
+  </ol>
+</div>
+
+<!-- ATTACHMENTS -->
+<div class="prose-callout">
+  <span class="prose-callout-label">📎 Attachments &amp; Further Reading</span>
+  <p>📄 <a href="https://arxiv.org/abs/2005.11401" target="_blank" rel="noopener">Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks — Lewis et al. (2020)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The original RAG paper from Facebook AI. Sections 2 and 4 are the core contributions — the retrieval-augmented generation model and the knowledge-intensive task results.</em></p>
+  <p>🔗 <a href="https://python.langchain.com/docs/tutorials/rag/" target="_blank" rel="noopener">LangChain RAG Tutorial</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The most complete step-by-step guide for building a production RAG system. Covers document loading, splitting, embedding, vector stores, and retrieval chains with real runnable code.</em></p>
+  <p>📄 <a href="https://arxiv.org/abs/2312.10997" target="_blank" rel="noopener">RAGAS: Automated Evaluation of Retrieval Augmented Generation — Es et al. (2023)</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The standard evaluation framework. Defines faithfulness, answer relevancy, context precision, and context recall. Essential before deploying any RAG system.</em></p>
+  <p>🔗 <a href="https://docs.trychroma.com/" target="_blank" rel="noopener">Chroma Documentation</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">The easiest vector database to get started with — runs locally, no infrastructure required, integrates seamlessly with LangChain and LlamaIndex.</em></p>
+  <p>▶ <a href="https://www.youtube.com/watch?v=sVcwVQRHIc8" target="_blank" rel="noopener">RAG from Scratch — LangChain YouTube Series</a><br>
+  <em style="font-size:.85rem;color:var(--text-muted)">A series of short, focused videos building RAG from first principles. The best hands-on companion to this post — watch alongside reading.</em></p>
+</div>
+
+<!-- TAGS -->
+<div style="margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:.45rem">
+  <span class="tag">#RAG</span><span class="tag">#RetrievalAugmentedGeneration</span><span class="tag">#Embeddings</span><span class="tag">#VectorDatabase</span><span class="tag">#FAISS</span><span class="tag">#LangChain</span><span class="tag">#LLM</span><span class="tag">#SemanticSearch</span><span class="tag">#NLP</span><span class="tag">#31DaysOfAI</span><span class="tag">#Ramadan2026</span>
+</div>
+
+</div><!-- /prose -->
+</article>
+
+<div class="post-footer-nav">
+  <a href="fine-tuning.html" class="post-nav-card">
+    <span class="post-nav-label">← Day 28</span>
+    <span class="post-nav-title">Fine-Tuning LLMs</span>
+  </a>
+  <a href="prompt-engineering.html" class="post-nav-card next">
+    <span class="post-nav-label">Day 30 →</span>
+    <span class="post-nav-title">Prompt Engineering</span>
+  </a>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home"><img src="../assets/logo.png" alt="Mohamed Abdalkader logo" /></a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a><a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a><a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader" class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel"><span class="feedback-trigger-text">Feedback</span></button>
+<div class="feedback-overlay" id="feedbackOverlay" aria-hidden="true"></div>
+<aside class="feedback-panel" id="feedbackPanel" role="dialog" aria-modal="true" aria-labelledby="feedbackTitle" aria-hidden="true">
+  <div class="feedback-header">
+    <h2 id="feedbackTitle">Send Feedback</h2>
+    <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
+  </div>
+  <form class="feedback-form" id="feedbackForm">
+    <div class="feedback-field"><label for="feedbackName">Name</label><input type="text" id="feedbackName" placeholder="Anonymous" value="Anonymous" maxlength="100" /></div>
+    <div class="feedback-field"><label for="feedbackTopic">Topic</label><select id="feedbackTopic"><option value="General">General</option><option value="Suggestion">Suggestion</option><option value="Bug">Bug</option></select></div>
+    <div class="feedback-field"><label for="feedbackPage">Page</label><input type="text" id="feedbackPage" readonly /></div>
+    <div class="feedback-field"><label for="feedbackMessage">Message <span class="required">*</span></label><textarea id="feedbackMessage" rows="5" placeholder="Share your thoughts..." required maxlength="2000"></textarea><div class="char-count"><span id="charCount">0</span> / 2000</div></div>
+    <button type="submit" class="btn btn-primary feedback-submit" id="feedbackSubmit">Send Feedback</button>
+    <div class="feedback-status" id="feedbackStatus"></div>
+  </form>
+</aside>
+
+<script>
+function toggleQuiz(btn){
+  var a=btn.nextElementSibling;
+  var open=a.style.display!=='none';
+  a.style.display=open?'none':'block';
+  btn.textContent=open?'Reveal answer ↓':'Hide answer ↑';
+}
+</script>
+<script src="../js/main.js"></script>
+<script src="../js/feedback.js"></script>
+</body>
+</html>
