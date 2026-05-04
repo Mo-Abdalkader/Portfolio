@@ -33,12 +33,6 @@
   </div>
   <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
 </div>
-<div class="announcement-banner eid-banner" id="eidBanner" style="display:none">
-  <div class="eid-content">
-    <p>🌙 Eid Mubarak! 🌙 &nbsp;—&nbsp; Wishing you joy, peace, and blessings this Eid.</p>
-  </div>
-  <button class="eid-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
-</div>
 
 <nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
   <div class="nav-inner">
@@ -71,38 +65,66 @@
   <a href="index.html#contact" class="nav-link" role="menuitem">Contact</a>
 </div>
 
-<!-- ══ PAGE HERO ════════════════════════════════════════════════════ -->
+<!-- PAGE HERO -->
 <section class="page-hero">
   <div class="dot-grid" aria-hidden="true"></div>
   <div class="page-hero-inner" data-animate>
-    <span class="section-label" id="t-page-projects-label">// my work</span>
-    <h1 id="t-page-projects-h1">Projects</h1>
-    <p class="page-hero-desc" id="t-page-projects-sub">Production-grade ML systems. Real results.</p>
+    <span class="section-label">// my work</span>
+    <h1>Projects</h1>
+    <p class="page-hero-desc">Production-grade ML systems. Real results.</p>
   </div>
 </section>
 
-<!-- ══ FEATURED PROJECTS ════════════════════════════════════════════ -->
+<!-- PROJECTS SECTION -->
 <section class="section">
   <div class="container">
 
     <!-- Filter tabs -->
     <div class="filter-tabs" data-filter="projects" data-animate>
       <button class="filter-tab active" data-category="all">All (10)</button>
-      <button class="filter-tab" data-category="Medical AI">Medical AI (4)</button>
-      <button class="filter-tab" data-category="Computer Vision">Computer Vision (4)</button>
-      <button class="filter-tab" data-category="Research">Research (2)</button>
-    </div>
-
-    <!-- ── SECTION LABEL: Featured ──────────────────────────────── -->
-    <div style="margin:2.5rem 0 1.25rem;display:flex;align-items:center;gap:0.75rem" data-animate>
-      <span class="section-label" style="position:static;font-size:0.7rem;letter-spacing:0.12em">// featured projects</span>
-      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <button class="filter-tab" data-category="LLMs">LLMs (2)</button>
+      <button class="filter-tab" data-category="Medical AI">Medical AI (5)</button>
+      <button class="filter-tab" data-category="Computer Vision">Computer Vision (2)</button>
+      <button class="filter-tab" data-category="Research">Research (1)</button>
     </div>
 
     <div class="grid-auto">
 
-      <!-- ── PROJECT 1 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="1" data-category="Medical AI">
+      <!-- PROJECT 1: NeuralChat -->
+      <article class="project-card" data-animate data-delay="1" data-category="LLMs">
+        <div class="card-top">
+          <span class="status-badge status-live">Live</span>
+          <span class="card-category">LLMs</span>
+        </div>
+        <h3 class="card-title">NeuralChat — Multi-Provider LLM Chatbot</h3>
+        <p class="card-desc">Multi-provider LLM chatbot supporting 10+ models (Cohere, OpenAI, Groq) switchable from the UI. Supports 5 prompting strategies: Zero-Shot, Few-Shot, Chain-of-Thought, Memory Chain, and Structured JSON. Streams responses via SSE with per-session memory, 6 AI personas, and real-time cost and latency display. Deployed on Railway with FastAPI.</p>
+        <div class="tech-stack">
+          <span class="tag">FastAPI</span><span class="tag">LangChain</span><span class="tag">Cohere</span><span class="tag">OpenAI</span><span class="tag">Groq</span><span class="tag">Railway</span>
+        </div>
+        <div class="card-actions">
+          <a href="https://github.com/Mo-Abdalkader/NeuralChat" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://neuralchat-production.up.railway.app/" class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+        </div>
+      </article>
+
+      <!-- PROJECT 2: Mo-Bot -->
+      <article class="project-card" data-animate data-delay="2" data-category="LLMs">
+        <div class="card-top">
+          <span class="status-badge status-live">Live</span>
+          <span class="card-category">LLMs</span>
+        </div>
+        <h3 class="card-title">Mo-Bot — Personal AI Telegram Bot</h3>
+        <p class="card-desc">Serverless AI assistant deployed on Cloudflare Workers, representing Mohamed professionally 24/7 at zero infrastructure cost. Implements a three-model fallback chain (LLaMA 3.3 70B → 3.1 70B → 3.1 8B) across independent Groq token pools. Uses keyword-based CV extraction to send only relevant sections per query. Supports bilingual Arabic/English input with Arabizi detection.</p>
+        <div class="tech-stack">
+          <span class="tag">Cloudflare Workers</span><span class="tag">Groq</span><span class="tag">LLaMA 3.3</span><span class="tag">JavaScript</span><span class="tag">Telegram API</span>
+        </div>
+        <div class="card-actions">
+          <a href="http://t.me/Mo_Abdalkader_bot" class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Bot</a>
+        </div>
+      </article>
+
+      <!-- PROJECT 3: Medical VLM -->
+      <article class="project-card" data-animate data-delay="3" data-category="Medical AI">
         <div class="card-top">
           <span class="status-badge status-private">Private Research</span>
           <span class="card-category">Medical AI</span>
@@ -117,8 +139,8 @@
         </div>
       </article>
 
-      <!-- ── PROJECT 2 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="2" data-category="Medical AI">
+      <!-- PROJECT 4: Medical RAG -->
+      <article class="project-card" data-animate data-delay="1" data-category="Medical AI">
         <div class="card-top">
           <span class="status-badge status-private">Private Research</span>
           <span class="card-category">Medical AI</span>
@@ -133,14 +155,14 @@
         </div>
       </article>
 
-      <!-- ── PROJECT 3 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="3" data-category="Medical AI">
+      <!-- PROJECT 5: Diabetic Retinopathy -->
+      <article class="project-card" data-animate data-delay="2" data-category="Medical AI">
         <div class="card-top">
           <span class="status-badge status-live">Live</span>
           <span class="card-category">Medical AI</span>
         </div>
         <h3 class="card-title">Diabetic Retinopathy — CNN vs Vision Transformer</h3>
-        <p class="card-desc">Flask app delivering side-by-side retinal fundus analysis from ResNet50 and a Vision Transformer (ViT). Dual-output classification: 5-level retinopathy severity (No DR → Proliferative DR) and 3-level macular edema risk. Trained on the IDRiD dataset with PyTorch and the <code>timm</code> library.</p>
+        <p class="card-desc">Flask app delivering side-by-side retinal fundus analysis from ResNet50 and a Vision Transformer (ViT). Dual-output classification: 5-level retinopathy severity (No DR → Proliferative DR) and 3-level macular edema risk. Trained on the IDRiD dataset with PyTorch and the timm library.</p>
         <div class="tech-stack">
           <span class="tag">PyTorch</span><span class="tag">ResNet50</span><span class="tag">ViT (timm)</span><span class="tag">Flask</span><span class="tag">IDRiD Dataset</span>
         </div>
@@ -149,25 +171,25 @@
         </div>
       </article>
 
-      <!-- ── PROJECT 4 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="1" data-category="Medical AI">
+      <!-- PROJECT 6: Brain Tumor -->
+      <article class="project-card" data-animate data-delay="3" data-category="Medical AI">
         <div class="card-top">
           <span class="status-badge status-live">Live</span>
           <span class="card-category">Medical AI</span>
         </div>
         <h3 class="card-title">Brain Tumor Classification</h3>
-        <p class="card-desc">Custom CNN achieving 95% accuracy on 3,000 brain MRI scans across 4 tumour types (glioma, meningioma, pituitary, healthy). 400% dataset expansion via augmentation. Dockerised Streamlit app with real-time inference &lt;2 s and Class Activation Map visualisation.</p>
+        <p class="card-desc">Custom CNN achieving 95% accuracy on 3,000 brain MRI scans across 4 tumour types (glioma, meningioma, pituitary, healthy). 400% dataset expansion via augmentation. Dockerised Streamlit app with real-time inference and Class Activation Map visualisation.</p>
         <div class="tech-stack">
           <span class="tag">TensorFlow</span><span class="tag">Keras</span><span class="tag">OpenCV</span><span class="tag">Streamlit</span><span class="tag">Docker</span>
         </div>
         <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/Brain-Tumor"    class="btn btn-ghost btn-sm"   target="_blank" rel="noopener">⌥ GitHub</a>
-          <a href="https://brain-tumor-cls.streamlit.app/"           class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+          <a href="https://github.com/Mo-Abdalkader/Brain-Tumor" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://brain-tumor-cls.streamlit.app/" class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
         </div>
       </article>
 
-      <!-- ── PROJECT 5 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="2" data-category="Computer Vision">
+      <!-- PROJECT 7: Face Recognition -->
+      <article class="project-card" data-animate data-delay="1" data-category="Computer Vision">
         <div class="card-top">
           <span class="status-badge status-live">Live</span>
           <span class="card-category">Computer Vision</span>
@@ -178,112 +200,33 @@
           <span class="tag">PyTorch</span><span class="tag">Triplet Loss</span><span class="tag">MTCNN</span><span class="tag">SQLite</span><span class="tag">Streamlit</span>
         </div>
         <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/Face-Recognition-"          class="btn btn-ghost btn-sm"   target="_blank" rel="noopener">⌥ GitHub</a>
-          <a href="https://face-similarity-recognition.streamlit.app/"           class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
+          <a href="https://github.com/Mo-Abdalkader/Face-Recognition" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://facematch-pro.streamlit.app/" class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
         </div>
       </article>
 
-      <!-- ── PROJECT 6 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="3" data-category="Research">
+      <!-- PROJECT 8: Renewable Energy -->
+      <article class="project-card" data-animate data-delay="2" data-category="Research">
         <div class="card-top">
           <span class="status-badge status-live">Live</span>
           <span class="card-category">Research</span>
         </div>
         <h3 class="card-title">AI-IoT Renewable Energy Prediction</h3>
-        <p class="card-desc">Graduation project benchmarking 21 deep learning architectures (LSTM, GRU, BiLSTM, CNN-LSTM, Transformer, TFT) for solar and wind forecasting. 98% accuracy, &lt;15% MAPE, 48-hour horizon. ITAC + ASRT funded. IEEE national recognition award.</p>
+        <p class="card-desc">Graduation project benchmarking 21 deep learning architectures (LSTM, GRU, BiLSTM, CNN-LSTM, Transformer, TFT) for solar and wind forecasting. 98% accuracy, less than 15% MAPE, 48-hour horizon. ITAC + ASRT funded. IEEE national recognition award.</p>
         <div class="tech-stack">
           <span class="tag">LSTM · GRU</span><span class="tag">Transformers</span><span class="tag">Azure IoT Hub</span><span class="tag">TensorFlow</span>
         </div>
         <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/Renewable-Energy-Prediction" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
+          <a href="https://github.com/Mo-Abdalkader/Graduation_project" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
         </div>
       </article>
 
-    </div><!-- /featured grid -->
-
-    <!-- ── SECTION LABEL: Other Projects ────────────────────────── -->
-    <div style="margin:3.5rem 0 1.25rem;display:flex;align-items:center;gap:0.75rem" data-animate>
-      <span class="section-label" style="position:static;font-size:0.7rem;letter-spacing:0.12em">// other projects</span>
-      <div style="flex:1;height:1px;background:var(--border)"></div>
     </div>
-    <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.75rem;max-width:52ch" data-animate>
-      Standalone experiments, learning projects, and tools built to explore specific techniques.
-    </p>
-
-    <div class="grid-auto">
-
-      <!-- ── PROJECT 7 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="1" data-category="Computer Vision">
-        <div class="card-top">
-          <span class="status-badge status-live">Live</span>
-          <span class="card-category">Computer Vision</span>
-        </div>
-        <h3 class="card-title">Fast Food Image Classification</h3>
-        <p class="card-desc">EfficientNetB0 transfer learning fine-tuned on 15,000 food images across 10 categories. Last 20 layers retrained with global average pooling head. Flask + Streamlit dual deployment with Plotly confidence charts and per-layer feature map visualisation. &lt;1 s inference.</p>
-        <div class="tech-stack">
-          <span class="tag">TensorFlow</span><span class="tag">EfficientNetB0</span><span class="tag">Flask</span><span class="tag">Streamlit</span><span class="tag">Plotly</span>
-        </div>
-        <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/Fast-Food"     class="btn btn-ghost btn-sm"   target="_blank" rel="noopener">⌥ GitHub</a>
-          <a href="https://fast-food-cls.streamlit.app/"            class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
-        </div>
-      </article>
-
-      <!-- ── PROJECT 8 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="2" data-category="Computer Vision">
-        <div class="card-top">
-          <span class="status-badge status-live">Live</span>
-          <span class="card-category">Computer Vision</span>
-        </div>
-        <h3 class="card-title">MNIST Handwritten Digit Recognition</h3>
-        <p class="card-desc">Custom CNN (32→64 conv, ~150 K parameters) trained on 60,000 MNIST samples achieving ~99% test accuracy. Flask app with drag-and-drop upload and Conv1/Conv2 feature map grids. Streamlit dashboard with Plotly confidence charts and model information pages.</p>
-        <div class="tech-stack">
-          <span class="tag">TensorFlow</span><span class="tag">Keras</span><span class="tag">Flask</span><span class="tag">Streamlit</span><span class="tag">Plotly</span>
-        </div>
-        <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/MNIST"          class="btn btn-ghost btn-sm"   target="_blank" rel="noopener">⌥ GitHub</a>
-          <a href="https://mnist-digit-recognition.streamlit.app/"  class="btn btn-outline btn-sm" target="_blank" rel="noopener">↗ Live Demo</a>
-        </div>
-      </article>
-
-      <!-- ── PROJECT 9 ─────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="3" data-category="Computer Vision">
-        <div class="card-top">
-          <span class="status-badge status-live">Live</span>
-          <span class="card-category">Computer Vision</span>
-        </div>
-        <h3 class="card-title">Neural Hand — Gesture-Controlled PC</h3>
-        <p class="card-desc">Touchless PC control via MediaPipe 21-point hand landmark detection. 10+ gestures mapped to system actions: cursor movement, left/right click, scroll, window minimize/maximize/close, and volume control. 25–30 FPS, 30–50 ms latency. CustomTkinter desktop UI with live camera overlay.</p>
-        <div class="tech-stack">
-          <span class="tag">MediaPipe</span><span class="tag">OpenCV</span><span class="tag">PyAutoGUI</span><span class="tag">CustomTkinter</span>
-        </div>
-        <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/Neural-Hand"    class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
-        </div>
-      </article>
-
-      <!-- ── PROJECT 10 ────────────────────────────────────────── -->
-      <article class="project-card" data-animate data-delay="1" data-category="Research">
-        <div class="card-top">
-          <span class="status-badge status-live">Live</span>
-          <span class="card-category">Research</span>
-        </div>
-        <h3 class="card-title">Lung &amp; Colon Cancer Detection</h3>
-        <p class="card-desc">Histopathological image classification comparing custom CNNs and DenseNet transfer learning on the LC25000 dataset. DenseNet (RGB) reached 98% accuracy; CNN (RGB) reached 98%; grayscale DenseNet 99%. Flask web app for real-time biopsy image classification. DEPI graduation project.</p>
-        <div class="tech-stack">
-          <span class="tag">TensorFlow</span><span class="tag">DenseNet</span><span class="tag">Flask</span><span class="tag">LC25000 Dataset</span>
-        </div>
-        <div class="card-actions">
-          <a href="https://github.com/Mo-Abdalkader/DEPI_Project_M1e" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">⌥ GitHub</a>
-        </div>
-      </article>
-
-    </div><!-- /other grid -->
 
   </div>
 </section>
 
-<!-- ══ FOOTER ═══════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
 <footer class="footer">
   <div class="footer-inner">
     <div class="footer-main">
@@ -291,12 +234,13 @@
         <a href="index.html" class="footer-logo" aria-label="Home">
           <img src="assets/logo.png" alt="Mohamed Abdalkader logo" />
         </a>
-        <p class="footer-tagline" id="t-footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
       </div>
       <nav class="footer-nav" aria-label="Footer navigation">
         <a href="index.html">Home</a>
         <a href="projects.html">Projects</a>
         <a href="blog.html">Blog</a>
+        <a href="blog/resources.html">Resources</a>
         <a href="index.html#contact">Contact</a>
       </nav>
       <div class="social-links">
@@ -306,8 +250,8 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copy" id="t-footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
-      <span class="footer-built">Built with ♥ HTML · CSS · JS</span>
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with vanilla HTML · CSS · JS</span>
     </div>
   </div>
 </footer>
@@ -317,7 +261,7 @@
 
 <script src="js/main.js"></script>
 
-<!-- ══ GLOBAL FEEDBACK SYSTEM ═════════════════════════════════════ -->
+<!-- FEEDBACK SYSTEM -->
 <button class="feedback-trigger" id="feedbackTrigger" aria-label="Open feedback panel">
   <span class="feedback-trigger-text">Feedback</span>
 </button>
@@ -329,7 +273,7 @@
     <h2 id="feedbackTitle">Send Feedback</h2>
     <button class="feedback-close" id="feedbackClose" aria-label="Close feedback panel">×</button>
   </div>
-
+  
   <form class="feedback-form" id="feedbackForm">
     <div class="feedback-field">
       <label for="feedbackName">Name</label>

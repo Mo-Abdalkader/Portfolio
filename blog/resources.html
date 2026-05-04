@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resources — Mohamed Abdalkader</title>
+  <meta name="description" content="Curated resources for learning AI/ML — frameworks, tools, and guides for beginners." />
+  <link rel="icon" type="image/png" href="../assets/logo.png" />
+  <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-6JXJJ6Y1ZC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-6JXJJ6Y1ZC');
+  </script>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+
+  <style>
+    /* ────────────────────────────────────────────────────────────────
+       RESOURCES PAGE — QUICK REFERENCE GUIDES
+    ──────────────────────────────────────────────────────────────── */
+
+    .resource-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      transition: all 0.2s ease;
+    }
+    .resource-card:hover {
+      border-color: rgba(56,189,248,0.35);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+
+    .resource-category {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    .resource-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 0.5rem;
+    }
+
+    .resource-desc {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0 0 1rem;
+    }
+
+    .resource-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .resource-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      color: #05101f;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.16s ease;
+    }
+    .resource-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(56,189,248,0.25);
+    }
+
+    .quick-start {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .quick-start h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin: 0 0 0.75rem;
+      color: var(--text-primary);
+    }
+
+    .quick-start pre {
+      background: rgba(0,0,0,0.25);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    @media (max-width: 580px) {
+      .resource-card { padding: 1.25rem; }
+      .resource-title { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SEASONAL BANNER ZONE -->
+<div class="announcement-banner ramadan-banner" id="ramadanBanner" style="display:none">
+  <div class="ramadan-stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✧</span></div>
+  <div class="ramadan-content">
+    <span class="ramadan-crescent">☽</span>
+    <p>🌙 Ramadan Mubarak! Follow the 30-Day AI Series — one concept every day.</p>
+    <a href="../blog.html" class="ramadan-cta">Explore Series →</a>
+  </div>
+  <button class="ramadan-close" onclick="this.closest('.announcement-banner').style.display='none';window.dispatchEvent(new Event('resize'))" aria-label="Dismiss">×</button>
+</div>
+
+<nav id="navbar" class="navbar scrolled" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo" aria-label="Home">
+      <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="../index.html"       class="nav-link">Home</a></li>
+      <li><a href="../projects.html"    class="nav-link">Projects</a></li>
+      <li><a href="../blog.html"       class="nav-link">Blog</a></li>
+      <li><a href="../index.html#contact" class="nav-link">Contact</a></li>
+    </ul>
+    <div class="nav-right">
+      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle theme">☀️</button>
+      <button class="hamburger" id="hamburger" aria-expanded="false" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu" role="menu">
+  <a href="../index.html"       class="nav-link" role="menuitem">Home</a>
+  <a href="../projects.html"    class="nav-link" role="menuitem">Projects</a>
+  <a href="../blog.html"       class="nav-link" role="menuitem">Blog</a>
+  <a href="../index.html#contact" class="nav-link" role="menuitem">Contact</a>
+</div>
+
+<!-- PAGE HERO -->
+<section class="page-hero">
+  <div class="dot-grid" aria-hidden="true"></div>
+  <div class="page-hero-inner" data-animate>
+    <span class="section-label">// tools & guides</span>
+    <h1>Resources</h1>
+    <p class="page-hero-desc">Quick reference guides for frameworks, tools, and packages —<br>junior-friendly explanations to get you started fast.</p>
+    <div style="margin-top:1.2rem">
+      <a href="../blog.html" class="btn btn-ghost btn-sm">← Back to Blog</a>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0.5rem">
+  <div class="container">
+
+    <!-- RESOURCE CATEGORIES -->
+    <div class="filter-tabs" data-animate style="margin-bottom:2rem">
+      <button class="filter-tab active" data-category="all">All</button>
+      <button class="filter-tab" data-category="llm">LLMs</button>
+      <button class="filter-tab" data-category="cv">Computer Vision</button>
+      <button class="filter-tab" data-category="data">Data Processing</button>
+      <button class="filter-tab" data-category="deploy">Deployment</button>
+    </div>
+
+    <div class="grid-auto">
+
+      <!-- FASTAPI -->
+      <div class="resource-card" data-category="deploy" data-animate>
+        <span class="resource-category">Deployment</span>
+        <h3 class="resource-title">FastAPI</h3>
+        <p class="resource-desc">Modern Python web framework for building APIs. Auto-generates docs, async support, type validation out of the box.</p>
+        <div class="resource-tags">
+          <span class="tag">Python</span><span class="tag">Async</span><span class="tag">API</span>
+        </div>
+        <a href="https://fastapi.tiangolo.com/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- LANGCHAIN -->
+      <div class="resource-card" data-category="llm" data-animate data-delay="1">
+        <span class="resource-category">LLMs</span>
+        <h3 class="resource-title">LangChain</h3>
+        <p class="resource-desc">Build apps with LLMs — chains, agents, memory, RAG pipelines. Python & JS support.</p>
+        <div class="resource-tags">
+          <span class="tag">RAG</span><span class="tag">Agents</span><span class="tag">Python</span>
+        </div>
+        <a href="https://python.langchain.com/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- HUGGING FACE -->
+      <div class="resource-card" data-category="llm" data-animate data-delay="2">
+        <span class="resource-category">LLMs</span>
+        <h3 class="resource-title">Hugging Face</h3>
+        <p class="resource-desc">The hub for models, datasets, and demos. Transformers library, Diffusers, Gradio.</p>
+        <div class="resource-tags">
+          <span class="tag">Models</span><span class="tag">Transformers</span><span class="tag">Gradio</span>
+        </div>
+        <a href="https://huggingface.co/" class="resource-link" target="_blank" rel="noopener">Hub ↗</a>
+      </div>
+
+      <!-- PYTORCH -->
+      <div class="resource-card" data-category="llm" data-animate data-delay="3">
+        <span class="resource-category">Deep Learning</span>
+        <h3 class="resource-title">PyTorch</h3>
+        <p class="resource-desc">Open source ML framework. Tensors, autograd, neural networks. Preferred for research.</p>
+        <div class="resource-tags">
+          <span class="tag">Tensors</span><span class="tag">Autograd</span><span class="tag">Python</span>
+        </div>
+        <a href="https://pytorch.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- TENSORFLOW -->
+      <div class="resource-card" data-category="cv" data-animate>
+        <span class="resource-category">Deep Learning</span>
+        <h3 class="resource-title">TensorFlow</h3>
+        <p class="resource-desc">End-to-end ML platform. Keras integration, TensorBoard, TensorFlow Serving for production.</p>
+        <div class="resource-tags">
+          <span class="tag">Keras</span><span class="tag">Serving</span><span class="tag">Python</span>
+        </div>
+        <a href="https://tensorflow.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- OPENCV -->
+      <div class="resource-card" data-category="cv" data-animate data-delay="1">
+        <span class="resource-category">Computer Vision</span>
+        <h3 class="resource-title">OpenCV</h3>
+        <p class="resource-desc">Classic CV library. Image processing, feature detection, camera calibration. C++ with Python bindings.</p>
+        <div class="resource-tags">
+          <span class="tag">Image Processing</span><span class="tag">Features</span>
+        </div>
+        <a href="https://opencv.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- MEDIAPIPE -->
+      <div class="resource-card" data-category="cv" data-animate data-delay="2">
+        <span class="resource-category">Computer Vision</span>
+        <h3 class="resource-title">MediaPipe</h3>
+        <p class="resource-desc">Google's ready-made CV solutions. Face detection, hand tracking, pose estimation.</p>
+        <div class="resource-tags">
+          <span class="tag">Face</span><span class="tag">Pose</span><span class="tag">Hands</span>
+        </div>
+        <a href="https://mediapipe.dev/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- PANDAS -->
+      <div class="resource-card" data-category="data" data-animate>
+        <span class="resource-category">Data Processing</span>
+        <h3 class="resource-title">Pandas</h3>
+        <p class="resource-desc">Data manipulation & analysis. DataFrames, CSV/Excel handling, missing values.</p>
+        <div class="resource-tags">
+          <span class="tag">DataFrame</span><span class="tag">CSV</span>
+        </div>
+        <a href="https://pandas.pydata.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- NUMPY -->
+      <div class="resource-card" data-category="data" data-animate data-delay="1">
+        <span class="resource-category">Data Processing</span>
+        <h3 class="resource-title">NumPy</h3>
+        <p class="resource-desc">Numerical computing. N-dimensional arrays, linear algebra, random numbers. Foundation of scientific Python.</p>
+        <div class="resource-tags">
+          <span class="tag">Arrays</span><span class="tag">Math</span>
+        </div>
+        <a href="https://numpy.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- SCIKIT-LEARN -->
+      <div class="resource-card" data-category="data" data-animate data-delay="2">
+        <span class="resource-category">ML Library</span>
+        <h3 class="resource-title">scikit-learn</h3>
+        <p class="resource-desc">Classical ML algorithms. Regression, classification, clustering, preprocessing. Beginner-friendly.</p>
+        <div class="resource-tags">
+          <span class="tag">Regression</span><span class="tag">Classification</span>
+        </div>
+        <a href="https://scikit-learn.org/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- XGBOOST -->
+      <div class="resource-card" data-category="data" data-animate data-delay="3">
+        <span class="resource-category">Gradient Boosting</span>
+        <h3 class="resource-title">XGBoost</h3>
+        <p class="resource-desc">Gradient boosting library. Fast, scalable, sparse-aware. Kaggle favorite.</p>
+        <div class="resource-tags">
+          <span class="tag">Boosting</span><span class="tag">Trees</span>
+        </div>
+        <a href="https://xgboost.readthedocs.io/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- DOCKER -->
+      <div class="resource-card" data-category="deploy" data-animate data-delay="1">
+        <span class="resource-category">Deployment</span>
+        <h3 class="resource-title">Docker</h3>
+        <p class="resource-desc">Containerize apps. Reproducible environments, easy deployment, Kubernetes ready.</p>
+        <div class="resource-tags">
+          <span class="tag">Container</span><span class="tag">DevOps</span>
+        </div>
+        <a href="https://docker.com/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- GRADIO -->
+      <div class="resource-card" data-category="llm" data-animate data-delay="2">
+        <span class="resource-category">UI</span>
+        <h3 class="resource-title">Gradio</h3>
+        <p class="resource-desc">Build ML demos fast. Text, image, audio interfaces. Part of Hugging Face.</p>
+        <div class="resource-tags">
+          <span class="tag">Demo</span><span class="tag">UI</span>
+        </div>
+        <a href="https://gradio.app/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+      <!-- STREAMLIT -->
+      <div class="resource-card" data-category="llm" data-animate data-delay="3">
+        <span class="resource-category">UI</span>
+        <h3 class="resource-title">Streamlit</h3>
+        <p class="resource-desc">Turn scripts into web apps. Data apps, dashboards, ML demos. Pure Python.</p>
+        <div class="resource-tags">
+          <span class="tag">Web App</span><span class="tag">Dashboard</span>
+        </div>
+        <a href="https://streamlit.io/" class="resource-link" target="_blank" rel="noopener">Docs ↗</a>
+      </div>
+
+    </div><!-- /grid-auto -->
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div>
+        <a href="../index.html" class="footer-logo" aria-label="Home">
+          <img src="../assets/logo.png" alt="Mohamed Abdalkader logo" />
+        </a>
+        <p class="footer-tagline">AI Engineer · Building tomorrow's systems today.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="../index.html">Home</a>
+        <a href="../projects.html">Projects</a>
+        <a href="../blog.html">Blog</a>
+        <a href="../index.html#contact">Contact</a>
+      </nav>
+      <div class="social-links">
+        <a href="https://github.com/Mo-Abdalkader"      class="social-link" target="_blank" rel="noopener">⌥ GitHub</a>
+        <a href="https://linkedin.com/in/mo-abdalkader" class="social-link" target="_blank" rel="noopener">⊕ LinkedIn</a>
+        <a href="https://mail.google.com/mail/?view=cm&fs=1&to=Mohameed.Abdalkadeer@gmail.com" class="social-link">✉ Email</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2026 Mohamed Abdalkader. All rights reserved.</p>
+      <span class="footer-built">Built with vanilla HTML · CSS · JS</span>
+    </div>
+  </div>
+</footer>
+
+<button class="back-to-top" id="backToTop" aria-label="Back to top">↑</button>
+<script src="../js/main.js"></script>
+
+<script>
+  // Resource filter
+  document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.category;
+      document.querySelectorAll('.resource-card').forEach(card => {
+        card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+      });
+    });
+  });
+</script>
+
+</body>
+</html>
